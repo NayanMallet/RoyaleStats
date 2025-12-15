@@ -43,18 +43,18 @@ const ARENA_NAMES: Record<number | string, string> = {
 export function getArenaDetails(id: number | string, apiName?: string): ArenaDetails {
     console.log('[getArenaDetails] Input:', { id, apiName });
 
-    let numericId = typeof id === 'number' ? id : parseInt(id as string);
-
-    // Special Case: Robust detection for Goblin Mode / Arena 26
-    if (
-        apiName === "Royal Road" ||
-        id === "Royal Road" ||
-        numericId === 26 ||
-        (apiName && apiName.includes("Goblin"))
-    ) {
-        numericId = 26;
-        id = 26;
+    // Special Case: "Royal Road" or "Arena_L" series often implies specific high-level arenas
+    // We map "Royal Road" to "Voie Royale" explicitly.
+    if (apiName === "Royal Road") {
+        return {
+            id: 0, // ID ignored by UI now
+            name: "Voie Royale",
+            // Fallback to a nice arena image since 54000130 doesn't have one
+            image: "https://raw.githubusercontent.com/RoyaleAPI/cr-api-assets/master/arenas-png/arena-1.png"
+        };
     }
+
+    let numericId = typeof id === 'number' ? id : parseInt(id as string);
 
     // Try to map by ID first
     let frenchName = ARENA_NAMES[numericId];
@@ -72,18 +72,15 @@ export function getArenaDetails(id: number | string, apiName?: string): ArenaDet
     console.log('[getArenaDetails] Name Resolved:', frenchName);
 
     // Image URL construction
-    // Since official asset URLs are unstable/404ing, we use a placeholder or known working fallback.
-    // For Arena 26, we'll use a placeholder until a valid asset is found.
+    // Use fallback for high IDs (like 54000130) or missing assets.
+    // Standard arenas are usually 0-26ish.
     let image: string;
 
-    if (numericId === 26) {
-        // Fallback for Arena 26 specifically to ensure it has *something*
+    if (numericId > 30 || isNaN(numericId)) {
+        // Fallback for weird IDs/Leagues -> Arena 1 (Goblinarium) or Legendary Arena (13/20)?
+        // Let's use Arena 1 (Goblinarium) as it's colorful and neutral enough, or Arena 11 (Electro).
+        // User seemed OK with the image I set previously (placeholder/arena-1 fallback).
         image = "https://raw.githubusercontent.com/RoyaleAPI/cr-api-assets/master/arenas-png/arena-1.png";
-        // If that 404s (which it did in tests), let's use a reliable placeholder for now to prove it works.
-        // Actually, let's try to leave it empty or generic to avoid broken icon? 
-        // User said "image doesn't work". 
-        // Let's use the placeholder service.
-        image = "https://placehold.co/200x200/10b981/ffffff?text=Ar%C3%A8ne+26";
     } else {
         image = `https://raw.githubusercontent.com/RoyaleAPI/cr-api-assets/master/arenas-png/arena-${numericId}.png`;
     }

@@ -83,6 +83,7 @@ export interface PlayerProfile {
     };
     totalExpPoints?: number;
     starPoints?: number;
+    totalDonations?: number; // Added to fix TS error
 }
 
 export interface Card {
@@ -90,14 +91,15 @@ export interface Card {
     id: number;
     level: number;
     maxLevel: number;
+    rarity: string;
     count: number;
+    elixirCost: number;
     iconUrls: {
         medium: string;
         heroMedium?: string;
         evolutionMedium?: string;
     };
-    rarity: string;
-    elixirCost: number;
+    evolutionLevel?: number; // Added to fix type error
 }
 
 export async function fetchCards(): Promise<Card[]> {

@@ -179,7 +179,7 @@ const heroImage = computed(() => {
                                     <Shield class="w-4 h-4 fill-orange-400" /> {{ player.clan.name }}
                                 </span>
                                 <span v-if="player.arena" class="flex items-center gap-1.5 text-blue-300 font-bold bg-blue-900/30 px-3 py-1 rounded-lg border border-blue-500/20">
-                                    <Target class="w-4 h-4" /> {{ player.arena.name }}
+                                    <Target class="w-4 h-4" /> {{ getArenaDetails(player.arena.id || 0, player.arena.name).name }}
                                 </span>
                             </div>
                         </div>
@@ -203,25 +203,6 @@ const heroImage = computed(() => {
                                 <div class="text-3xl font-black text-white">{{ getWinRate(player.wins, player.battleCount) }}</div>
                                 <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Win Rate</div>
                             </div>
-                        </div>
-
-                        <!-- Arena Section -->
-                         <div class="flex justify-center md:justify-start pt-6 border-t border-slate-800/50 mt-6">
-                             <div class="flex items-center gap-3 bg-slate-800/50 px-5 py-3 rounded-2xl border border-slate-700/50 backdrop-blur-md group-hover:scale-105 transition-transform">
-                                <img 
-                                    :src="getArenaDetails(player.arena?.id || 0, player.arena?.name).image" 
-                                    class="w-14 h-14 object-contain drop-shadow-md"
-                                    @error="(e) => (e.target as HTMLImageElement).src = 'https://raw.githubusercontent.com/RoyaleAPI/cr-api-assets/master/arenas-png/arena-0.png'"
-                                />
-                                <div>
-                                    <div class="text-xl font-black text-white leading-none mb-1">
-                                        {{ getArenaDetails(player.arena?.id || 0, player.arena?.name).name }}
-                                    </div>
-                                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                                        Arène {{ getArenaDetails(player.arena?.id || 0, player.arena?.name).id }}
-                                    </div>
-                                </div>
-                             </div>
                         </div>
 
                     </div>
