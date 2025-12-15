@@ -58,6 +58,16 @@ services:
       - user-service
     networks: [microservices-net]
 
+  front:
+    build:
+      context: .
+      dockerfile: front/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - api-gateway
+    networks: [microservices-net]
+
 networks:
   microservices-net:
     driver: bridge
