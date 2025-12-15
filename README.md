@@ -115,6 +115,10 @@ L’architecture repose sur une séparation entre le **Front** et le **Back**, a
 
 ### 
 
+### **BDD**
+<img width="325" height="312" alt="Untitled-5" src="https://github.com/user-attachments/assets/30128f60-1220-4363-9cf4-52b3c98e7102" />
+
+
 ### **Clash Data Service (TypeScript)**
 
 - **Rôle :** Agir comme une passerelle centralisée et intelligente vers l'API officielle de Clash Royale. Il abstrait la complexité de l'API tierce pour le reste de l'application et gère les contraintes techniques (rate limiting, caching).
