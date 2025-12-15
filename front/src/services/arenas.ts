@@ -34,6 +34,8 @@ const ARENA_NAMES: Record<number | string, string> = {
     24: "Arène des Maîtres II",
     25: "Arène des Champions",
     26: "Grand Festin Gobelin",
+    // New/Special Arenas
+    "Lumberlove Cabin": "Chalet des Amoureux",
     // Common API fallbacks if IDs mismatch
     "Royal Road": "Voie Royale",
     "Trophy Road": "Voie des Trophées"

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, watchEffect, computed } from 'vue'
-import { fetchPlayer, fetchCards, type PlayerProfile, type Card as ApiCard } from '@/services/clash.service'
+import { fetchPlayer, fetchCards, fetchClan, getClanBadgeUrl, type PlayerProfile, type Card as ApiCard, type ClanDetails } from '@/services/clash.service'
 import { getArenaDetails } from '@/services/arenas'
 import { toast } from 'vue-sonner'
 import { 
-    Trophy, Swords, Crown, Shield, Target, Search, Loader2, Users, Zap, TrendingUp, X, Sparkles, Star
+    Trophy, Swords, Crown, Shield, Target, Search, Loader2, Users, Zap, TrendingUp, X, Sparkles, Star, Globe
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,36 @@ const loading = ref(false)
 const player = ref<PlayerProfile | null>(null)
 const allCards = ref<ApiCard[]>([])
 const selectedCard = ref<ApiCard | null>(null)
+
+// Clan Modal Logic
+const showClanModal = ref(false)
+const selectedClan = ref<ClanDetails | null>(null)
+const loadingClan = ref(false)
+
+const openClanModal = async (tag: string) => {
+    if (!tag) return
+    try {
+        loadingClan.value = true
+        showClanModal.value = true
+        selectedClan.value = await fetchClan(tag)
+    } catch (e) {
+        toast.error("Impossible de charger les infos du clan")
+        showClanModal.value = false
+    } finally {
+        loadingClan.value = false
+    }
+}
+
+const closeClanModal = () => {
+    showClanModal.value = false
+    selectedClan.value = null
+}
+
+const handleMemberClick = (tag: string) => {
+    closeClanModal()
+    playerTag.value = tag
+    handleSearch()
+}
 
 // Load card definitions for extra info (Description/Elixir)
 watchEffect(async () => {
@@ -44,7 +74,7 @@ function getCalculatedLevel(card: ApiCard): number {
         'legendary': 9,
         'champion': 11
     }
-    const rarity = card.rarity?.toLowerCase() || 'common'
+    const rarity = (card.rarity?.toLowerCase() || 'common') as keyof typeof baseLevels
     const base = baseLevels[rarity] || 1
     return base + (card.level - 1)
 }
@@ -79,6 +109,13 @@ const closeCardModal = () => {
     selectedCard.value = null
 }
 
+const hasBadgeError = ref(false)
+
+const handleImageError = () => {
+    // Switch to fallback component
+    hasBadgeError.value = true 
+}
+
 const showBadgesModal = ref(false)
 
 const openBadgesModal = () => {
@@ -93,7 +130,7 @@ const closeBadgesModal = () => {
 const goblinProgress = computed(() => {
     if (!player.value?.progress) return null
     const keys = Object.keys(player.value.progress).filter(k => k !== '' && (k.includes('Goblin') || k.includes('AutoChess')))
-    if (keys.length > 0) return player.value.progress[keys[0]]
+    if (keys.length > 0) return player.value.progress![keys[0]]
     return null
 })
 
@@ -119,7 +156,9 @@ const heroImage = computed(() => {
     
     if (player.value.currentDeck && player.value.currentDeck.length > 0) {
         const first = player.value.currentDeck[0]
-        return first.iconUrls.heroMedium || first.iconUrls.medium
+        if (first) {
+             return first.iconUrls.heroMedium || first.iconUrls.medium
+        }
     }
     return null
 })
@@ -175,8 +214,23 @@ const heroImage = computed(() => {
                             </h1>
                             <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
                                 <span class="text-slate-400 font-mono font-bold text-lg bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50">{{ player.tag }}</span>
-                                <span v-if="player.clan" class="flex items-center gap-1.5 text-orange-400 font-bold bg-orange-900/30 px-3 py-1 rounded-lg border border-orange-500/20">
-                                    <Shield class="w-4 h-4 fill-orange-400" /> {{ player.clan.name }}
+                                <span 
+                                    v-if="player.clan" 
+                                    @click="openClanModal(player.clan.tag)"
+                                    class="flex items-center gap-1.5 text-orange-400 font-bold bg-orange-900/30 px-3 py-1 rounded-lg border border-orange-500/20 cursor-pointer hover:bg-orange-900/50 hover:scale-105 transition-all active:scale-95"
+                                >
+                                    <Loader2 v-if="loadingClan && selectedClan?.tag === player.clan.tag" class="w-4 h-4 animate-spin text-orange-400" />
+                                    <!-- Fallback Icon if Image Fails -->
+                                    <Shield v-else-if="hasBadgeError" class="w-5 h-5 fill-orange-400 text-orange-600" />
+                                    <!-- Real Image -->
+                                    <img 
+                                        v-else
+                                        :src="getClanBadgeUrl(player.clan.badgeId)" 
+                                        class="w-5 h-5 object-contain"
+                                        alt="Clan Badge"
+                                        @error="handleImageError"
+                                    />
+                                    {{ player.clan.name }}
                                 </span>
                                 <span v-if="player.arena" class="flex items-center gap-1.5 text-blue-300 font-bold bg-blue-900/30 px-3 py-1 rounded-lg border border-blue-500/20">
                                     <Target class="w-4 h-4" /> {{ getArenaDetails(player.arena.id || 0, player.arena.name).name }}
@@ -288,7 +342,7 @@ const heroImage = computed(() => {
                          <Zap class="absolute -right-6 -bottom-6 w-40 h-40 text-white/5 rotate-12" />
                          <div class="relative z-10 flex justify-between items-center">
                             <div>
-                                <h3 class="text-xl font-bold text-emerald-100 mb-1">Voyage de la Reine Gobeline</h3>
+                                <h3 class="text-xl font-bold text-emerald-100 mb-1">Merge Tactics</h3>
                                 <p class="text-emerald-300/80 text-sm">Progression Spéciale</p>
                             </div>
                             <div class="text-right">
@@ -381,6 +435,97 @@ const heroImage = computed(() => {
                         </div>
                         <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{{ badge.name }}</div>
                     </div>
+                </div>
+             </div>
+        </div>
+
+        <!-- Clan Modal -->
+        <div v-if="showClanModal && selectedClan" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300" @click.self="closeClanModal">
+             <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300">
+                <!-- Header -->
+                <div class="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row gap-6 items-center bg-slate-50/50">
+                    <img :src="getClanBadgeUrl(selectedClan.badgeId)" class="w-24 h-24 object-contain drop-shadow-lg" />
+                    <div class="flex-1 text-center md:text-left space-y-2">
+                        <h3 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">{{ selectedClan.name }}</h3>
+                        <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                            <span class="text-slate-400 font-mono font-bold bg-slate-200/50 px-2 py-1 rounded text-sm">{{ selectedClan.tag }}</span>
+                            <span class="flex items-center gap-1.5 text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-full">
+                                <Globe class="w-3.5 h-3.5" /> {{ selectedClan.location.name }}
+                            </span>
+                            <span class="flex items-center gap-1.5 text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-full">
+                                <Users class="w-3.5 h-3.5" /> {{ selectedClan.members }}/50
+                            </span>
+                        </div>
+                        <p class="text-slate-500 text-sm italic max-w-2xl">{{ selectedClan.description }}</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="text-center px-4 py-2 bg-yellow-50 rounded-xl border border-yellow-100">
+                             <div class="text-2xl font-black text-slate-800 flex items-center justify-center gap-1">
+                                <Trophy class="w-5 h-5 text-yellow-500 fill-yellow-500" /> {{ selectedClan.clanScore }}
+                            </div>
+                            <div class="text-[10px] font-bold text-yellow-600 uppercase tracking-widest">Score Clan</div>
+                        </div>
+                         <div class="text-center px-4 py-2 bg-green-50 rounded-xl border border-green-100">
+                             <div class="text-2xl font-black text-slate-800">{{ selectedClan.donationsPerWeek }}</div>
+                            <div class="text-[10px] font-bold text-green-600 uppercase tracking-widest">Dons / Sem.</div>
+                        </div>
+                    </div>
+                    <Button variant="ghost" class="absolute top-4 right-4 rounded-full w-10 h-10 p-0 hover:bg-slate-200 text-slate-400" @click="closeClanModal">
+                        <X class="w-6 h-6" />
+                    </Button>
+                </div>
+
+                <!-- Members List -->
+                <div class="flex-1 overflow-y-auto p-0">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <tr>
+                                <th class="p-4 pl-8">#</th>
+                                <th class="p-4">Joueur</th>
+                                <th class="p-4 hidden md:table-cell">Rôle</th>
+                                <th class="p-4 text-right">Trophées</th>
+                                <th class="p-4 pr-8 text-right hidden md:table-cell">Dons</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-for="member in selectedClan.memberList" :key="member.tag" 
+                                class="group hover:bg-blue-50/50 transition-colors cursor-pointer"
+                                @click="handleMemberClick(member.tag)"
+                            >
+                                <td class="p-4 pl-8 font-mono font-bold text-slate-400 w-16">{{ member.clanRank }}</td>
+                                <td class="p-4">
+                                    <div class="font-bold text-slate-800 group-hover:text-blue-600 transition-colors text-lg">{{ member.name }}</div>
+                                    <div class="flex items-center gap-1.5 text-xs text-slate-400 md:hidden">
+                                        <span>{{ member.role === 'leader' ? 'Chef' : member.role === 'coLeader' ? 'Chef Adjoint' : member.role === 'elder' ? 'Aîné' : 'Membre' }}</span>
+                                        <span>•</span>
+                                        <span>{{ member.donations }} dons</span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 font-mono mt-0.5">{{ member.tag }}</div>
+                                </td>
+                                <td class="p-4 hidden md:table-cell">
+                                    <span :class="{
+                                        'px-2 py-1 rounded text-xs font-bold uppercase tracking-wider border': true,
+                                        'bg-yellow-100 text-yellow-700 border-yellow-200': member.role === 'leader',
+                                        'bg-orange-100 text-orange-700 border-orange-200': member.role === 'coLeader',
+                                        'bg-blue-100 text-blue-700 border-blue-200': member.role === 'elder',
+                                        'bg-slate-100 text-slate-600 border-slate-200': member.role === 'member'
+                                    }">
+                                        {{ member.role === 'leader' ? 'Chef' : member.role === 'coLeader' ? 'Chef Adj.' : member.role === 'elder' ? 'Aîné' : 'Membre' }}
+                                    </span>
+                                </td>
+                                <td class="p-4 text-right">
+                                    <div class="font-black text-slate-800 flex items-center justify-end gap-1.5">
+                                        {{ member.trophies }} <Trophy class="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                    </div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ member.arena.name }}</div>
+                                </td>
+                                <td class="p-4 pr-8 text-right hidden md:table-cell">
+                                    <div class="font-bold text-green-600">+{{ member.donations }}</div>
+                                    <div class="text-[10px] text-slate-400">Reçus: {{ member.donationsReceived }}</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
              </div>
         </div>

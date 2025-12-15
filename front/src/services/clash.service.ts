@@ -102,6 +102,57 @@ export interface Card {
     evolutionLevel?: number; // Added to fix type error
 }
 
+// -- Clan Types --
+export interface ClanMember {
+    tag: string;
+    name: string;
+    role: string;
+    lastSeen: string;
+    expLevel: number;
+    trophies: number;
+    arena: { id: number; name: string; };
+    clanRank: number;
+    previousClanRank: number;
+    donations: number;
+    donationsReceived: number;
+}
+
+export interface ClanDetails {
+    tag: string;
+    name: string;
+    type: string;
+    description: string;
+    badgeId: number;
+    clanScore: number;
+    clanWarTrophies: number;
+    location: { id: number; name: string; isCountry: boolean; countryCode: string; };
+    requiredTrophies: number;
+    donationsPerWeek: number;
+    members: number;
+    memberList: ClanMember[];
+}
+
+export async function fetchClan(tag: string): Promise<ClanDetails> {
+    // tag needs to be URL encoded (hashes become %23) but usually the proxy handles it or we strip #
+    // The previous fetchPlayer logic adds # if missing.
+    // Let's assume input tag has # or not, API usually expects %23 if passed in path.
+    const cleanTag = tag.startsWith('#') ? '%23' + tag.slice(1) : '%23' + tag;
+
+    // Using the same proxy path convention
+    const response = await fetch(`/api/clash/clans/${cleanTag}`);
+    if (!response.ok) throw new Error('Failed to fetch clan details');
+    return await response.json();
+}
+
+export function getClanBadgeUrl(badgeId: number): string {
+    // RoyaleAPI assets often use badges_75 directory or just badges
+    // If standard fails, try badges_75 or similar.
+    // For now, attempting the most common pattern.
+    // If badgeId is 0 or undefined, return a generic shield.
+    if (!badgeId) return 'https://raw.githubusercontent.com/RoyaleAPI/cr-api-assets/master/badges/0.png';
+    return `https://raw.githubusercontent.com/RoyaleAPI/cr-api-assets/master/badges/${badgeId}.png`;
+}
+
 export async function fetchCards(): Promise<Card[]> {
     const response = await fetch('/api/clash/cards');
     if (!response.ok) throw new Error('Failed to fetch cards');
