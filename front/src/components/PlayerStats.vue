@@ -1,7 +1,8 @@
 ```vue
 <script setup lang="ts">
 import { ref, watchEffect, computed, watch } from 'vue'
-import { fetchPlayer, fetchCards, fetchClan, getClanBadgeUrl, type PlayerProfile, type Card as ApiCard, type ClanDetails } from '@/services/clash.service'
+import { fetchPlayer, fetchCards, fetchClan, type PlayerProfile, type Card as ApiCard, type ClanDetails } from '@/services/clash.service'
+import { getClanBadgeUrl, initBadges } from '@/services/badges'
 import { getArenaDetails } from '@/services/arenas'
 import { toast } from 'vue-sonner'
 import { 
@@ -31,6 +32,8 @@ const openClanModal = async (tag: string) => {
     try {
         loadingClan.value = true
         showClanModal.value = true
+        // Initiate badge loading in parallel
+        initBadges()
         selectedClan.value = await fetchClan(tag)
     } catch (e) {
         toast.error("Impossible de charger les infos du clan")
@@ -472,7 +475,14 @@ const heroImage = computed(() => {
              <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300">
                 <!-- Header -->
                 <div class="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row gap-6 items-center bg-slate-50/50">
-                    <img :src="getClanBadgeUrl(selectedClan.badgeId)" class="w-24 h-24 object-contain drop-shadow-lg" />
+                    <img 
+                        v-if="getClanBadgeUrl(selectedClan.badgeId)" 
+                        :src="getClanBadgeUrl(selectedClan.badgeId)" 
+                        class="w-24 h-24 object-contain drop-shadow-lg" 
+                    />
+                    <div v-else class="w-24 h-24 flex items-center justify-center bg-orange-100 rounded-full border-4 border-white shadow-lg">
+                        <Shield class="w-12 h-12 text-orange-500" />
+                    </div>
                     <div class="flex-1 text-center md:text-left space-y-2">
                         <h3 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">{{ selectedClan.name }}</h3>
                         <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">

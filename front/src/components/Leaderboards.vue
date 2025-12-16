@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { fetchGlobalRankings, fetchPathOfLegendRankings, fetchLocations, fetchLocationRankings, type LeaderboardPlayer } from '@/services/leaderboards'
+import { getClanBadgeUrl, initBadges } from '@/services/badges'
 import { Trophy, Crown, Swords, Ghost, ChevronLeft, Shield, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 
@@ -34,10 +35,11 @@ function shuffleArray(array: any[]) {
 onMounted(async () => {
     loading.value = true
     try {
-        const [ranked, trophies, locations] = await Promise.all([
+        const [ranked, trophies, locations, _] = await Promise.all([
             fetchPathOfLegendRankings(20),
             fetchGlobalRankings(20),
-            fetchLocations().catch(() => []) 
+            fetchLocations().catch(() => []),
+            initBadges() 
         ])
         
         // Ranked Data (Real)
@@ -272,7 +274,13 @@ const getCategoryColor = (cat: Category) => {
                         class="hidden sm:flex col-span-4 items-center gap-2 text-slate-500 font-medium text-sm group/clan cursor-pointer hover:bg-slate-200/60 rounded-lg py-1 px-2 -ml-2 w-fit transition-all duration-200"
                         @click.stop="player.clan ? selectClan(player.clan.tag) : null"
                     >
-                        <Shield v-if="player.clan" class="w-3.5 h-3.5 text-slate-400 group-hover/clan:text-orange-500 transition-colors" />
+                        <img 
+                            v-if="player.clan && getClanBadgeUrl(player.clan.badgeId)"
+                            :src="getClanBadgeUrl(player.clan.badgeId)"
+                            class="w-5 h-5 object-contain"
+                            alt="Clan Badge"
+                        />
+                        <Shield v-else-if="player.clan" class="w-3.5 h-3.5 text-slate-400 group-hover/clan:text-orange-500 transition-colors" />
                         <span class="truncate group-hover/clan:text-slate-900 transition-colors">{{ player.clan?.name || '-' }}</span>
                     </div>
 
