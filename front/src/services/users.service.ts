@@ -6,6 +6,6 @@ export async function fetchUsers(): Promise<User[]> {
   return http.get<User[]>(apiEndpoints.users.list)
 }
 
-export async function createUser(payload: { name: string; email: string; password: string }): Promise<User> {
+export async function createUser(payload: { player_tag: string; password: string }): Promise<User> {
   return http.post<User>(apiEndpoints.users.create, payload)
 }

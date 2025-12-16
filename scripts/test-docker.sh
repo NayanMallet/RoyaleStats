@@ -25,17 +25,13 @@ wait_for() {
   done
 }
 
-echo "Waiting for item-service..."
-wait_for http://localhost:3003/health "item-service"
+
 
 echo "Waiting for user-service..."
 wait_for http://localhost:3002/health "user-service"
 
 # smoke-tests
-echo "Testing item-service..."
-curl -s -X POST http://localhost:3003/items -H "Content-Type: application/json" -d '{"name":"docker-smoke-item"}' | jq -r '.' || true
-sleep 0.5
-curl -s http://localhost:3003/items | jq -r '.' || true
+
 
 
 echo "Testing user-service (register + login)..."

@@ -1,53 +1,40 @@
-ARG ARCH=amd64
-FROM --platform=linux/${ARCH} node:18-alpine AS builder
-WORKDIR /app
-
-# Installer outils de compilation nécessaires pour les modules natifs (node-gyp)
-RUN apk add --no-cache python3 build-base linux-headers
-
-# Activer pnpm via corepack
+FROM node:20-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-# Copier les fichiers de dépendances (workspace + service)
+FROM base AS builder
+WORKDIR /app
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY shared/package.json ./shared/package.json
-COPY user-service/package.json ./user-service/package.json
-
-# Installer les dépendances pour user-service (et ses dépendances internes)
-RUN pnpm -r --filter ./user-service... install --frozen-lockfile
-
-# Copier le code source (shared + user-service) et compiler
 COPY shared ./shared
 COPY user-service ./user-service
-RUN pnpm -r --filter ./user-service... run build
 
-# Production stage
-ARG ARCH=amd64
-FROM --platform=linux/$ARCH node:18-alpine AS production
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Set DATABASE_URL for Prisma Client generation
+ENV DATABASE_URL="file:./prisma/data/database.sqlite"
+
+# Generate Prisma Client
+RUN cd user-service && pnpm exec prisma generate
+
+# Build the project
+RUN pnpm -r run build
+
+# Deploy production dependencies
+RUN pnpm --filter=user-service --prod deploy /prod/user-service --legacy
+
+FROM base AS production
 WORKDIR /app/user-service
 
-# Installer outils de compilation nécessaires pour les modules natifs (node-gyp) et npm
-RUN apk add --no-cache python3 build-base linux-headers npm
-
-# Copier uniquement le package.json du user-service
-COPY user-service/package.json ./
-
-# Supprimer la dépendance 'shared' du package.json (incompatible npm)
-RUN sed -i '/"shared"/d' package.json
-
-# Installer les dépendances de production avec npm (pour sqlite3 natif)
-RUN npm install --omit=dev
-
-# Copier le code compilé
+# Copy the deployed application
+COPY --from=builder /prod/user-service ./
+# Copy built code
 COPY --from=builder /app/user-service/dist ./dist
-COPY --from=builder /app/shared/dist ../shared/dist
-
-# Rendre le module shared accessible comme un package node_modules
-RUN mkdir -p node_modules/shared && cp -r ../shared/dist/* node_modules/shared/
+# Copy shared package  
+COPY --from=builder /app/shared/dist ./node_modules/shared/dist
+# Copy Prisma files
+COPY --from=builder /app/user-service/prisma ./prisma
 
 EXPOSE 3002
-CMD ["node", "dist/server.js"]
-
-# Astuce :
-# Pour builder en x86_64 (plus compatible), lance :
-# docker-compose build --build-arg ARCH=amd64
+CMD ["npm", "start"]

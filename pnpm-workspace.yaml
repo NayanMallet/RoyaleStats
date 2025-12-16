@@ -3,5 +3,4 @@ packages:
   - api-gateway
   - user-service
   - public-api
-  - item-service
   - front

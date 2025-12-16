@@ -1,1 +1,1 @@
-export { createCorsMiddleware } from './src/corsConfig'
+export { createCorsMiddleware } from './src/corsConfig';

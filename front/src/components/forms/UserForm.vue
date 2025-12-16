@@ -5,42 +5,32 @@ import type { SubmissionHandler } from 'vee-validate'
 import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card'
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from '@/components/ui/field'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 
 const props = defineProps<{ submitting?: boolean }>()
 const emit = defineEmits<{
-    (e: 'submit', payload: { name: string; email: string; password: string }): void
+    (e: 'submit', payload: { player_tag: string; password: string }): void
 }>()
 
 const userFormSchema = toTypedSchema(
     z.object({
-        name: z.string().min(2, 'Name must be at least 2 characters.'),
-        email: z.email('Please provide a valid email address.'),
+        player_tag: z
+            .string()
+            .min(3, 'Player tag must be at least 3 characters.')
+            .regex(/^#?[0-9A-Z]+$/i, 'Player tag must contain only letters and numbers (e.g., #ABC123).'),
         password: z.string().min(6, 'Password must be at least 6 characters.'),
     }),
 )
 
 const onSubmit: SubmissionHandler = (values) => {
-    const { name, email, password } = values as {
-        name: string
-        email: string
+    const { player_tag, password } = values as {
+        player_tag: string
         password: string
     }
 
-    emit('submit', { name, email, password })
+    emit('submit', { player_tag, password })
 }
 </script>
 
@@ -49,14 +39,14 @@ const onSubmit: SubmissionHandler = (values) => {
         <CardHeader>
             <CardTitle>Create user</CardTitle>
             <CardDescription>
-                Send a POST request to the user microservice.
+                Register with your Clash Royale player tag.
             </CardDescription>
         </CardHeader>
         <CardContent>
             <VeeForm
                 v-slot="{ handleSubmit, resetForm }"
                 :validation-schema="userFormSchema"
-                :initial-values="{ name: '', email: '', password: '' }"
+                :initial-values="{ player_tag: '', password: '' }"
                 as="div"
             >
                 <form
@@ -65,27 +55,13 @@ const onSubmit: SubmissionHandler = (values) => {
                     :aria-busy="props.submitting"
                 >
                     <FieldGroup>
-                        <VeeField v-slot="{ field, errors }" name="name">
+                        <VeeField v-slot="{ field, errors }" name="player_tag">
                             <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="user-name">Name</FieldLabel>
+                                <FieldLabel for="player-tag">Player Tag</FieldLabel>
                                 <Input
-                                    id="user-name"
+                                    id="player-tag"
                                     v-bind="field"
-                                    placeholder="Jane Doe"
-                                    :aria-invalid="!!errors.length"
-                                />
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </Field>
-                        </VeeField>
-
-                        <VeeField v-slot="{ field, errors }" name="email">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="user-email">Email</FieldLabel>
-                                <Input
-                                    id="user-email"
-                                    v-bind="field"
-                                    type="email"
-                                    placeholder="jane.doe@example.com"
+                                    placeholder="#ABC123XYZ"
                                     :aria-invalid="!!errors.length"
                                 />
                                 <FieldError v-if="errors.length" :errors="errors" />

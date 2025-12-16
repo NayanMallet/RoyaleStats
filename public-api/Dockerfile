@@ -1,7 +1,7 @@
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Installer outils de compilation nécessaires pour les modules natifs (node-gyp)
+# Install build tools for native modules if needed
 RUN apk add --no-cache python3 build-base linux-headers
 
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
@@ -13,13 +13,13 @@ RUN corepack enable \
 COPY public-api ./public-api
 RUN pnpm -r --filter ./public-api... run build
 
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 WORKDIR /app
 
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY public-api/package.json ./public-api/package.json
 
-# Installer les dépendances de production uniquement pour public-api
+# Install production dependencies only
 RUN corepack enable \
   && pnpm -r --filter ./public-api... install --prod --frozen-lockfile
 

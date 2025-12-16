@@ -1,23 +1,35 @@
-import type { DB } from '../config';
+import { prisma } from '../config';
 import type { User } from '../types/user';
 
-export function createUserModel(db: DB) {
-  return {
-    async getAll(): Promise<Omit<User, 'password'>[]> {
-      const rows = await db.all('SELECT id, name, email FROM users');
-      return rows as Omit<User, 'password'>[];
-    },
+export const userModel = {
+  async getAll(): Promise<Omit<User, 'password'>[]> {
+    const users = await prisma.user.findMany({
+      select: {
+        uuid: true,
+        player_tag: true,
+        created_at: true,
+        updated_at: true,
+        password: false,
+      },
+    });
+    return users;
+  },
 
-    async getByEmail(email: string): Promise<User | undefined> {
-      const row = await db.get('SELECT id, name, email, password FROM users WHERE email = ?', [email]);
-      return row as User | undefined;
-    },
+  async getByPlayerTag(player_tag: string): Promise<User | null> {
+    const user = await prisma.user.findUnique({
+      where: { player_tag },
+    });
+    return user;
+  },
 
-    async create(user: User): Promise<void> {
-      await db.run(
-        'INSERT INTO users (id, name, email, password) VALUES (?, ?, ?, ?)',
-        [user.id, user.name, user.email, user.password]
-      );
-    }
-  };
-}
+  async create(user: Omit<User, 'created_at' | 'updated_at'>): Promise<User> {
+    const newUser = await prisma.user.create({
+      data: {
+        uuid: user.uuid,
+        player_tag: user.player_tag,
+        password: user.password,
+      },
+    });
+    return newUser;
+  },
+};

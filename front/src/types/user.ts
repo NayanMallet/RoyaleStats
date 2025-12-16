@@ -1,5 +1,7 @@
 export interface User {
-  id: number
-  name: string
-  email: string
+  uuid: string
+  player_tag: string
+  password?: string  // Optional for display purposes
+  created_at: string
+  updated_at: string
 }
