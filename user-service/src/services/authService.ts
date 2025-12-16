@@ -2,7 +2,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { JWT_SECRET } from '../config';
-import type { User } from '../types/user';
 
 export const AuthService = {
   async hash(password: string) {
@@ -21,7 +20,7 @@ export const AuthService = {
     return jwt.verify(token, JWT_SECRET) as T;
   },
 
-  makeUserId() {
+  makeUserUuid() {
     return uuidv4();
   }
 };
