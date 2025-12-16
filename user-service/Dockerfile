@@ -1,53 +1,46 @@
-ARG ARCH=amd64
-FROM --platform=linux/${ARCH} node:18-alpine AS builder
-WORKDIR /app
-
-# Installer outils de compilation nécessaires pour les modules natifs (node-gyp)
-RUN apk add --no-cache python3 build-base linux-headers
-
-# Activer pnpm via corepack
+FROM node:20-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-# Copier les fichiers de dépendances (workspace + service)
+FROM base AS builder
+# Install build tools for native modules (sqlite3, etc.)
+# py3-setuptools provides distutils needed by node-gyp on Python 3.12+
+RUN apk add --no-cache python3 py3-setuptools build-base linux-headers
+
+WORKDIR /app
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY shared/package.json ./shared/package.json
-COPY user-service/package.json ./user-service/package.json
-
-# Installer les dépendances pour user-service (et ses dépendances internes)
-RUN pnpm -r --filter ./user-service... install --frozen-lockfile
-
-# Copier le code source (shared + user-service) et compiler
 COPY shared ./shared
 COPY user-service ./user-service
-RUN pnpm -r --filter ./user-service... run build
 
-# Production stage
-ARG ARCH=amd64
-FROM --platform=linux/$ARCH node:18-alpine AS production
+# Install dependencies for workspace
+RUN pnpm install --frozen-lockfile
+
+# Build the project
+RUN pnpm -r run build
+
+# Deploy the production application to a temporary directory
+# This installs production dependencies (including rebuilding native modules) in an isolated folder
+RUN pnpm --filter=user-service --prod deploy /prod/user-service --legacy
+
+FROM base AS production
+# Install build tools for rebuilding native modules in production
+# py3-setuptools provides distutils needed by node-gyp on Python 3.12+
+RUN apk add --no-cache python3 py3-setuptools build-base linux-headers
+
 WORKDIR /app/user-service
 
-# Installer outils de compilation nécessaires pour les modules natifs (node-gyp) et npm
-RUN apk add --no-cache python3 build-base linux-headers npm
+# Copy the deployed application (includes node_modules with compiled binaries)
+COPY --from=builder /prod/user-service ./
 
-# Copier uniquement le package.json du user-service
-COPY user-service/package.json ./
-
-# Supprimer la dépendance 'shared' du package.json (incompatible npm)
-RUN sed -i '/"shared"/d' package.json
-
-# Installer les dépendances de production avec npm (pour sqlite3 natif)
-RUN npm install --omit=dev
-
-# Copier le code compilé
+# Copy built code artifacts (in case pnpm deploy excluded them due to .gitignore)
 COPY --from=builder /app/user-service/dist ./dist
-COPY --from=builder /app/shared/dist ../shared/dist
+# Ensure shared workspace package has its code if it was symlinked/packaged without dist
+COPY --from=builder /app/shared/dist ./node_modules/shared/dist
 
-# Rendre le module shared accessible comme un package node_modules
-RUN mkdir -p node_modules/shared && cp -r ../shared/dist/* node_modules/shared/
+# Rebuild native modules in the production environment to ensure correct bindings
+# Navigate to the sqlite3 package and rebuild it directly with npm
+RUN cd node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3 && npm run install --build-from-source
 
 EXPOSE 3002
 CMD ["node", "dist/server.js"]
-
-# Astuce :
-# Pour builder en x86_64 (plus compatible), lance :
-# docker-compose build --build-arg ARCH=amd64

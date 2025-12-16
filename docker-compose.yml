@@ -6,10 +6,9 @@ services:
       dockerfile: public-api/Dockerfile
     ports:
       - "3001:3001"
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
   user-service:
-    platform: linux/amd64
     env_file: .env
     build:
       context: .
@@ -21,12 +20,11 @@ services:
     volumes:
       - ./data/user-service:/data/user-service
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3002/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3002/health" ]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [microservices-net]
-
+    networks: [ microservices-net ]
 
   api-gateway:
     env_file: .env
@@ -38,7 +36,7 @@ services:
     depends_on:
       - public-api
       - user-service
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
   front:
     build:
@@ -48,7 +46,7 @@ services:
       - "8080:80"
     depends_on:
       - api-gateway
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
 networks:
   microservices-net:
