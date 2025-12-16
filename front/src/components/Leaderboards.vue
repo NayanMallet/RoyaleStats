@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { fetchGlobalRankings, fetchPathOfLegendRankings, type LeaderboardPlayer } from '@/services/leaderboards'
+import { fetchGlobalRankings, fetchPathOfLegendRankings, fetchLocations, fetchLocationRankings, type LeaderboardPlayer } from '@/services/leaderboards'
 import { Trophy, Crown, Swords, Ghost, ChevronLeft, Shield, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 
 const emit = defineEmits(['select-player', 'select-clan'])
-
-
 
 function selectClan(tag: string) {
     if (!tag) return
@@ -36,9 +34,10 @@ function shuffleArray(array: any[]) {
 onMounted(async () => {
     loading.value = true
     try {
-        const [ranked, trophies] = await Promise.all([
+        const [ranked, trophies, locations] = await Promise.all([
             fetchPathOfLegendRankings(20),
-            fetchGlobalRankings(20)
+            fetchGlobalRankings(20),
+            fetchLocations().catch(() => []) 
         ])
         
         // Ranked Data (Real)
@@ -48,16 +47,36 @@ onMounted(async () => {
         if (trophies && trophies.length > 0) {
              players_trophy.value = trophies
         } else if (ranked && ranked.length > 0) {
-            // Mock Trophies if API is empty
+            // Fallback: Mock Trophies if API is empty
             players_trophy.value = shuffleArray([...ranked]).map((p, i) => ({
                 ...p,
                 score: 9000 - (i * 50) + Math.floor(Math.random() * 40),
                 rank: i + 1
             }))
         }
+
+        // --- Fetch Real Data for Merge & 2v2 ---
         
-        // Merge Tactics (Mock)
-        if (ranked && ranked.length > 0) {
+        // Helper to find max ID for a given name
+        const findMaxId = (name: string) => {
+            const matches = locations.filter((l: any) => l.name === name)
+            if (!matches.length) return null
+            return Math.max(...matches.map((l: any) => l.id))
+        }
+
+        const mergeId = findMaxId("Merge Tactics")
+        const duoId = findMaxId("2v2 League")
+
+        // Fetch them if IDs found
+        const [mergeData, duoData] = await Promise.all([
+            mergeId ? fetchLocationRankings(mergeId, 20) : Promise.resolve([]),
+            duoId ? fetchLocationRankings(duoId, 20) : Promise.resolve([])
+        ])
+        
+        // Assign Merge Data (or mock fallback)
+        if (mergeData && mergeData.length > 0) {
+            players_merge.value = mergeData
+        } else if (ranked && ranked.length > 0) {
              const shuffledForMerge = shuffleArray([...ranked])
              players_merge.value = shuffledForMerge.map((p, i) => ({ 
                  ...p, 
@@ -66,8 +85,10 @@ onMounted(async () => {
              }))
         }
 
-        // 2v2 League (Mock)
-        if (ranked && ranked.length > 0) {
+        // Assign 2v2 Data (or mock fallback)
+        if (duoData && duoData.length > 0) {
+            players_2v2.value = duoData
+        } else if (ranked && ranked.length > 0) {
              const shuffledFor2v2 = shuffleArray([...ranked])
              players_2v2.value = shuffledFor2v2.map((p, i) => ({ 
                  ...p, 
@@ -248,11 +269,11 @@ const getCategoryColor = (cat: Category) => {
 
                     <!-- Clan Info -->
                     <div 
-                        class="hidden sm:flex col-span-4 items-center gap-2 text-slate-500 font-medium text-sm group/clan"
+                        class="hidden sm:flex col-span-4 items-center gap-2 text-slate-500 font-medium text-sm group/clan cursor-pointer hover:bg-slate-200/60 rounded-lg py-1 px-2 -ml-2 w-fit transition-all duration-200"
                         @click.stop="player.clan ? selectClan(player.clan.tag) : null"
                     >
-                        <Shield v-if="player.clan" class="w-3.5 h-3.5 text-slate-400 group-hover/clan:text-blue-500 transition-colors" />
-                        <span class="truncate group-hover/clan:text-blue-600 group-hover/clan:underline cursor-pointer transition-colors">{{ player.clan?.name || '-' }}</span>
+                        <Shield v-if="player.clan" class="w-3.5 h-3.5 text-slate-400 group-hover/clan:text-orange-500 transition-colors" />
+                        <span class="truncate group-hover/clan:text-slate-900 transition-colors">{{ player.clan?.name || '-' }}</span>
                     </div>
 
                     <!-- Score -->

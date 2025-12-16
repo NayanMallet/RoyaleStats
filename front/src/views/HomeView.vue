@@ -43,11 +43,16 @@ const handleLeaderboardSelection = (tag: string) => {
     searchQuery.value = tag
     triggerSearch()
 }
+const handleLeaderboardClanSelection = (tag: string) => {
+    searchType.value = 'clan'
+    searchQuery.value = tag
+    triggerSearch()
+}
 </script>
 
 <template>
     <div class="flex flex-col gap-8 px-4 py-6 w-full relative overflow-hidden max-w-[1600px] mx-auto min-h-screen">
-        <!-- Background decoration -->
+        <!-- ... (background) -->
         <div class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-50 to-transparent -z-10" />
 
         <!-- Global Navbar -->
@@ -116,7 +121,7 @@ const handleLeaderboardSelection = (tag: string) => {
         </header>
 
         <!-- Leaderboards (Home Page) -->
-        <Leaderboards v-if="!isPlayerLoaded" @select-player="handleLeaderboardSelection" />
+        <Leaderboards v-if="!isPlayerLoaded" @select-player="handleLeaderboardSelection" @select-clan="handleLeaderboardClanSelection" />
 
         <!-- Player Stats -->
         <PlayerStats ref="playerStatsRef" @player-loaded="isPlayerLoaded = $event" />

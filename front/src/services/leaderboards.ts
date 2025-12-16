@@ -32,5 +32,21 @@ export async function fetchPathOfLegendRankings(limit = 10): Promise<Leaderboard
     }))
 }
 
-// Placeholder for other modes if specific endpoints exist
-// "Merge Tactics" / "2v2" might not have direct global ranking endpoints in public API
+// Fetch list of all available season leaderboards
+export async function fetchLocations(): Promise<{ id: number; name: string }[]> {
+    const res = await fetch(`${API_BASE}/leaderboards`)
+    if (!res.ok) throw new Error('Failed to fetch Leaderboards List')
+    const data = await res.json()
+    return data.items
+}
+
+// Fetch rankings for a specific leaderboard season
+export async function fetchLocationRankings(leaderboardId: number, limit = 10): Promise<LeaderboardPlayer[]> {
+    const res = await fetch(`${API_BASE}/leaderboard/${leaderboardId}?limit=${limit}`)
+    if (!res.ok) {
+        console.warn(`Failed to fetch rankings for leaderboard ${leaderboardId}`)
+        return []
+    }
+    const data = await res.json()
+    return data.items
+}
