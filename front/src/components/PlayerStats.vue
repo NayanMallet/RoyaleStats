@@ -45,7 +45,7 @@ const closeClanModal = () => {
 const handleMemberClick = (tag: string) => {
     closeClanModal()
     playerTag.value = tag
-    handleSearch()
+    handleSearch(tag)
 }
 
 // Load card definitions for extra info (Description/Elixir)
@@ -79,9 +79,10 @@ function getCalculatedLevel(card: ApiCard): number {
     return base + (card.level - 1)
 }
 
-async function handleSearch() {
-    if (!playerTag.value) return
-    let tag = playerTag.value.trim().toUpperCase()
+// Exposed function for Parent Component
+async function handleSearch(tagInput: string) {
+    if (!tagInput) return
+    let tag = tagInput.trim().toUpperCase()
     if (!tag.startsWith('#')) tag = '#' + tag
 
     try {
@@ -95,6 +96,22 @@ async function handleSearch() {
         loading.value = false
     }
 }
+
+// Exposed function for Clan Search (Parent Component)
+async function handleClanSearch(tagInput: string) {
+    if (!tagInput) return
+    let tag = tagInput.trim().toUpperCase()
+    if (!tag.startsWith('#')) tag = '#' + tag
+    
+    // Use existing logic to open clan modal
+    openClanModal(tag)
+}
+
+// Expose the method to the parent (App.vue)
+defineExpose({
+    handleSearch,
+    handleClanSearch
+})
 
 const getWinRate = (wins: number, battles: number) => {
     if (!battles) return '0%'
@@ -171,24 +188,6 @@ const heroImage = computed(() => {
 <template>
     <div class="flex flex-col gap-12 w-full max-w-7xl mx-auto font-sans pb-24 px-4 sm:px-6">
         
-        <!-- Search Bar -->
-        <div class="flex w-full max-w-2xl items-center gap-3 mx-auto bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-2xl shadow-blue-900/10 border border-white/20 transition-all focus-within:ring-4 focus-within:ring-blue-500/10">
-            <div class="relative w-full">
-                <Search class="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
-                <Input 
-                    v-model="playerTag" 
-                    type="text" 
-                    placeholder="Tag du joueur (ex: #89GQPQC9)" 
-                    class="pl-12 h-12 border-0 shadow-none focus-visible:ring-0 bg-transparent text-lg font-semibold placeholder:text-slate-300 text-slate-800"
-                    @keyup.enter="handleSearch"
-                />
-            </div>
-            <Button @click="handleSearch" :disabled="loading" class="rounded-xl h-12 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold tracking-wide shadow-lg shadow-blue-600/20 active:scale-95 transition-all">
-                <Loader2 v-if="loading" class="w-5 h-5 animate-spin" />
-                <span v-else>ANALYSER</span>
-            </Button>
-        </div>
-
         <!-- Dashboard -->
         <div v-if="player" class="animate-in fade-in slide-in-from-bottom-12 duration-1000 space-y-12">
             
