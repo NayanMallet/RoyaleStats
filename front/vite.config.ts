@@ -26,7 +26,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/clash/, ''),
         configure: (proxy, _options) => {
           proxy.on('proxyReq', (proxyReq, _req, _res) => {
-            proxyReq.setHeader('Authorization', 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6IjUyYjQ4Mzg0LTJjNTItNGU1My05ZWNkLTM4MTY1YzViNmI5MiIsImlhdCI6MTc2NTgwMjgyOSwic3ViIjoiZGV2ZWxvcGVyLzkxZGJhNWIxLWM2NjMtY2ZjNi1kOGY4LTM0MDJhZDcyNzkyNCIsInNjb3BlcyI6WyJyb3lhbGUiXSwibGltaXRzIjpbeyJ0aWVyIjoiZGV2ZWxvcGVyL3NpbHZlciIsInR5cGUiOiJ0aHJvdHRsaW5nIn0seyJjaWRycyI6WyI4NS4xNjkuMTAxLjE2MiIsIjgyLjk2LjE2Ny4xNDciLCI4NS4xNjkuMTAxLjE2MiJdLCJ0eXBlIjoiY2xpZW50In1dfQ.dJNRFYkZ-_q60Mn5zDFZDUw-3wFr3Nce-fPJ5KJPSitqWC6AjzrJD7hFKwPoRd-w11R8iE3pA1NEOtAb1jckMw');
+            proxyReq.setHeader('Authorization', 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6IjJmZWQ5NjAxLTgwYTktNDA5NC05ZGJmLWUzMTdlN2Q1YTMxOSIsImlhdCI6MTc2NTgyNTg1Miwic3ViIjoiZGV2ZWxvcGVyLzkxZGJhNWIxLWM2NjMtY2ZjNi1kOGY4LTM0MDJhZDcyNzkyNCIsInNjb3BlcyI6WyJyb3lhbGUiXSwibGltaXRzIjpbeyJ0aWVyIjoiZGV2ZWxvcGVyL3NpbHZlciIsInR5cGUiOiJ0aHJvdHRsaW5nIn0seyJjaWRycyI6WyI4NS4xNjkuMTAxLjE2MiIsIjgyLjk2LjE2Ny4xNDciLCIzNy42NS4xNzcuMjI1Il0sInR5cGUiOiJjbGllbnQifV19.tC8g1wijt_b9RqWHQGZKolRTyuLanY2Aw8s6LJFqYUG_qoDDi0QjkGgXTK20WP4IT0F8eTPfuYZqrIw_A5AroQ');
           });
         },
       },

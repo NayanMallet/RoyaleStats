@@ -1,0 +1,205 @@
+[
+    {
+        "id": 54000000,
+        "name": "Training Camp",
+        "number": 0,
+        "image": "arena0.png",
+        "slug": "training-camp"
+    },
+    {
+        "id": 54000001,
+        "name": "Goblin Stadium",
+        "number": 1,
+        "image": "arena1.png",
+        "slug": "goblin-stadium"
+    },
+    {
+        "id": 54000002,
+        "name": "Bone Pit",
+        "number": 2,
+        "image": "arena2.png",
+        "slug": "bone-pit"
+    },
+    {
+        "id": 54000003,
+        "name": "Barbarian Bowl",
+        "number": 3,
+        "image": "arena3.png",
+        "slug": "barbarian-bowl"
+    },
+    {
+        "id": 54000005,
+        "name": "Spell Valley",
+        "number": 4,
+        "image": "arena4.png",
+        "slug": "spell-valley"
+    },
+    {
+        "id": 54000006,
+        "name": "Builder's Workshop",
+        "number": 5,
+        "image": "arena5.png",
+        "slug": "builders-workshop"
+    },
+    {
+        "id": 54000006,
+        "name": "P.E.K.K.A's Playhouse",
+        "number": 6,
+        "image": "arena6.png",
+        "slug": "pekkas-playhouse"
+    },
+    {
+        "id": 54000007,
+        "name": "Royal Arena",
+        "number": 7,
+        "image": "arena7.png",
+        "slug": "royal-arena"
+    },
+    {
+        "id": 54000008,
+        "name": "Frozen Peak",
+        "number": 8,
+        "image": "arena8.png",
+        "slug": "frozen-peak"
+    },
+    {
+        "id": 54000009,
+        "name": "Jungle Arena",
+        "number": 9,
+        "image": "arena9.png",
+        "slug": "jungle-arena"
+    },
+    {
+        "id": 54000010,
+        "name": "Hog Mountain",
+        "number": 10,
+        "image": "arena10.png",
+        "slug": "hog-mountain"
+    },
+    {
+        "id": 54000011,
+        "name": "Electro Valley",
+        "number": 11,
+        "image": "arena11.png",
+        "slug": "electro-valley"
+    },
+    {
+        "id": 54000012,
+        "name": "Spooky Town",
+        "number": 12,
+        "image": "arena12.png",
+        "slug": "spooky-town"
+    },
+    {
+        "id": 54000013,
+        "name": "Rascal's Hideout",
+        "number": 13,
+        "image": "arena13.png",
+        "slug": "rascals-hideout"
+    },
+    {
+        "id": 54000014,
+        "name": "Serenity Peak",
+        "number": 14,
+        "image": "arena14.png",
+        "slug": "serenity-peak"
+    },
+    {
+        "id": 54000015,
+        "name": "Miner's Mine",
+        "number": 15,
+        "image": "arena15.png",
+        "slug": "miners-mine"
+    },
+    {
+        "id": 54000016,
+        "name": "Executioner's Kitchen",
+        "number": 16,
+        "image": "arena16.png",
+        "slug": "executioners-kitchen"
+    },
+    {
+        "id": 54000017,
+        "name": "Royal Crypt",
+        "number": 17,
+        "image": "arena17.png",
+        "slug": "royal-crypt"
+    },
+    {
+        "id": 54000018,
+        "name": "Silent Sanctuary",
+        "number": 18,
+        "image": "arena18.png",
+        "slug": "silent-sanctuary"
+    },
+    {
+        "id": 54000019,
+        "name": "Dragon Spa",
+        "number": 19,
+        "image": "arena19.png",
+        "slug": "dragon-spa"
+    },
+    {
+        "id": 54000020,
+        "name": "Boot Camp",
+        "number": 20,
+        "image": "arena20.png",
+        "slug": "boot-camp"
+    },
+    {
+        "id": 54000021,
+        "name": "Clash Fest",
+        "number": 21,
+        "image": "arena21.png",
+        "slug": "clash-fest"
+    },
+    {
+        "id": 54000022,
+        "name": "PANCAKES!",
+        "number": 22,
+        "image": "arena22.png",
+        "slug": "pancakes"
+    },
+    {
+        "id": 54000057,
+        "name": "Valkalla",
+        "number": 23,
+        "image": "arena23.png",
+        "slug": "valkalla"
+    },
+    {
+        "id": 54000056,
+        "name": "Legendary Arena",
+        "number": 24,
+        "image": "arena24.png",
+        "slug": "legendary-arena"
+    },
+    {
+        "id": 54000063,
+        "name": "Lumberlove Cabin",
+        "number": 25,
+        "image": "arena25.png",
+        "slug": "lumberlove-cabin"
+    },
+    {
+        "id": 54000064,
+        "name": "Royal Road",
+        "number": 26,
+        "image": "arena26.png",
+        "slug": "royal-road"
+    },
+    {
+        "id": 54000065,
+        "name": "Musketeer Street",
+        "number": 27,
+        "image": "arena27.png",
+        "slug": "musketeer-street"
+    },
+    {
+        "id": 54000066,
+        "name": "Summit of Heroes",
+        "number": 28,
+        "image": "arena28.webp",
+        "slug": "summit-of-heroes"
+    }
+]

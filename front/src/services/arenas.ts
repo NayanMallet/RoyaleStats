@@ -1,11 +1,12 @@
+import arenaData from './arenas.json';
+
 export interface ArenaDetails {
     id: number;
     name: string; // French name
     image: string;
 }
 
-// Mapped from standard lists. 
-// Note: Images sourced from community assets (RoyaleAPI/GitHub).
+// French Translations
 const ARENA_NAMES: Record<number | string, string> = {
     0: "Camp d'Entraînement",
     1: "Gobelinarium",
@@ -32,59 +33,82 @@ const ARENA_NAMES: Record<number | string, string> = {
     22: "Arène des Challengers II",
     23: "Arène des Maîtres I",
     24: "Arène des Maîtres II",
-    25: "Arène des Champions",
-    26: "Grand Festin Gobelin",
-    // New/Special Arenas
-    "Lumberlove Cabin": "Chalet des Amoureux",
+    25: "Chalet des Amoureux",
+    26: "Voie Royale",
+    27: "Rue des Mousquetaires",
+    28: "Sommet des Héros",
     // Common API fallbacks if IDs mismatch
     "Royal Road": "Voie Royale",
     "Trophy Road": "Voie des Trophées"
 };
 
-// Fallback for new arenas
-export function getArenaDetails(id: number | string, apiName?: string): ArenaDetails {
-    console.log('[getArenaDetails] Input:', { id, apiName });
+const CDN_BASE_URL = 'https://cdn.jsdelivr.net/gh/RoyaleAPI/cr-api-assets@master/arenas/';
 
-    // Special Case: "Royal Road" or "Arena_L" series often implies specific high-level arenas
-    // We map "Royal Road" to "Voie Royale" explicitly.
-    if (apiName === "Royal Road") {
-        return {
-            id: 0, // ID ignored by UI now
-            name: "Voie Royale",
-            // Fallback to a nice arena image since 54000130 doesn't have one
-            image: "https://raw.githubusercontent.com/RoyaleAPI/cr-api-assets/master/arenas-png/arena-1.png"
-        };
+// Load local arena images (arena15+)
+// Keys will be like '../arenas/arena15.png'
+const localArenas = import.meta.glob('../arenas/*.{png,webp}', { eager: true, import: 'default' }) as Record<string, string>;
+
+export function getArenaDetails(id: number | string, apiName?: string): ArenaDetails {
+    // console.log('[getArenaDetails] Input:', { id, apiName });
+
+    // 1. Resolve Name (French)
+    let numericId = typeof id === 'number' ? id : parseInt(id as string, 10);
+
+    // Prioritize Name lookup because API IDs for Leagues can be confusing/reused (e.g. 54000016 for Dragon Spa)
+    let arenaInfo;
+
+    if (apiName) {
+        arenaInfo = arenaData.find((a: any) => a.name === apiName || a.slug === apiName);
     }
 
-    let numericId = typeof id === 'number' ? id : parseInt(id as string);
+    // Fallback to ID lookup if name didn't match
+    if (!arenaInfo) {
+        arenaInfo = arenaData.find((a: any) => a.id === numericId || a.number === numericId);
+    }
 
-    // Try to map by ID first
-    let frenchName = ARENA_NAMES[numericId];
+    // If we have a huge ID, we might find it in JSON, get the 'number' (e.g. 15), and use that for translation map?
+    let lookupId = numericId;
+    if (arenaInfo) {
+        lookupId = arenaInfo.number;
+    }
 
-    // Fallback: Check if we mapped the English name directly
+    let frenchName = ARENA_NAMES[lookupId];
+
     if (!frenchName && apiName) {
         frenchName = ARENA_NAMES[apiName] || undefined;
     }
 
-    // Fallback: Use API name or generic "Arène X"
     if (!frenchName) {
-        frenchName = apiName || `Arène ${numericId || id}`;
+        frenchName = apiName || `Arène ${lookupId}`;
     }
 
-    console.log('[getArenaDetails] Name Resolved:', frenchName);
+    // 2. Resolve Image (Hybrid Strategy)
+    let image = 'https://placehold.co/400x200/png?text=Arena'; // Default
 
-    // Image URL construction
-    // Use fallback for high IDs (like 54000130) or missing assets.
-    // Standard arenas are usually 0-26ish.
-    let image: string;
+    if (arenaInfo && arenaInfo.image) {
+        const arenaNum = arenaInfo.number;
 
-    if (numericId > 30 || isNaN(numericId)) {
-        // Fallback for weird IDs/Leagues -> Arena 1 (Goblinarium) or Legendary Arena (13/20)?
-        // Let's use Arena 1 (Goblinarium) as it's colorful and neutral enough, or Arena 11 (Electro).
-        // User seemed OK with the image I set previously (placeholder/arena-1 fallback).
-        image = "https://raw.githubusercontent.com/RoyaleAPI/cr-api-assets/master/arenas-png/arena-1.png";
-    } else {
-        image = `https://raw.githubusercontent.com/RoyaleAPI/cr-api-assets/master/arenas-png/arena-${numericId}.png`;
+        if (arenaNum <= 14) {
+            // Use CDN
+            image = `${CDN_BASE_URL}${arenaInfo.image}`;
+        } else {
+            // Use Local
+            // Construct key: ../arenas/arena15.png
+            const localKey = `../arenas/${arenaInfo.image}`;
+            const localPath = localArenas[localKey];
+
+            if (localPath) {
+                image = localPath;
+            } else {
+                console.warn(`[Arenas] Local image not found for key: ${localKey}`);
+                // Fallback to CDN just in case user added it there? Or placeholder.
+                image = `${CDN_BASE_URL}${arenaInfo.image}`;
+            }
+        }
+    } else if (apiName === "Trophy Road") {
+        // Fallback for Trophy Road specifically if not in JSON
+        const fallback = arenaData.find((a: any) => a.number === 1);
+        if (fallback) image = `${CDN_BASE_URL}${fallback.image}`;
     }
 
     return {

@@ -130,7 +130,10 @@ const closeBadgesModal = () => {
 const goblinProgress = computed(() => {
     if (!player.value?.progress) return null
     const keys = Object.keys(player.value.progress).filter(k => k !== '' && (k.includes('Goblin') || k.includes('AutoChess')))
-    if (keys.length > 0) return player.value.progress![keys[0]]
+    if (keys.length > 0) {
+        const key = keys[0] as string
+        return player.value.progress![key]
+    }
     return null
 })
 
@@ -193,7 +196,13 @@ const heroImage = computed(() => {
             <div class="relative overflow-hidden rounded-[2.5rem] bg-slate-900 text-white shadow-2xl shadow-slate-900/20 group">
                 <!-- Hero Background -->
                 <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-900/40 z-10"></div>
-                <img v-if="heroImage" :src="heroImage" class="absolute right-0 top-1/2 -translate-y-1/2 w-3/4 md:w-1/2 h-auto object-contain opacity-40 blur-sm md:blur-0 mix-blend-overlay group-hover:scale-105 transition-transform duration-1000 rotate-12 translate-x-12" />
+                <!-- Arena Image (Right Side) -->
+                <img 
+                    v-if="player.arena" 
+                    :src="getArenaDetails(player.arena.id, player.arena.name).image" 
+                    class="absolute right-8 top-1/2 -translate-y-1/2 w-auto h-auto max-w-[60%] max-h-[110%] object-contain opacity-80"
+                />
+                <img v-if="heroImage" :src="heroImage" class="absolute right-12 top-1/2 -translate-y-1/2 w-1/2 md:w-1/3 h-auto object-contain opacity-20 blur-sm md:blur-0 mix-blend-overlay group-hover:scale-105 transition-transform duration-1000 rotate-12" />
                 
                 <div class="relative z-20 p-8 md:p-16 flex flex-col md:flex-row items-center md:items-start gap-10">
                     <!-- Avatar -->
