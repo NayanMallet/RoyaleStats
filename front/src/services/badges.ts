@@ -29,6 +29,15 @@ export async function initBadges() {
     return loadPromise
 }
 
+export async function getBadgeId(clanTag: string): Promise<number> {
+    const formattedTag = clanTag.startsWith('#') ? clanTag : `#${clanTag}`
+    const encodedTag = encodeURIComponent(formattedTag)
+    const res = await fetch(`/api/clash/clans/${encodedTag}`)
+    if (!res.ok) throw new Error('Failed to fetch clan data')
+    const data = await res.json()
+    return data.badgeId
+}
+
 export function getClanBadgeUrl(badgeId: number | undefined): string | undefined {
     if (!badgeId) return undefined
     // If not loaded, trigger load (optional, or rely on explicit init)
