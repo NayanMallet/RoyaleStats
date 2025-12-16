@@ -60,7 +60,7 @@ const handleRegister = async () => {
             <!-- Logo Section -->
             <div class="flex justify-center mb-8">
                 <img :src="AppLogo" alt="Royale Stats Logo"
-                    class="h-20 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300 grayscale opacity-80 hover:grayscale-0 hover:opacity-100" />
+                    class="h-20 w-auto hover:scale-105 transition-transform duration-300" />
             </div>
 
             <div
