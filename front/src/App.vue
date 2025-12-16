@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Toaster } from '@/components/ui/sonner'
 import PlayerStats from '@/components/PlayerStats.vue'
+import AppLogo from '@/statics/Logo.png'
 </script>
 
 <template>
@@ -11,13 +12,12 @@ import PlayerStats from '@/components/PlayerStats.vue'
              <!-- Background decoration -->
             <div class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-50 to-transparent -z-10" />
 
-            <header class="flex flex-col items-center justify-center gap-2 mb-4 relative z-10">
-                <h1 class="text-5xl font-black tracking-tighter text-slate-900 drop-shadow-sm">
-                    ROYALE STATS
-                </h1>
-                <p class="text-sm font-medium text-slate-400 tracking-widest uppercase">
-                    Analytics Professionnels
-                </p>
+            <header class="flex flex-col items-center justify-center gap-4 mb-8 relative z-10 animate-in fade-in slide-in-from-top-4 duration-700">
+                <img 
+                    :src="AppLogo" 
+                    alt="Royale Stats Logo" 
+                    class="h-24 md:h-32 w-auto object-contain drop-shadow-xl hover:scale-105 hover:drop-shadow-2xl transition-all duration-300 cursor-pointer"
+                />
             </header>
 
             <PlayerStats />
