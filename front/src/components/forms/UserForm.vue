@@ -11,105 +11,94 @@ import { Input } from '@/components/ui/input'
 
 const props = defineProps<{ submitting?: boolean }>()
 const emit = defineEmits<{
-  (e: 'submit', payload: { name: string; email: string; password: string }): void
+    (e: 'submit', payload: { player_tag: string; password: string }): void
 }>()
 
 const userFormSchema = toTypedSchema(
-  z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters.'),
-    email: z.email('Please provide a valid email address.'),
-    password: z.string().min(6, 'Password must be at least 6 characters.'),
-  }),
+    z.object({
+        player_tag: z
+            .string()
+            .min(3, 'Player tag must be at least 3 characters.')
+            .regex(/^#?[0-9A-Z]+$/i, 'Player tag must contain only letters and numbers (e.g., #ABC123).'),
+        password: z.string().min(6, 'Password must be at least 6 characters.'),
+    }),
 )
 
 const onSubmit: SubmissionHandler = (values) => {
-  const { name, email, password } = values as {
-    name: string
-    email: string
-    password: string
-  }
+    const { player_tag, password } = values as {
+        player_tag: string
+        password: string
+    }
 
-  emit('submit', { name, email, password })
+    emit('submit', { player_tag, password })
 }
 </script>
 
 <template>
-  <Card>
-    <CardHeader>
-      <CardTitle>Create user</CardTitle>
-      <CardDescription> Send a POST request to the user microservice. </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <VeeForm
-        v-slot="{ handleSubmit, resetForm }"
-        :validation-schema="userFormSchema"
-        :initial-values="{ name: '', email: '', password: '' }"
-        as="div"
-      >
-        <form
-          class="space-y-4"
-          @submit.prevent="handleSubmit($event, onSubmit)"
-          :aria-busy="props.submitting"
-        >
-          <FieldGroup>
-            <VeeField v-slot="{ field, errors }" name="name">
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="user-name">Name</FieldLabel>
-                <Input
-                  id="user-name"
-                  v-bind="field"
-                  placeholder="Jane Doe"
-                  :aria-invalid="!!errors.length"
-                />
-                <FieldError v-if="errors.length" :errors="errors" />
-              </Field>
-            </VeeField>
-
-            <VeeField v-slot="{ field, errors }" name="email">
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="user-email">Email</FieldLabel>
-                <Input
-                  id="user-email"
-                  v-bind="field"
-                  type="email"
-                  placeholder="jane.doe@example.com"
-                  :aria-invalid="!!errors.length"
-                />
-                <FieldError v-if="errors.length" :errors="errors" />
-              </Field>
-            </VeeField>
-
-            <VeeField v-slot="{ field, errors }" name="password">
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="user-password">Password</FieldLabel>
-                <Input
-                  id="user-password"
-                  v-bind="field"
-                  type="password"
-                  placeholder="••••••••"
-                  :aria-invalid="!!errors.length"
-                />
-                <FieldError v-if="errors.length" :errors="errors" />
-              </Field>
-            </VeeField>
-          </FieldGroup>
-
-          <div class="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              @click="resetForm()"
-              :disabled="props.submitting"
+    <Card>
+        <CardHeader>
+            <CardTitle>Create user</CardTitle>
+            <CardDescription>
+                Register with your Clash Royale player tag.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <VeeForm
+                v-slot="{ handleSubmit, resetForm }"
+                :validation-schema="userFormSchema"
+                :initial-values="{ player_tag: '', password: '' }"
+                as="div"
             >
-              Reset
-            </Button>
-            <Button type="submit" :disabled="props.submitting">
-              <span v-if="props.submitting">Creating…</span>
-              <span v-else>Create user</span>
-            </Button>
-          </div>
-        </form>
-      </VeeForm>
-    </CardContent>
-  </Card>
+                <form
+                    class="space-y-4"
+                    @submit.prevent="handleSubmit($event, onSubmit)"
+                    :aria-busy="props.submitting"
+                >
+                    <FieldGroup>
+                        <VeeField v-slot="{ field, errors }" name="player_tag">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel for="player-tag">Player Tag</FieldLabel>
+                                <Input
+                                    id="player-tag"
+                                    v-bind="field"
+                                    placeholder="#ABC123XYZ"
+                                    :aria-invalid="!!errors.length"
+                                />
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+
+                        <VeeField v-slot="{ field, errors }" name="password">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel for="user-password">Password</FieldLabel>
+                                <Input
+                                    id="user-password"
+                                    v-bind="field"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    :aria-invalid="!!errors.length"
+                                />
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+                    </FieldGroup>
+
+                    <div class="flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            @click="resetForm()"
+                            :disabled="props.submitting"
+                        >
+                            Reset
+                        </Button>
+                        <Button type="submit" :disabled="props.submitting">
+                            <span v-if="props.submitting">Creating…</span>
+                            <span v-else>Create user</span>
+                        </Button>
+                    </div>
+                </form>
+            </VeeForm>
+        </CardContent>
+    </Card>
 </template>

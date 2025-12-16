@@ -32,18 +32,18 @@ const emit = defineEmits<{
       <ul v-else-if="props.users.length" class="divide-y divide-border">
         <li
           v-for="user in props.users"
-          :key="user.id"
+          :key="user.uuid"
           class="flex items-center justify-between py-3"
         >
           <div>
             <p class="text-sm font-medium leading-none">
-              {{ user.name }}
+              {{ user.player_tag }}
             </p>
             <p class="mt-1 text-xs text-muted-foreground">
-              {{ user.email }}
+              Created {{ new Date(user.created_at).toLocaleDateString() }}
             </p>
           </div>
-          <span class="text-xs text-muted-foreground"> #{{ user.id }} </span>
+          <span class="font-mono text-xs text-muted-foreground"> {{ user.uuid.slice(0, 8) }}… </span>
         </li>
       </ul>
 

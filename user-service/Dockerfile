@@ -9,7 +9,7 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY shared ./shared
 COPY user-service ./user-service
 
-# Install dependencies for workspace
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Set DATABASE_URL for Prisma Client generation
@@ -21,8 +21,7 @@ RUN cd user-service && pnpm exec prisma generate
 # Build the project
 RUN pnpm -r run build
 
-# Deploy the production application to a temporary directory
-# This installs production dependencies in an isolated folder
+# Deploy production dependencies
 RUN pnpm --filter=user-service --prod deploy /prod/user-service --legacy
 
 FROM base AS production
@@ -30,12 +29,11 @@ WORKDIR /app/user-service
 
 # Copy the deployed application
 COPY --from=builder /prod/user-service ./
-
-# Copy built code artifacts (in case pnpm deploy excluded them due to .gitignore)
+# Copy built code
 COPY --from=builder /app/user-service/dist ./dist
-# Ensure shared workspace package has its code if it was symlinked/packaged without dist
+# Copy shared package  
 COPY --from=builder /app/shared/dist ./node_modules/shared/dist
-# Copy Prisma schema and migrations for runtime migration deployment
+# Copy Prisma files
 COPY --from=builder /app/user-service/prisma ./prisma
 
 EXPOSE 3002

@@ -5,8 +5,4 @@ export const apiEndpoints = {
     list: `${API_GATEWAY_BASE_URL}/api/users`,
     create: `${API_GATEWAY_BASE_URL}/api/users`,
   },
-  items: {
-    list: `${API_GATEWAY_BASE_URL}/api/items`,
-    create: `${API_GATEWAY_BASE_URL}/api/items`,
-  },
 }
