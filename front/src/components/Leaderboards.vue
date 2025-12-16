@@ -162,11 +162,16 @@ const getCategoryColor = (cat: Category) => {
                 <div class="relative z-10 h-full flex flex-col justify-between p-6 text-white text-center">
                     
                     <div class="flex justify-center">
-                        <div class="bg-white/20 backdrop-blur-sm p-3 rounded-2xl shadow-inner border border-white/20 group-hover:scale-110 transition-transform duration-300">
-                             <component 
-                                :is="cat === 'ranked' ? Crown : cat === 'trophy' ? Trophy : cat === 'merge' ? Ghost : Swords" 
-                                class="w-8 h-8 drop-shadow-md text-white" 
-                            />
+                        <div class="bg-white/20 backdrop-blur-sm p-3 rounded-2xl shadow-inner border border-white/20 group-hover:scale-110 transition-transform duration-300 flex items-center justify-center w-16 h-16">
+                             <!-- Conditional Icon Rendering -->
+                             <img 
+                                :src=" cat === 'trophy' ? 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/trophy.png' : 
+                                    cat === 'ranked' ? 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/league10.png' : 
+                                    cat === 'merge' ? 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/trophy-gm-merge-tactics.png' : 
+                                    'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/2v2.png'"
+                                class="w-10 h-10 object-contain drop-shadow-md"
+                                alt="Icon"
+                             />
                         </div>
                     </div>
 
@@ -185,7 +190,6 @@ const getCategoryColor = (cat: Category) => {
                     </div>
                 </div>
             </div>
-
         </div>
 
         <!-- LEADERBOARD LIST View -->
