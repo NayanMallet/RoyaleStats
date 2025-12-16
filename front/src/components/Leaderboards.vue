@@ -4,7 +4,14 @@ import { fetchGlobalRankings, fetchPathOfLegendRankings, type LeaderboardPlayer 
 import { Trophy, Crown, Swords, Ghost, ChevronLeft, Shield, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 
-const emit = defineEmits(['select-player'])
+const emit = defineEmits(['select-player', 'select-clan'])
+
+
+
+function selectClan(tag: string) {
+    if (!tag) return
+    emit('select-clan', tag)
+}
 
 type Category = 'ranked' | 'trophy' | 'merge' | '2v2'
 
@@ -131,13 +138,12 @@ const getCategoryColor = (cat: Category) => {
             </Button>
             <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-3">
                  <img 
-                    v-if="activeCategory !== 'trophy'"
-                    :src="activeCategory === 'ranked' ? 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/league10.png' : 
+                    :src=" activeCategory === 'trophy' ? 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/trophy.png' :
+                        activeCategory === 'ranked' ? 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/league10.png' : 
                           activeCategory === 'merge' ? 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/trophy-gm-merge-tactics.png' : 
                           'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/2v2.png'"
                     class="w-8 h-8 object-contain"
                  />
-                 <Trophy v-else class="w-8 h-8 text-orange-500" />
                  {{ getCategoryTitle }}
             </h2>
              <div class="w-24"></div> 
@@ -241,13 +247,19 @@ const getCategoryColor = (cat: Category) => {
                     </div>
 
                     <!-- Clan Info -->
-                    <div class="hidden sm:flex col-span-4 items-center gap-2 text-slate-500 font-medium text-sm">
-                        <Shield v-if="player.clan" class="w-3.5 h-3.5 text-slate-400" />
-                        <span class="truncate">{{ player.clan?.name || '-' }}</span>
+                    <div 
+                        class="hidden sm:flex col-span-4 items-center gap-2 text-slate-500 font-medium text-sm group/clan"
+                        @click.stop="player.clan ? selectClan(player.clan.tag) : null"
+                    >
+                        <Shield v-if="player.clan" class="w-3.5 h-3.5 text-slate-400 group-hover/clan:text-blue-500 transition-colors" />
+                        <span class="truncate group-hover/clan:text-blue-600 group-hover/clan:underline cursor-pointer transition-colors">{{ player.clan?.name || '-' }}</span>
                     </div>
 
                     <!-- Score -->
-                    <div class="hidden sm:block col-span-2 text-right font-black text-lg text-slate-800 tabular-nums tracking-tight flex items-center justify-end gap-1">
+                     <div></div>
+                    <div class="hidden sm:flex font-black text-lg text-slate-800 flex-row items-center gap-1">
+                        <img v-if="activeCategory === 'ranked'" src="https://kboosting.com/img/29327/c/champion-medals-500x500.png" class="size-10 object-contain" />
+                        <img v-else src="https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/trophy.png" class="size-6 mr-1 object-contain" />
                         {{ player.score?.toLocaleString() }}
                     </div>
                 </div>
