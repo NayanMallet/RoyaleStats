@@ -45,16 +45,13 @@ onMounted(async () => {
         // Ranked Data (Real)
         players_ranked.value = ranked || []
 
-        // Trophy Data (Real or Mock fallback)
+        // Trophy Data (Real)
         if (trophies && trophies.length > 0) {
              players_trophy.value = trophies
-        } else if (ranked && ranked.length > 0) {
-            // Fallback: Mock Trophies if API is empty
-            players_trophy.value = shuffleArray([...ranked]).map((p, i) => ({
-                ...p,
-                score: 9000 - (i * 50) + Math.floor(Math.random() * 40),
-                rank: i + 1
-            }))
+        } else {
+             // API is currently returning empty for Global Trophies, better to show empty than fake
+             console.warn("Global Trophies API returned empty list.")
+             players_trophy.value = []
         }
 
         // --- Fetch Real Data for Merge & 2v2 ---
