@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import PlayerStats from '@/components/PlayerStats.vue'
 import Leaderboards from '@/components/Leaderboards.vue'
 import AppLogo from '@/statics/Logo.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, Loader2 } from 'lucide-vue-next'
-import { useRouter } from 'vue-router'
+import { History, X, Clock, Search, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const playerStatsRef = ref()
@@ -15,20 +15,69 @@ const isPlayerLoaded = ref(false)
 const searchQuery = ref('')
 const searchType = ref<'player' | 'clan'>('player')
 const loading = ref(false)
+const isFocused = ref(false)
 
-const triggerSearch = async () => {
-    if (playerStatsRef.value && searchQuery.value) {
+interface HistoryItem {
+    tag: string
+    name?: string
+    type: 'player' | 'clan'
+    timestamp: number
+}
+
+const searchHistory = ref<HistoryItem[]>(JSON.parse(localStorage.getItem('royale_stats_history') || '[]'))
+
+const filteredHistory = computed(() => {
+    return searchHistory.value
+        .filter(item => item.type === searchType.value)
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 5) // Last 5 items
+})
+
+const addToHistory = (tag: string, type: 'player' | 'clan', name?: string) => {
+    const newItem: HistoryItem = { tag: tag.toUpperCase(), type, timestamp: Date.now(), name }
+    // Remove duplicates
+    const exists = searchHistory.value.findIndex(h => h.tag === newItem.tag && h.type === newItem.type)
+    if (exists !== -1) {
+        searchHistory.value.splice(exists, 1)
+    }
+    searchHistory.value.unshift(newItem)
+    localStorage.setItem('royale_stats_history', JSON.stringify(searchHistory.value))
+}
+
+const removeFromHistory = (item: HistoryItem) => {
+    searchHistory.value = searchHistory.value.filter(h => h.tag !== item.tag || h.type !== item.type)
+    localStorage.setItem('royale_stats_history', JSON.stringify(searchHistory.value))
+}
+
+const triggerSearch = async (historyTag?: string) => {
+    const tagToSearch = historyTag || searchQuery.value
+    if (playerStatsRef.value && tagToSearch) {
         loading.value = true
+        isFocused.value = false // Close dropdown
         try {
+            let result = null
             if (searchType.value === 'player') {
-                await playerStatsRef.value.handleSearch(searchQuery.value)
+                result = await playerStatsRef.value.handleSearch(tagToSearch)
             } else {
-                await playerStatsRef.value.handleClanSearch(searchQuery.value)
+                result = await playerStatsRef.value.handleClanSearch(tagToSearch)
+            }
+
+            if (result) {
+                addToHistory(tagToSearch, searchType.value, result.name)
+                if (historyTag) {
+                    searchQuery.value = historyTag // Update input if clicked from history
+                }
             }
         } finally {
             loading.value = false
         }
     }
+}
+
+const handleBlur = () => {
+    setTimeout(() => {
+        isFocused.value = false
+    }, 200)
 }
 
 const goHome = () => {
@@ -91,9 +140,38 @@ const handleLeaderboardClanSelection = (tag: string) => {
                         <Input v-model="searchQuery"
                             :placeholder="searchType === 'player' ? '#TAG Joueur' : '#TAG Clan'"
                             class="pl-10 h-12 bg-transparent border-none text-lg font-medium focus-visible:ring-0 placeholder:text-slate-300 w-full"
-                            @keyup.enter="triggerSearch" />
+                            @keyup.enter="triggerSearch()" @focus="isFocused = true" @blur="handleBlur" />
+
+                        <!-- History Dropdown -->
+                        <div v-if="isFocused && filteredHistory.length > 0"
+                            class="absolute top-14 left-0 w-full bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div
+                                class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 bg-slate-50/50">
+                                <History class="w-3 h-3" /> Récent
+                            </div>
+                            <div v-for="item in filteredHistory" :key="item.tag" @click="triggerSearch(item.tag)"
+                                class="px-4 py-2.5 hover:bg-slate-50 cursor-pointer flex items-center justify-between group transition-colors">
+                                <div class="flex items-center gap-2">
+                                    <Clock class="w-3.5 h-3.5 text-slate-400" />
+                                    <div class="flex flex-col">
+                                        <span
+                                            class="font-bold text-slate-700 text-sm group-hover:text-blue-600 transition-colors">
+                                            {{ item.name || item.tag }}
+                                        </span>
+                                        <span v-if="item.name"
+                                            class="text-[10px] font-mono font-bold text-slate-400 uppercase">
+                                            {{ item.tag }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <button @click.stop="removeFromHistory(item)"
+                                    class="p-1 rounded-full hover:bg-slate-200 text-slate-300 hover:text-red-500 transition-colors">
+                                    <X class="w-3 h-3" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <Button @click="triggerSearch" :disabled="loading"
+                    <Button @click="triggerSearch()" :disabled="loading"
                         class="flex-shrink-0 rounded-xl h-12 px-6 text-white font-bold tracking-wide shadow-lg active:scale-95 transition-all min-w-[80px]"
                         :class="searchType === 'player' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20' : 'bg-orange-600 hover:bg-orange-700 shadow-orange-600/20'">
                         <Loader2 v-if="loading" class="w-5 h-5 animate-spin" />
@@ -121,7 +199,8 @@ const handleLeaderboardClanSelection = (tag: string) => {
         </header>
 
         <!-- Leaderboards (Home Page) -->
-        <Leaderboards v-if="!isPlayerLoaded" @select-player="handleLeaderboardSelection" @select-clan="handleLeaderboardClanSelection" />
+        <Leaderboards v-if="!isPlayerLoaded" @select-player="handleLeaderboardSelection"
+            @select-clan="handleLeaderboardClanSelection" />
 
         <!-- Player Stats -->
         <PlayerStats ref="playerStatsRef" @player-loaded="isPlayerLoaded = $event" />
