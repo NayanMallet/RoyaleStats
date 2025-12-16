@@ -52,7 +52,7 @@ const handleLogin = async () => {
             <!-- Logo Section -->
             <div class="flex justify-center mb-8">
                 <img :src="AppLogo" alt="Royale Stats Logo"
-                    class="h-24 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300" />
+                    class="h-24 w-auto hover:scale-105 transition-transform duration-300" />
             </div>
 
             <div
