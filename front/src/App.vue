@@ -2,12 +2,30 @@
 import { ref } from 'vue'
 import { Toaster } from '@/components/ui/sonner'
 import PlayerStats from '@/components/PlayerStats.vue'
+import Leaderboards from '@/components/Leaderboards.vue'
 import AppLogo from '@/statics/Logo.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, Loader2 } from 'lucide-vue-next'
 
 const playerStatsRef = ref()
+// ...
+
+const isPlayerLoaded = ref(false)
+
+// We need to know if PlayerStats has loaded a player to toggle between Home/Stats view
+// We can check if `playerStatsRef.value?.player` is truthy, but that's reactive deep inside
+// Alternatively, we catch the "success" of the search
+// Better: Add an emit to PlayerStats 'loaded' and 'reset'
+
+// For now, let's rely on checking if the playerStatsRef exposes 'hasPlayer' or similar?
+// Or better, let's just make `isPlayerLoaded` tracking.
+// Actually, `PlayerStats` is always mounted to keep its state? Or we unmount it?
+// The user wants "Home Page" which implies when no player is searched.
+// Let's modify PlayerStats to emit 'update:player' or just use a v-if in App?
+// But PlayerStats logic is self-contained.
+// Let's modify PlayerStats to emit events.
+
 const searchQuery = ref('')
 const searchType = ref<'player' | 'clan'>('player')
 const loading = ref(false)
@@ -32,6 +50,12 @@ const goHome = () => {
     if (playerStatsRef.value) {
         playerStatsRef.value.reset()
     }
+}
+
+const handleLeaderboardSelection = (tag: string) => {
+    searchType.value = 'player'
+    searchQuery.value = tag
+    triggerSearch()
 }
 </script>
 
@@ -114,7 +138,17 @@ const goHome = () => {
 
             </header>
 
-            <PlayerStats ref="playerStatsRef" />
+            <!-- Leaderboards (Home Page) -->
+            <Leaderboards 
+                v-if="!isPlayerLoaded" 
+                @select-player="handleLeaderboardSelection"
+            />
+
+            <!-- Player Stats -->
+            <PlayerStats 
+                ref="playerStatsRef" 
+                @player-loaded="isPlayerLoaded = $event"
+            />
             
             <footer class="mt-12 text-center text-xs text-slate-300">
                 Clash Royale est une marque de Supercell. Ce site n'est pas affilié à Supercell.

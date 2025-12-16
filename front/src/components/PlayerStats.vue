@@ -1,5 +1,6 @@
+```vue
 <script setup lang="ts">
-import { ref, watchEffect, computed } from 'vue'
+import { ref, watchEffect, computed, watch } from 'vue'
 import { fetchPlayer, fetchCards, fetchClan, getClanBadgeUrl, type PlayerProfile, type Card as ApiCard, type ClanDetails } from '@/services/clash.service'
 import { getArenaDetails } from '@/services/arenas'
 import { toast } from 'vue-sonner'
@@ -10,6 +11,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+
+const emit = defineEmits(['player-loaded'])
 
 // -- Types & Logic --
 const playerTag = ref('')
@@ -104,7 +107,7 @@ async function handleClanSearch(tagInput: string) {
     if (!tag.startsWith('#')) tag = '#' + tag
     
     // Use existing logic to open clan modal
-    openClanModal(tag)
+    // Use existing logic to open clan modal
     openClanModal(tag)
 }
 
@@ -115,7 +118,13 @@ function reset() {
     showBadgesModal.value = false
     showClanModal.value = false
     selectedClan.value = null
+    emit('player-loaded', false)
 }
+
+// Listen to player changes
+watch(player, (newVal) => {
+    emit('player-loaded', !!newVal)
+})
 
 // Expose the method to the parent (App.vue)
 defineExpose({
