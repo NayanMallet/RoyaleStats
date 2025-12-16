@@ -4,7 +4,6 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 // TODO: Move service URLs to environment variables or config files
 const USER_SERVICE = 'http://user-service:3002';
 
-
 const proxy: RequestHandler = createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: { '^/api': '' },

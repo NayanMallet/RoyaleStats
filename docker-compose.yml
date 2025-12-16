@@ -5,8 +5,8 @@ services:
       context: .
       dockerfile: public-api/Dockerfile
     ports:
-      - "3001:3001"
-    networks: [ microservices-net ]
+      - '3001:3001'
+    networks: [microservices-net]
 
   user-service:
     env_file: .env
@@ -14,17 +14,17 @@ services:
       context: .
       dockerfile: user-service/Dockerfile
     ports:
-      - "3002:3002"
+      - '3002:3002'
     environment:
       - DATABASE_URL=file:./prisma/data/database.sqlite
     volumes:
       - ./user-service/prisma/data:/app/user-service/prisma/data
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3002/health" ]
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3002/health']
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [ microservices-net ]
+    networks: [microservices-net]
 
   api-gateway:
     env_file: .env
@@ -32,21 +32,21 @@ services:
       context: .
       dockerfile: api-gateway/Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       - public-api
       - user-service
-    networks: [ microservices-net ]
+    networks: [microservices-net]
 
   front:
     build:
       context: .
       dockerfile: front/Dockerfile
     ports:
-      - "8080:80"
+      - '8080:80'
     depends_on:
       - api-gateway
-    networks: [ microservices-net ]
+    networks: [microservices-net]
 
 networks:
   microservices-net:

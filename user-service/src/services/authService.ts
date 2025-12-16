@@ -22,6 +22,5 @@ export const AuthService = {
 
   makeUserUuid() {
     return uuidv4();
-  }
+  },
 };
-

@@ -9,15 +9,15 @@ export const userModel = {
         player_tag: true,
         created_at: true,
         updated_at: true,
-        password: false
-      }
+        password: false,
+      },
     });
     return users;
   },
 
   async getByPlayerTag(player_tag: string): Promise<User | null> {
     const user = await prisma.user.findUnique({
-      where: { player_tag }
+      where: { player_tag },
     });
     return user;
   },
@@ -27,9 +27,9 @@ export const userModel = {
       data: {
         uuid: user.uuid,
         player_tag: user.player_tag,
-        password: user.password
-      }
+        password: user.password,
+      },
     });
     return newUser;
-  }
+  },
 };

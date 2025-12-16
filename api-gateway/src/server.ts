@@ -7,7 +7,7 @@ const app: Application = express();
 const PORT: number = Number(process.env.GATEWAY_PORT) || 3000;
 
 // TODO: Why app.use(express.json()); is removed
-app.use( createCorsMiddleware() );
+app.use(createCorsMiddleware());
 // NOTE: Do NOT use express.json() here before the proxy. If the gateway
 // parses the body it consumes the request stream and the proxy won't forward
 // the raw body to upstream services which makes POST/PUT requests hang or fail.

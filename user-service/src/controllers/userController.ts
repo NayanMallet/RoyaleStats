@@ -31,7 +31,7 @@ export const userController = {
     const user = await userModel.create({
       uuid,
       player_tag,
-      password: hashed
+      password: hashed,
     });
 
     const token = AuthService.sign({ uuid, player_tag });
@@ -57,5 +57,5 @@ export const userController = {
 
     const token = AuthService.sign({ uuid: user.uuid, player_tag: user.player_tag });
     res.json({ token, uuid: user.uuid, player_tag: user.player_tag });
-  }
+  },
 };
