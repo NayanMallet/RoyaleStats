@@ -27,24 +27,6 @@ services:
       retries: 5
     networks: [microservices-net]
 
-  item-service:
-    platform: linux/amd64
-    env_file: .env
-    build:
-      context: .
-      dockerfile: item-service/Dockerfile
-    ports:
-      - "3003:3003"
-    environment:
-      - ITEM_DB_FILE=/data/item-service/database.sqlite
-    volumes:
-      - ./data/item-service:/data/item-service
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3003/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks: [ microservices-net ]
 
   api-gateway:
     env_file: .env
