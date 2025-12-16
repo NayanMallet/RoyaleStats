@@ -247,7 +247,7 @@ const heroImage = computed(() => {
                         </div>
 
                         <!-- Hero Stats -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-slate-800/50">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-slate-800/50 bg-slate-900/50">
                             <div class="text-center md:text-left">
                                 <div class="text-3xl font-black text-white">{{ player.trophies }}</div>
                                 <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Trophées</div>
