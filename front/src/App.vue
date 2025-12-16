@@ -95,8 +95,8 @@ const triggerSearch = async () => {
                 </div>
 
                 <!-- Right: Auth Buttons -->
-                <div class="flex items-center gap-3 flex-shrink-0">
-                    <Button variant="ghost" class="text-slate-600 h-12 font-bold hover:bg-slate-100 hover:text-slate-900 px-5">
+                <div class="flex items-center gap-3 flex-shrink-0 mr-6">
+                    <Button variant="ghost" class="text-slate-600 h-12 font-bold hover:bg-gray-100 hover:text-slate-900 px-5">
                         Connexion
                     </Button>
                     <Button class="bg-[#DC8F26] text-white h-12 font-bold hover:bg-[#DC8F26]/80 px-6 shadow-lg shadow-[#DC8F26]/20 active:scale-95 transition-all">
