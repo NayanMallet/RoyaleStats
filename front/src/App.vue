@@ -26,6 +26,13 @@ const triggerSearch = async () => {
         }
     }
 }
+
+const goHome = () => {
+    searchQuery.value = ''
+    if (playerStatsRef.value) {
+        playerStatsRef.value.reset()
+    }
+}
 </script>
 
 <template>
@@ -45,6 +52,7 @@ const triggerSearch = async () => {
                         :src="AppLogo" 
                         alt="Royale Stats Logo" 
                         class="h-16 md:h-20 w-auto object-contain drop-shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer"
+                        @click="goHome"
                     />
                 </div>
 

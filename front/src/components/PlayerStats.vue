@@ -105,12 +105,23 @@ async function handleClanSearch(tagInput: string) {
     
     // Use existing logic to open clan modal
     openClanModal(tag)
+    openClanModal(tag)
+}
+
+function reset() {
+    player.value = null
+    playerTag.value = ''
+    selectedCard.value = null
+    showBadgesModal.value = false
+    showClanModal.value = false
+    selectedClan.value = null
 }
 
 // Expose the method to the parent (App.vue)
 defineExpose({
     handleSearch,
-    handleClanSearch
+    handleClanSearch,
+    reset
 })
 
 const getWinRate = (wins: number, battles: number) => {
