@@ -25,7 +25,11 @@ export async function fetchPathOfLegendRankings(limit = 10): Promise<Leaderboard
     const res = await fetch(`${API_BASE}/locations/global/pathoflegend/players?limit=${limit}`)
     if (!res.ok) throw new Error('Failed to fetch Path of Legend Rankings')
     const data = await res.json()
-    return data.items
+    // Map eloRating to score for consistent usage
+    return data.items.map((p: any) => ({
+        ...p,
+        score: p.eloRating || p.score
+    }))
 }
 
 // Placeholder for other modes if specific endpoints exist

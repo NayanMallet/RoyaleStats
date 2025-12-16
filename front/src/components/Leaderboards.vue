@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { fetchGlobalRankings, fetchPathOfLegendRankings, type LeaderboardPlayer } from '@/services/leaderboards'
-import { Trophy, Crown, Swords, Ghost, ChevronLeft, Medal, Shield, Loader2 } from 'lucide-vue-next'
+import { Trophy, Crown, Swords, Ghost, ChevronLeft, Shield, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 
 const emit = defineEmits(['select-player'])
@@ -14,7 +14,6 @@ const loading = ref(false)
 function selectPlayer(tag: string) {
     emit('select-player', tag)
 }
-
 
 const players_ranked = ref<LeaderboardPlayer[]>([])
 const players_trophy = ref<LeaderboardPlayer[]>([])
@@ -30,41 +29,44 @@ function shuffleArray(array: any[]) {
 onMounted(async () => {
     loading.value = true
     try {
-        console.log('Fetching Leaderboards...')
         const [ranked, trophies] = await Promise.all([
             fetchPathOfLegendRankings(20),
             fetchGlobalRankings(20)
         ])
         
-        console.log('Ranked:', ranked?.length)
-        console.log('Trophies:', trophies?.length)
-
+        // Ranked Data (Real)
         players_ranked.value = ranked || []
-        players_trophy.value = trophies || []
+
+        // Trophy Data (Real or Mock fallback)
+        if (trophies && trophies.length > 0) {
+             players_trophy.value = trophies
+        } else if (ranked && ranked.length > 0) {
+            // Mock Trophies if API is empty
+            players_trophy.value = shuffleArray([...ranked]).map((p, i) => ({
+                ...p,
+                score: 9000 - (i * 50) + Math.floor(Math.random() * 40),
+                rank: i + 1
+            }))
+        }
         
-        // Better Mock Data logic
-        // Use ranked players as base but shuffle for 2v2
+        // Merge Tactics (Mock)
         if (ranked && ranked.length > 0) {
-             const shuffledFor2v2 = shuffleArray([...ranked])
-             players_2v2.value = shuffledFor2v2.map((p, i) => ({ 
+             const shuffledForMerge = shuffleArray([...ranked])
+             players_merge.value = shuffledForMerge.map((p, i) => ({ 
                  ...p, 
-                 score: 2000 - (i * 50) + Math.floor(Math.random() * 30),
+                 score: 4000 - (i * 100) + Math.floor(Math.random() * 80),
                  rank: i + 1
              }))
         }
 
-        // Use trophies or ranked for Merge
-        const sourceForMerge = (trophies && trophies.length > 0) ? trophies : ranked
-        if (sourceForMerge && sourceForMerge.length > 0) {
-             const shuffledForMerge = shuffleArray([...sourceForMerge])
-             players_merge.value = shuffledForMerge.map((p, i) => ({ 
+        // 2v2 League (Mock)
+        if (ranked && ranked.length > 0) {
+             const shuffledFor2v2 = shuffleArray([...ranked])
+             players_2v2.value = shuffledFor2v2.map((p, i) => ({ 
                  ...p, 
-                 score: 5000 - (i * 100) + Math.floor(Math.random() * 50),
+                 score: 3000 - (i * 80) + Math.floor(Math.random() * 50),
                  rank: i + 1
              }))
-        } else {
-            // Fallback if APIs fail completely
-             players_merge.value = []
         }
 
     } catch (e) {
@@ -128,10 +130,17 @@ const getCategoryColor = (cat: Category) => {
                 <ChevronLeft class="w-5 h-5" /> Retour
             </Button>
             <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-3">
-                 <component :is="getCategoryIcon" class="w-8 h-8" />
+                 <img 
+                    v-if="activeCategory !== 'trophy'"
+                    :src="activeCategory === 'ranked' ? 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/league10.png' : 
+                          activeCategory === 'merge' ? 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/trophy-gm-merge-tactics.png' : 
+                          'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/2v2.png'"
+                    class="w-8 h-8 object-contain"
+                 />
+                 <Trophy v-else class="w-8 h-8 text-orange-500" />
                  {{ getCategoryTitle }}
             </h2>
-             <div class="w-24"></div> <!-- Spacer for center alignment -->
+             <div class="w-24"></div> 
         </div>
 
         <div v-if="!activeCategory" class="text-center space-y-2 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -141,7 +150,7 @@ const getCategoryColor = (cat: Category) => {
 
         <!-- CATEGORY SELECTION Grid -->
         <div v-if="!activeCategory" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4 max-w-[1400px] mx-auto">
-            
+             
             <!-- Category Card Generator -->
             <div 
                 v-for="(cat, idx) in ['ranked', 'trophy', 'merge', '2v2']" 
@@ -195,22 +204,18 @@ const getCategoryColor = (cat: Category) => {
         <!-- LEADERBOARD LIST View -->
         <div v-else class="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white/50 overflow-hidden mx-4 animate-in zoom-in-95 duration-300">
             
-            <!-- Loading State -->
             <div v-if="loading" class="flex justify-center py-32">
                  <Loader2 class="w-10 h-10 animate-spin text-blue-600" />
             </div>
 
-            <!-- List -->
             <div v-else class="flex flex-col">
-                <!-- Header Row -->
                 <div class="grid grid-cols-12 gap-4 px-6 sm:px-8 py-4 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
                     <div class="col-span-2 sm:col-span-1 text-center">#</div>
                     <div class="col-span-8 sm:col-span-5">Joueur</div>
                     <div class="hidden sm:block col-span-4">Clan</div>
-                    <div class="hidden sm:block col-span-2 text-right">Score</div>
+                    <div class="hidden sm:block col-span-2 text-right">{{ activeCategory === 'ranked' ? 'Médailles' : 'Trophées' }}</div>
                 </div>
 
-                <!-- Rows -->
                 <div 
                     v-for="(player, index) in getActiveList" 
                     :key="player.tag" 
@@ -242,13 +247,12 @@ const getCategoryColor = (cat: Category) => {
                     </div>
 
                     <!-- Score -->
-                    <div class="hidden sm:block col-span-2 text-right font-black text-lg text-slate-800 tabular-nums tracking-tight">
+                    <div class="hidden sm:block col-span-2 text-right font-black text-lg text-slate-800 tabular-nums tracking-tight flex items-center justify-end gap-1">
                         {{ player.score?.toLocaleString() }}
                     </div>
                 </div>
             </div>
 
         </div>
-
     </div>
 </template>
