@@ -46,7 +46,7 @@ const CDN_BASE_URL = 'https://cdn.jsdelivr.net/gh/RoyaleAPI/cr-api-assets@master
 
 // Load local arena images (arena15+)
 // Keys will be like '../arenas/arena15.png'
-const localArenas = import.meta.glob('../arenas/*.{png,webp}', { eager: true, import: 'default' }) as Record<string, string>;
+const localArenas = import.meta.glob('../assets/*.{png,webp}', { eager: true, import: 'default' }) as Record<string, string>;
 
 export function getArenaDetails(id: number | string, apiName?: string): ArenaDetails {
     // console.log('[getArenaDetails] Input:', { id, apiName });
@@ -93,8 +93,8 @@ export function getArenaDetails(id: number | string, apiName?: string): ArenaDet
             image = `${CDN_BASE_URL}${arenaInfo.image}`;
         } else {
             // Use Local
-            // Construct key: ../arenas/arena15.png
-            const localKey = `../arenas/${arenaInfo.image}`;
+            // Construct key: ../assets/arena15.png
+            const localKey = `../assets/${arenaInfo.image}`;
             const localPath = localArenas[localKey];
 
             if (localPath) {

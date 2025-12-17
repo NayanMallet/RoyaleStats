@@ -151,7 +151,7 @@ const getCategoryColor = (cat: Category) => {
 </script>
 
 <template>
-    <div class="w-full max-w-7xl mx-auto pb-12 transition-all duration-500">
+    <div class="w-full max-w-7xl mx-auto pb-4 transition-all duration-500">
 
         <!-- HEADER -->
         <div class="flex items-center justify-between mb-8 px-4" v-if="activeCategory">

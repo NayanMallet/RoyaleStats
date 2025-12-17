@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import PlayerStats from '@/components/PlayerStats.vue'
 import Leaderboards from '@/components/Leaderboards.vue'
+import HowToFindTag from '@/components/HowToFindTag.vue'
 import AppLogo from '@/statics/Logo.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -201,6 +202,9 @@ const handleLeaderboardClanSelection = (tag: string) => {
         <!-- Leaderboards (Home Page) -->
         <Leaderboards v-if="!isPlayerLoaded" @select-player="handleLeaderboardSelection"
             @select-clan="handleLeaderboardClanSelection" />
+
+        <!-- How To Find Tag Section -->
+        <HowToFindTag v-if="!isPlayerLoaded" :type="searchType" />
 
         <!-- Player Stats -->
         <PlayerStats ref="playerStatsRef" @player-loaded="isPlayerLoaded = $event" />
