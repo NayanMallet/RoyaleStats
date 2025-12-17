@@ -4,8 +4,11 @@ import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
+import path from 'node:path'
+
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), 'VITE_') // ou '' si tu veux tout charger
+  // Load env from parent directory (root of the repo)
+  const env = loadEnv(mode, path.resolve(process.cwd(), '..'), 'VITE_')
   const CR_KEY = env.VITE_CLASHROYALE_API_KEY
 
   return {
