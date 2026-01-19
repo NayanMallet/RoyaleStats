@@ -1,30 +1,37 @@
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
+
+# Build stage
+FROM base AS builder
 WORKDIR /app
 
-# Installer outils de compilation nécessaires pour les modules natifs (node-gyp)
-RUN apk add --no-cache python3 build-base linux-headers
-
+# Copy workspace files
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY public-api/package.json ./public-api/package.json
-
-RUN corepack enable \
-  && pnpm -r --filter ./public-api... install --frozen-lockfile
-
+COPY shared ./shared
 COPY public-api ./public-api
-RUN pnpm -r --filter ./public-api... run build
 
-FROM node:18-alpine AS production
+# Install ALL dependencies
+RUN pnpm install --shamefully-hoist
+
+# Build shared package
+RUN pnpm --filter shared build
+
+# Build public-api
+RUN pnpm --filter public-api build
+
+# Production stage
+FROM base AS runner
 WORKDIR /app
 
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY public-api/package.json ./public-api/package.json
-
-# Installer les dépendances de production uniquement pour public-api
-RUN corepack enable \
-  && pnpm -r --filter ./public-api... install --prod --frozen-lockfile
-
+# Copy everything from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/public-api/dist ./public-api/dist
+COPY --from=builder /app/public-api/package.json ./public-api/package.json
 
 WORKDIR /app/public-api
+
+ENV NODE_ENV=production
 EXPOSE 3001
+
 CMD ["node", "dist/server.js"]

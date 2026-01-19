@@ -1,53 +1,42 @@
-ARG ARCH=amd64
-FROM --platform=linux/${ARCH} node:18-alpine AS builder
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
+
+# Build stage
+FROM base AS builder
 WORKDIR /app
 
-# Installer outils de compilation nécessaires pour les modules natifs (node-gyp)
-RUN apk add --no-cache python3 build-base linux-headers
+# Install build dependencies for native modules
+RUN apk add --no-cache python3 make g++
 
-# Activer pnpm via corepack
-RUN corepack enable
-
-# Copier les fichiers de dépendances (workspace + service)
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY shared/package.json ./shared/package.json
-COPY user-service/package.json ./user-service/package.json
-
-# Installer les dépendances pour user-service (et ses dépendances internes)
-RUN pnpm -r --filter ./user-service... install --frozen-lockfile
-
-# Copier le code source (shared + user-service) et compiler
+# Copy workspace files
+COPY pnpm-workspace.yaml package.json ./
 COPY shared ./shared
 COPY user-service ./user-service
-RUN pnpm -r --filter ./user-service... run build
+
+# Enable build scripts and force fresh install for Linux
+RUN pnpm config set enable-pre-post-scripts true
+RUN pnpm install --shamefully-hoist
+RUN npm rebuild better-sqlite3
+
+# Build shared package
+RUN pnpm --filter shared build
+
+# Build user-service
+RUN pnpm --filter user-service build
 
 # Production stage
-ARG ARCH=amd64
-FROM --platform=linux/$ARCH node:18-alpine AS production
+FROM base AS runner
+WORKDIR /app
+
+# Copy everything from builder (including compiled node_modules)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/user-service/dist ./user-service/dist
+COPY --from=builder /app/user-service/package.json ./user-service/package.json
+
 WORKDIR /app/user-service
 
-# Installer outils de compilation nécessaires pour les modules natifs (node-gyp) et npm
-RUN apk add --no-cache python3 build-base linux-headers npm
-
-# Copier uniquement le package.json du user-service
-COPY user-service/package.json ./
-
-# Supprimer la dépendance 'shared' du package.json (incompatible npm)
-RUN sed -i '/"shared"/d' package.json
-
-# Installer les dépendances de production avec npm (pour sqlite3 natif)
-RUN npm install --omit=dev
-
-# Copier le code compilé
-COPY --from=builder /app/user-service/dist ./dist
-COPY --from=builder /app/shared/dist ../shared/dist
-
-# Rendre le module shared accessible comme un package node_modules
-RUN mkdir -p node_modules/shared && cp -r ../shared/dist/* node_modules/shared/
-
+ENV NODE_ENV=production
 EXPOSE 3002
-CMD ["node", "dist/server.js"]
 
-# Astuce :
-# Pour builder en x86_64 (plus compatible), lance :
-# docker-compose build --build-arg ARCH=amd64
+CMD ["node", "dist/server.js"]

@@ -20,5 +20,7 @@ RUN pnpm install && pnpm run build
 ### Production stage
 FROM nginx:stable-alpine
 COPY --from=builder /app/front/dist /usr/share/nginx/html
+# Copy custom nginx config
+COPY front/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

@@ -6,7 +6,7 @@ services:
       dockerfile: public-api/Dockerfile
     ports:
       - "3001:3001"
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
   user-service:
     platform: linux/amd64
@@ -21,11 +21,11 @@ services:
     volumes:
       - ./data/user-service:/data/user-service
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3002/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3002/health" ]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
   item-service:
     platform: linux/amd64
@@ -40,7 +40,62 @@ services:
     volumes:
       - ./data/item-service:/data/item-service
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3003/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3003/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [ microservices-net ]
+
+  clash-data-service:
+    platform: linux/amd64
+    env_file: .env
+    build:
+      context: .
+      dockerfile: clash-data-service/Dockerfile
+    ports:
+      - "3004:3004"
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3004/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [ microservices-net ]
+
+  link-service:
+    platform: linux/amd64
+    env_file: .env
+    build:
+      context: .
+      dockerfile: link-service/Dockerfile
+    ports:
+      - "3005:3005"
+    environment:
+      - LINK_DB_FILE=/data/link-service/database.sqlite
+    volumes:
+      - ./data/link-service:/data/link-service
+    depends_on:
+      - clash-data-service
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3005/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [ microservices-net ]
+
+  meta-tracker-service:
+    platform: linux/amd64
+    env_file: .env
+    build:
+      context: .
+      dockerfile: meta-tracker-service/Dockerfile
+    ports:
+      - "3006:3006"
+    environment:
+      - META_DB_FILE=/data/meta-tracker-service/database.sqlite
+    volumes:
+      - ./data/meta-tracker-service:/data/meta-tracker-service
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3006/health" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -56,7 +111,18 @@ services:
     depends_on:
       - public-api
       - user-service
-    networks: [microservices-net]
+      - item-service
+      - clash-data-service
+      - link-service
+      - meta-tracker-service
+    networks: [ microservices-net ]
+    environment:
+      - USER_SERVICE_URL=http://user-service:3002
+      - ITEM_SERVICE_URL=http://item-service:3003
+      - CLASH_DATA_SERVICE_URL=http://clash-data-service:3004
+      - LINK_SERVICE_URL=http://link-service:3005
+      - META_TRACKER_SERVICE_URL=http://meta-tracker-service:3006
+      - PUBLIC_API_URL=http://public-api:3001
 
   front:
     build:
@@ -66,7 +132,7 @@ services:
       - "8080:80"
     depends_on:
       - api-gateway
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
 networks:
   microservices-net:

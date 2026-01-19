@@ -1,34 +1,37 @@
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
+
+# Build stage
+FROM base AS builder
 WORKDIR /app
 
-# Installer outils de compilation pour modules natifs
-RUN apk add --no-cache python3 build-base linux-headers
-
+# Copy workspace files
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY shared/package.json ./shared/package.json
-COPY api-gateway/package.json ./api-gateway/package.json
-
-RUN corepack enable \
-  && pnpm -r --filter ./api-gateway... install --frozen-lockfile
-
 COPY shared ./shared
 COPY api-gateway ./api-gateway
-RUN pnpm -r --filter ./api-gateway... run build
 
-FROM node:18-alpine AS production
+# Install ALL dependencies
+RUN pnpm install --shamefully-hoist
+
+# Build shared package
+RUN pnpm --filter shared build
+
+# Build api-gateway
+RUN pnpm --filter api-gateway build
+
+# Production stage
+FROM base AS runner
 WORKDIR /app
 
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY api-gateway/package.json ./api-gateway/package.json
-COPY shared/package.json ./shared/package.json
-
-# Installer les dépendances de production uniquement pour le gateway
-RUN corepack enable \
-  && pnpm -r --filter ./api-gateway... install --prod --frozen-lockfile
-
+# Copy everything from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/api-gateway/dist ./api-gateway/dist
-COPY --from=builder /app/shared/dist ./shared/dist
+COPY --from=builder /app/api-gateway/package.json ./api-gateway/package.json
 
 WORKDIR /app/api-gateway
+
+ENV NODE_ENV=production
 EXPOSE 3000
+
 CMD ["node", "dist/server.js"]

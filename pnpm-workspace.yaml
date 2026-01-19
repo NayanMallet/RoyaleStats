@@ -4,4 +4,8 @@ packages:
   - user-service
   - public-api
   - item-service
+  - clash-data-service
+  - link-service
+  - meta-tracker-service
   - front
+
