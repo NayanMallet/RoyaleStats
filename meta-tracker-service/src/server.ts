@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import { createCorsMiddleware, logger } from 'shared'
 import { initDatabase } from './database'
 import metaRoutes from './routes/meta'
+import { startWorker } from './worker'
 
 dotenv.config()
 
@@ -43,6 +44,7 @@ async function start() {
 
         app.listen(PORT, () => {
             logger.info(`🚀 Meta Tracker Service listening on port ${PORT}`)
+            startWorker()
         })
     } catch (error) {
         logger.error('Failed to start Meta Tracker Service:', error)

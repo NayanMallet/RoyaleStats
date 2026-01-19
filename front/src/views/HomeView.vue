@@ -7,7 +7,10 @@ import HowToFindTag from '@/components/HowToFindTag.vue'
 import AppLogo from '@/statics/Logo.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { History, X, Clock, Search, Loader2 } from 'lucide-vue-next'
+import { History, X, Clock, Search, Loader2, Trophy, TrendingUp } from 'lucide-vue-next'
+import MetaStats from '@/components/MetaStats.vue'
+
+const currentTab = ref<'leaderboards' | 'meta'>('leaderboards')
 
 const router = useRouter()
 const playerStatsRef = ref()
@@ -199,9 +202,32 @@ const handleLeaderboardClanSelection = (tag: string) => {
 
         </header>
 
+
+
+        <!-- View Switcher -->
+        <div v-if="!isPlayerLoaded" class="flex justify-center mb-8 animate-in fade-in slide-in-from-top-2 duration-500">
+            <div class="bg-white/50 backdrop-blur-sm p-1 rounded-2xl border border-white/50 shadow-sm flex gap-1">
+                <button @click="currentTab = 'leaderboards'"
+                    class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                    :class="currentTab === 'leaderboards' ? 'bg-white text-blue-600 shadow-md scale-100' : 'text-slate-500 hover:bg-white/50 hover:text-slate-700'">
+                    <Trophy class="w-4 h-4" />
+                    Classements
+                </button>
+                <button @click="currentTab = 'meta'"
+                    class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                    :class="currentTab === 'meta' ? 'bg-white text-emerald-600 shadow-md scale-100' : 'text-slate-500 hover:bg-white/50 hover:text-slate-700'">
+                    <TrendingUp class="w-4 h-4" />
+                    Méta Stats
+                </button>
+            </div>
+        </div>
+
         <!-- Leaderboards (Home Page) -->
-        <Leaderboards v-if="!isPlayerLoaded" @select-player="handleLeaderboardSelection"
+        <Leaderboards v-if="!isPlayerLoaded && currentTab === 'leaderboards'" @select-player="handleLeaderboardSelection"
             @select-clan="handleLeaderboardClanSelection" />
+
+        <!-- Meta Stats View -->
+        <MetaStats v-if="!isPlayerLoaded && currentTab === 'meta'" />
 
         <!-- How To Find Tag Section -->
         <HowToFindTag v-if="!isPlayerLoaded" :type="searchType" />

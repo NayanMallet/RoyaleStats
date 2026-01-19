@@ -92,6 +92,7 @@ services:
       - "3006:3006"
     environment:
       - META_DB_FILE=/data/meta-tracker-service/database.sqlite
+      - CLASH_DATA_SERVICE_URL=http://clash-data-service:3004
     volumes:
       - ./data/meta-tracker-service:/data/meta-tracker-service
     healthcheck:

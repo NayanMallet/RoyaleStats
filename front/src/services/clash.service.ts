@@ -177,3 +177,11 @@ export async function fetchPlayer(tag: string): Promise<PlayerProfile> {
 
     return response.json();
 }
+
+export async function fetchPlayerBattles(tag: string): Promise<any[]> {
+    const formattedTag = tag.startsWith('#') ? tag : `#${tag}`;
+    const encodedTag = encodeURIComponent(formattedTag);
+    const response = await fetch(`/api/clash/players/${encodedTag}/battles`);
+    if (!response.ok) return [];
+    return response.json();
+}

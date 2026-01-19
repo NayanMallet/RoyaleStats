@@ -1,7 +1,8 @@
 ```vue
 <script setup lang="ts">
 import { ref, watchEffect, computed, watch } from 'vue'
-import { fetchPlayer, fetchCards, fetchClan, type PlayerProfile, type Card as ApiCard, type ClanDetails } from '@/services/clash.service'
+import { fetchPlayer, fetchCards, fetchClan, fetchPlayerBattles, type PlayerProfile, type Card as ApiCard, type ClanDetails } from '@/services/clash.service'
+import { ingestBattles } from '@/services/meta.service'
 import { getClanBadgeUrl, initBadges } from '@/services/badges'
 import { getArenaDetails } from '@/services/arenas'
 import { toast } from 'vue-sonner'
@@ -97,6 +98,15 @@ async function handleSearch(tagInput: string): Promise<PlayerProfile | null> {
         loading.value = true
         player.value = null
         player.value = await fetchPlayer(tag)
+        
+        // Background: Ingest battles for meta analysis
+        fetchPlayerBattles(tag).then(battles => {
+            if (battles && battles.length) {
+                console.log(`[Meta] Ingesting ${battles.length} battles for ${tag}`)
+                ingestBattles(battles)
+            }
+        })
+
         return player.value
     } catch (err: any) {
         console.error(err)
