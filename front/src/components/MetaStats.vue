@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { fetchMetaSnapshot, type MetaSnapshot } from '@/services/meta.service'
-import { Loader2, TrendingUp, Hash, Trophy } from 'lucide-vue-next'
+import { Loader2, TrendingUp, Hash } from 'lucide-vue-next'
 
 const loading = ref(true)
 const snapshot = ref<MetaSnapshot | null>(null)
 
-// Map card names to rough asset URLs (best effort without full ID mapping)
+// Map card names to rough asset URLs (the best effort without full ID mapping)
 // In a real app, we would have a proper ID mapping from clash-data-service
 // For now, using a generic fallback or trying to map common names
 function getCardUrl(cardName: string) {
@@ -77,6 +77,7 @@ onMounted(async () => {
               :src="getCardUrl(card.card_name)"
               @error="handleImageError"
               class="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300"
+             alt="{{ card.card_name }}"
             />
             <div
               class="absolute -top-2 -left-2 w-6 h-6 bg-slate-800 text-white rounded-full flex items-center justify-center text-xs font-black border-2 border-white shadow-sm"
