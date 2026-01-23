@@ -1,15 +1,15 @@
-import Database from 'better-sqlite3'
-import { logger } from 'shared'
+import Database from 'better-sqlite3';
+import { logger } from 'shared';
 
-let db: Database.Database | null = null
+let db: Database.Database | null = null;
 
 export function initDatabase(): Database.Database {
-  if (db) return db
+  if (db) return db;
 
-  const dbFile = process.env.USER_DB_FILE || './database.sqlite'
-  logger.info(`Initializing User Service database at ${dbFile}`)
+  const dbFile = process.env.USER_DB_FILE || './database.sqlite';
+  logger.info(`Initializing User Service database at ${dbFile}`);
 
-  db = new Database(dbFile)
+  db = new Database(dbFile);
 
   // Create users table
   db.exec(`
@@ -23,15 +23,15 @@ export function initDatabase(): Database.Database {
     );
 
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-  `)
+  `);
 
-  logger.info('User Service database initialized successfully')
-  return db
+  logger.info('User Service database initialized successfully');
+  return db;
 }
 
 export function getDatabase(): Database.Database {
   if (!db) {
-    throw new Error('Database not initialized. Call initDatabase() first.')
+    throw new Error('Database not initialized. Call initDatabase() first.');
   }
-  return db
+  return db;
 }

@@ -1,15 +1,15 @@
-import Database from 'better-sqlite3'
-import { logger } from 'shared'
+import Database from 'better-sqlite3';
+import { logger } from 'shared';
 
-let db: Database.Database | null = null
+let db: Database.Database | null = null;
 
 export function initDatabase(): Database.Database {
-  if (db) return db
+  if (db) return db;
 
-  const dbFile = process.env.LINK_DB_FILE || './database.sqlite'
-  logger.info(`Initializing Link Service database at ${dbFile}`)
+  const dbFile = process.env.LINK_DB_FILE || './database.sqlite';
+  logger.info(`Initializing Link Service database at ${dbFile}`);
 
-  db = new Database(dbFile)
+  db = new Database(dbFile);
 
   // Create player_links table
   db.exec(`
@@ -22,15 +22,15 @@ export function initDatabase(): Database.Database {
 
     CREATE INDEX IF NOT EXISTS idx_player_links_user_id ON player_links(user_id);
     CREATE INDEX IF NOT EXISTS idx_player_links_player_tag ON player_links(player_tag);
-  `)
+  `);
 
-  logger.info('Link Service database initialized successfully')
-  return db
+  logger.info('Link Service database initialized successfully');
+  return db;
 }
 
 export function getDatabase(): Database.Database {
   if (!db) {
-    throw new Error('Database not initialized. Call initDatabase() first.')
+    throw new Error('Database not initialized. Call initDatabase() first.');
   }
-  return db
+  return db;
 }

@@ -1,15 +1,15 @@
-import Database from 'better-sqlite3'
-import { logger } from 'shared'
+import Database from 'better-sqlite3';
+import { logger } from 'shared';
 
-let db: Database.Database | null = null
+let db: Database.Database | null = null;
 
 export function initDatabase(): Database.Database {
-  if (db) return db
+  if (db) return db;
 
-  const dbFile = process.env.META_DB_FILE || './database.sqlite'
-  logger.info(`Initializing Meta Tracker Service database at ${dbFile}`)
+  const dbFile = process.env.META_DB_FILE || './database.sqlite';
+  logger.info(`Initializing Meta Tracker Service database at ${dbFile}`);
 
-  db = new Database(dbFile)
+  db = new Database(dbFile);
 
   // Create tables for battle tracking and card statistics
   db.exec(`
@@ -34,15 +34,15 @@ export function initDatabase(): Database.Database {
 
     CREATE INDEX IF NOT EXISTS idx_battles_player_tag ON battles(player_tag);
     CREATE INDEX IF NOT EXISTS idx_battles_result ON battles(result);
-  `)
+  `);
 
-  logger.info('Meta Tracker Service database initialized successfully')
-  return db
+  logger.info('Meta Tracker Service database initialized successfully');
+  return db;
 }
 
 export function getDatabase(): Database.Database {
   if (!db) {
-    throw new Error('Database not initialized. Call initDatabase() first.')
+    throw new Error('Database not initialized. Call initDatabase() first.');
   }
-  return db
+  return db;
 }

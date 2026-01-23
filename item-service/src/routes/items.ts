@@ -1,12 +1,12 @@
-import { Router } from 'express'
-import * as itemController from '../controllers/itemController'
+import { Router } from 'express';
+import * as itemController from '../controllers/itemController';
 
-const router = Router()
+const router = Router();
 
-router.get('/', itemController.listItems)
-router.post('/', itemController.createItem)
-router.get('/:id', itemController.getItem)
-router.put('/:id', itemController.updateItem)
-router.delete('/:id', itemController.deleteItem)
+router.get('/', itemController.listItems);
+router.post('/', itemController.createItem);
+router.get('/:id', itemController.getItem);
+router.put('/:id', itemController.updateItem);
+router.delete('/:id', itemController.deleteItem);
 
-export default router
+export default router;

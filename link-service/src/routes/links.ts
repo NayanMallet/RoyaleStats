@@ -1,10 +1,10 @@
-import { Router } from 'express'
-import * as linkController from '../controllers/linkController'
+import { Router } from 'express';
+import * as linkController from '../controllers/linkController';
 
-const router = Router()
+const router = Router();
 
-router.post('/', linkController.createLink)
-router.get('/:userId', linkController.getLink)
-router.delete('/:userId', linkController.deleteLink)
+router.post('/', linkController.createLink);
+router.get('/:userId', linkController.getLink);
+router.delete('/:userId', linkController.deleteLink);
 
-export default router
+export default router;

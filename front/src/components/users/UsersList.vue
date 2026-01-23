@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import type { User } from '@/types/user'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
 const props = defineProps<{
@@ -23,34 +17,19 @@ const emit = defineEmits<{
   <Card class="h-max">
     <CardHeader class="flex flex-row items-center justify-between">
       <div>
-        <CardTitle class="text-base">
-          Users
-        </CardTitle>
+        <CardTitle class="text-base"> Users </CardTitle>
         <CardDescription>
           Data fetched from <code class="font-mono text-xs">/api/users</code>.
         </CardDescription>
       </div>
-      <Button
-        size="sm"
-        variant="outline"
-        :disabled="props.loading"
-        @click="emit('refresh')"
-      >
+      <Button size="sm" variant="outline" :disabled="props.loading" @click="emit('refresh')">
         {{ props.loading ? 'Refreshing…' : 'Refresh' }}
       </Button>
     </CardHeader>
     <CardContent>
-      <div
-        v-if="props.loading"
-        class="text-sm text-muted-foreground"
-      >
-        Loading users…
-      </div>
+      <div v-if="props.loading" class="text-sm text-muted-foreground">Loading users…</div>
 
-      <ul
-        v-else-if="props.users.length"
-        class="divide-y divide-border"
-      >
+      <ul v-else-if="props.users.length" class="divide-y divide-border">
         <li
           v-for="user in props.users"
           :key="user.id"
@@ -64,16 +43,11 @@ const emit = defineEmits<{
               {{ user.email }}
             </p>
           </div>
-          <span class="text-xs text-muted-foreground">
-            #{{ user.id }}
-          </span>
+          <span class="text-xs text-muted-foreground"> #{{ user.id }} </span>
         </li>
       </ul>
 
-      <p
-        v-else
-        class="text-sm text-muted-foreground"
-      >
+      <p v-else class="text-sm text-muted-foreground">
         No users yet. Use the form above to create one.
       </p>
     </CardContent>
