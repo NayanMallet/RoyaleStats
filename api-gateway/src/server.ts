@@ -16,7 +16,16 @@ const PORT = process.env.API_GATEWAY_PORT || 3000;
 // Middleware
 app.use(morgan('dev'));
 app.use(createCorsMiddleware());
-app.use(express.json());
+// Don't use express.json() here - let the proxy forward raw body to services
+
+// Handle all OPTIONS requests after CORS has added headers
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    // CORS middleware has already set headers, just end the response
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 // Health check
 app.get('/health', (req, res) => {

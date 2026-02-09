@@ -7,10 +7,17 @@ export class HttpError extends Error {
   }
 }
 
+function getAuthToken(): string | null {
+  return localStorage.getItem('auth_token')
+}
+
 async function request<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
+  const token = getAuthToken()
+  
   const res = await fetch(input, {
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers || {}),
     },
     ...init,
@@ -33,4 +40,7 @@ export const http = {
   get: <T>(url: string, init?: RequestInit) => request<T>(url, { method: 'GET', ...init }),
   post: <T>(url: string, body: unknown, init?: RequestInit) =>
     request<T>(url, { method: 'POST', body: JSON.stringify(body), ...init }),
+  put: <T>(url: string, body: unknown, init?: RequestInit) =>
+    request<T>(url, { method: 'PUT', body: JSON.stringify(body), ...init }),
+  delete: <T>(url: string, init?: RequestInit) => request<T>(url, { method: 'DELETE', ...init }),
 }

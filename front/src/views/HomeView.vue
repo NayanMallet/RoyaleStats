@@ -4,12 +4,15 @@ import { useRouter } from 'vue-router'
 import PlayerStats from '@/components/PlayerStats.vue'
 import Leaderboards from '@/components/Leaderboards.vue'
 import HowToFindTag from '@/components/HowToFindTag.vue'
+import UserMenu from '@/components/UserMenu.vue'
 import AppLogo from '@/statics/Logo.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { History, X, Clock, Search, Loader2, Trophy, TrendingUp } from 'lucide-vue-next'
 import MetaStats from '@/components/MetaStats.vue'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const currentTab = ref<'leaderboards' | 'meta'>('leaderboards')
 
 const router = useRouter()
@@ -234,23 +237,28 @@ const handleLeaderboardClanSelection = (tag: string) => {
         </div>
       </div>
 
-      <!-- Right: Auth Buttons -->
+      <!-- Right: Auth Buttons or User Menu -->
       <div class="flex items-center gap-3 flex-shrink-0 mr-6">
-        <router-link to="/login">
-          <Button
-            variant="ghost"
-            class="text-slate-600 h-12 font-bold hover:bg-gray-100 hover:text-slate-900 px-5"
-          >
-            Connexion
-          </Button>
-        </router-link>
-        <router-link to="/register">
-          <Button
-            class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white h-12 cursor-pointer font-bold px-6 shadow-lg shadow-[#DC8F26]/20 active:scale-95 transition-all"
-          >
-            S'inscrire
-          </Button>
-        </router-link>
+        <template v-if="authStore.isAuthenticated">
+          <UserMenu />
+        </template>
+        <template v-else>
+          <router-link to="/login">
+            <Button
+              variant="ghost"
+              class="text-slate-600 h-12 font-bold hover:bg-gray-100 hover:text-slate-900 px-5"
+            >
+              Connexion
+            </Button>
+          </router-link>
+          <router-link to="/register">
+            <Button
+              class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white h-12 cursor-pointer font-bold px-6 shadow-lg shadow-[#DC8F26]/20 active:scale-95 transition-all"
+            >
+              S'inscrire
+            </Button>
+          </router-link>
+        </template>
       </div>
     </header>
 

@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label'
 import { Loader2, ArrowLeft, UserPlus } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import AppLogo from '@/statics/Logo.png'
+import { authService } from '@/services/auth.service'
+import { HttpError } from '@/services/http'
 
 const router = useRouter()
 const isLoading = ref(false)
@@ -26,17 +28,32 @@ const handleRegister = async () => {
     return
   }
 
+  if (password.value.length < 6) {
+    toast.error('Le mot de passe doit contenir au moins 6 caractères')
+    return
+  }
+
   isLoading.value = true
   try {
-    // Simulating API call directly in component
-    console.log('Fetching register...')
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    await authService.register({
+      name: username.value,
+      email: email.value,
+      password: password.value,
+    })
 
-    // Mock success
-    toast.success('Compte créé avec succès !')
+    toast.success('Compte créé avec succès ! Vous pouvez maintenant vous connecter.')
     router.push('/login')
   } catch (error) {
-    toast.error("Erreur lors de l'inscription")
+    if (error instanceof HttpError) {
+      if (error.status === 409) {
+        toast.error('Un compte existe déjà avec cet email')
+      } else {
+        toast.error("Erreur lors de l'inscription")
+      }
+    } else {
+      toast.error("Erreur lors de l'inscription")
+    }
+    console.error('Register error:', error)
   } finally {
     isLoading.value = false
   }

@@ -7,8 +7,12 @@ import { Label } from '@/components/ui/label'
 import { Loader2, ArrowLeft, LogIn } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import AppLogo from '@/statics/Logo.png'
+import { authService } from '@/services/auth.service'
+import { HttpError } from '@/services/http'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const isLoading = ref(false)
 const email = ref('')
 const password = ref('')
@@ -21,15 +25,25 @@ const handleLogin = async () => {
 
   isLoading.value = true
   try {
-    // Simulating API call directly in component as requested
-    console.log('Fetching login...')
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    const response = await authService.login({
+      email: email.value,
+      password: password.value,
+    })
 
-    // Mock success
+    authStore.setAuth(response.user, response.token)
     toast.success('Connexion réussie !')
     router.push('/')
   } catch (error) {
-    toast.error('Erreur lors de la connexion')
+    if (error instanceof HttpError) {
+      if (error.status === 401) {
+        toast.error('Email ou mot de passe incorrect')
+      } else {
+        toast.error('Erreur lors de la connexion')
+      }
+    } else {
+      toast.error('Erreur lors de la connexion')
+    }
+    console.error('Login error:', error)
   } finally {
     isLoading.value = false
   }

@@ -1,5 +1,6 @@
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { logger } from 'shared';
+import { Request } from 'express';
 
 // Service URLs (use env vars for local dev or defaults for Docker)
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://user-service:3002';
@@ -23,6 +24,8 @@ function createServiceProxy(
     changeOrigin: true,
     pathRewrite,
     logger: console,
+    timeout: 30000,
+    proxyTimeout: 30000,
     ...extraOptions,
     on: {
       proxyReq: (proxyReq: any, req: any) => {
@@ -33,6 +36,9 @@ function createServiceProxy(
             proxyReq.setHeader(key, value as string);
           });
         }
+      },
+      proxyRes: (proxyRes: any, req: any, res: any) => {
+        logger.info(`[PROXY RESPONSE] ${req.method} ${req.url} - ${proxyRes.statusCode}`);
       },
       error: (err: any, req: any, res: any) => {
         logger.error(`[PROXY ERROR] ${serviceName}:`, err);
@@ -45,12 +51,12 @@ function createServiceProxy(
 }
 
 export const proxies = {
-  users: createServiceProxy('User Service', USER_SERVICE_URL, { '^/api/users': '/users' }),
-  items: createServiceProxy('Item Service', ITEM_SERVICE_URL, { '^/api/items': '/items' }),
-  clash: createServiceProxy('Clash Data Service', CLASH_DATA_SERVICE_URL, { '^/api/clash': '' }),
-  link: createServiceProxy('Link Service', LINK_SERVICE_URL, { '^/api/link': '/link' }),
-  meta: createServiceProxy('Meta Tracker Service', META_TRACKER_SERVICE_URL, { '^/api/meta': '' }),
-  public: createServiceProxy('Public API', PUBLIC_API_URL, { '^/api/public': '' }),
+  users: createServiceProxy('User Service', USER_SERVICE_URL, { '^/': '/users/' }),
+  items: createServiceProxy('Item Service', ITEM_SERVICE_URL, { '^/': '/items/' }),
+  clash: createServiceProxy('Clash Data Service', CLASH_DATA_SERVICE_URL),
+  link: createServiceProxy('Link Service', LINK_SERVICE_URL, { '^/': '/link/' }),
+  meta: createServiceProxy('Meta Tracker Service', META_TRACKER_SERVICE_URL),
+  public: createServiceProxy('Public API', PUBLIC_API_URL),
   // External proxy for scraping/data
   royaleapi: createServiceProxy(
     'RoyaleAPI Proxy',
