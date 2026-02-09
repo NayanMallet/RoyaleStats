@@ -9,6 +9,7 @@ import AppLogo from '@/statics/Logo.png'
 import { authService } from '@/services/auth.service'
 import { HttpError } from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
+import { linkService } from '@/services/link.service'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -39,6 +40,17 @@ const handleLogin = async () => {
     })
 
     authStore.setAuth(response.user, response.token)
+
+    // Fetch linked player after login
+    try {
+      const link = await linkService.getLink()
+      if (link) {
+        authStore.setLinkedPlayerTag(link.player_tag)
+      }
+    } catch (e) {
+      // Ignore error - user might not have a linked player
+    }
+
     router.push('/')
   } catch (error) {
     if (error instanceof HttpError) {

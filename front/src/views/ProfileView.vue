@@ -109,9 +109,7 @@ const handleUnlinked = () => {
 }
 
 const handleViewProfile = (playerTag: string) => {
-  router.push('/')
-  // The home view will handle the search based on the tag
-  // We could also pass it via route params if needed
+  router.push({ path: '/', query: { search: playerTag, type: 'player' } })
 }
 
 onMounted(() => {
@@ -244,7 +242,6 @@ onMounted(() => {
                 v-else-if="playerLink"
                 :link="playerLink"
                 @unlinked="handleUnlinked"
-                @view-profile="handleViewProfile"
               />
               <Card v-else class="border-dashed border-2 border-slate-300 bg-slate-50/30">
                 <CardContent class="pt-6">

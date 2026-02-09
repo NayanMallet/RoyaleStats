@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Unlink, ExternalLink, Loader2, User } from 'lucide-vue-next'
+import { Unlink, Loader2, User } from 'lucide-vue-next'
 import { linkService, type PlayerLink } from '@/services/link.service'
 import { useAuthStore } from '@/stores/auth'
 
@@ -12,7 +12,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   unlinked: []
-  viewProfile: [playerTag: string]
 }>()
 
 const authStore = useAuthStore()
@@ -56,9 +55,7 @@ const handleUnlink = async () => {
   }
 }
 
-const handleViewProfile = () => {
-  emit('viewProfile', props.link.player_tag)
-}
+
 
 onMounted(() => {
   fetchPlayerName()
@@ -99,14 +96,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="flex gap-3">
-        <Button
-          @click="handleViewProfile"
-          class="flex-1 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-        >
-          <ExternalLink class="w-4 h-4 mr-2" />
-          Voir mon profil
-        </Button>
+      <div class="flex justify-end">
         <Button
           @click="handleUnlink"
           :disabled="loading"
@@ -114,7 +104,8 @@ onMounted(() => {
           class="h-11 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-semibold"
         >
           <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
-          <Unlink v-else class="w-4 h-4" />
+          <Unlink v-else class="w-4 h-4 mr-2" />
+          <span v-if="!loading">Dissocier</span>
         </Button>
       </div>
 

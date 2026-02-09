@@ -5,7 +5,7 @@ import { authService, type User } from '@/services/auth.service'
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(authService.getUser())
   const token = ref<string | null>(authService.getToken())
-  const linkedPlayerTag = ref<string | null>(null)
+  const linkedPlayerTag = ref<string | null>(localStorage.getItem('linked_player_tag'))
 
   const isAuthenticated = computed(() => !!token.value)
   const hasLinkedPlayer = computed(() => !!linkedPlayerTag.value)
@@ -32,6 +32,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   function setLinkedPlayerTag(tag: string | null) {
     linkedPlayerTag.value = tag
+    if (tag) {
+      localStorage.setItem('linked_player_tag', tag)
+    } else {
+      localStorage.removeItem('linked_player_tag')
+    }
   }
 
   return {

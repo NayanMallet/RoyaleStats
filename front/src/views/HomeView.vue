@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import PlayerStats from '@/components/PlayerStats.vue'
 import Leaderboards from '@/components/Leaderboards.vue'
 import HowToFindTag from '@/components/HowToFindTag.vue'
@@ -16,6 +16,7 @@ const authStore = useAuthStore()
 const currentTab = ref<'leaderboards' | 'meta'>('leaderboards')
 
 const router = useRouter()
+const route = useRoute()
 const playerStatsRef = ref()
 
 const isPlayerLoaded = ref(false)
@@ -118,6 +119,24 @@ const handleQuickAccessProfile = () => {
     triggerSearch(authStore.linkedPlayerTag)
   }
 }
+
+// Handle route query params for deep linking (e.g., from profile page)
+onMounted(async () => {
+  const searchParam = route.query.search as string | undefined
+  const typeParam = route.query.type as 'player' | 'clan' | undefined
+
+  if (searchParam) {
+    searchQuery.value = searchParam
+    if (typeParam && (typeParam === 'player' || typeParam === 'clan')) {
+      searchType.value = typeParam
+    }
+    // Wait for PlayerStats component to be ready
+    await nextTick()
+    triggerSearch(searchParam)
+    // Clean up URL
+    router.replace({ path: '/' })
+  }
+})
 </script>
 
 <template>
