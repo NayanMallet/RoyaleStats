@@ -6,6 +6,8 @@ export interface PlayerLink {
     id: number
     user_id: number
     player_tag: string
+    twitter?: string
+    twitch?: string
     linked_at: string
 }
 
@@ -44,6 +46,26 @@ export const linkService = {
             }
             throw error
         }
+    },
+
+    async getLinkByTag(tag: string): Promise<PlayerLink | null> {
+        try {
+            return await http.get<PlayerLink>(apiEndpoints.link.getByTag(tag))
+        } catch (error: any) {
+            if (error.status === 404) {
+                return null
+            }
+            throw error
+        }
+    },
+
+    async updateLink(twitter?: string, twitch?: string): Promise<PlayerLink> {
+        const user = authService.getUser()
+        if (!user) {
+            throw new Error('User not authenticated')
+        }
+
+        return http.patch<PlayerLink>(apiEndpoints.link.update(user.id), { twitter, twitch })
     },
 
     async deleteLink(): Promise<void> {

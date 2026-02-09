@@ -89,6 +89,55 @@ export async function createLink(req: Request, res: Response) {
   }
 }
 
+export async function updateLink(req: Request, res: Response) {
+  try {
+    const { userId } = req.params;
+    const { twitter, twitch } = req.body;
+
+    const db = getDatabase();
+
+    // Check if link exists
+    const existing = db.prepare('SELECT * FROM player_links WHERE user_id = ?').get(userId);
+    if (!existing) {
+      return res.status(404).json({
+        error: 'NotFoundError',
+        message: 'No linked player found for this user',
+      });
+    }
+
+    // Update link
+    // Only update fields that are provided
+    let updates = [];
+    let params = [];
+
+    if (twitter !== undefined) {
+      updates.push('twitter = ?');
+      params.push(twitter);
+    }
+
+    if (twitch !== undefined) {
+      updates.push('twitch = ?');
+      params.push(twitch);
+    }
+
+    if (updates.length > 0) {
+      params.push(userId);
+      db.prepare(`UPDATE player_links SET ${updates.join(', ')} WHERE user_id = ?`).run(...params);
+    }
+
+    const link = db.prepare('SELECT * FROM player_links WHERE user_id = ?').get(userId) as PlayerLink;
+
+    logger.info(`Link updated for user ${userId}`);
+    res.json(link);
+  } catch (error) {
+    logger.error('Error updating link:', error);
+    res.status(500).json({
+      error: 'InternalServerError',
+      message: 'Failed to update link',
+    });
+  }
+}
+
 export async function getLink(req: Request, res: Response) {
   try {
     const { userId } = req.params;
@@ -136,6 +185,37 @@ export async function deleteLink(req: Request, res: Response) {
     res.status(500).json({
       error: 'InternalServerError',
       message: 'Failed to delete link',
+    });
+  }
+}
+
+export async function getLinkByTag(req: Request, res: Response) {
+  try {
+    const { tag } = req.params;
+    if (typeof tag !== 'string') {
+      return res.status(400).json({ error: 'ValidationError', message: 'Invalid tag' });
+    }
+    const normalized = normalizeTag(tag); // Removes # and uppercases
+
+    const db = getDatabase();
+    // We store tags with # in database
+    const link = db.prepare('SELECT * FROM player_links WHERE player_tag = ?').get(`#${normalized}`) as
+      | PlayerLink
+      | undefined;
+
+    if (!link) {
+      return res.status(404).json({
+        error: 'NotFoundError',
+        message: 'No link found for this player tag',
+      });
+    }
+
+    res.json(link);
+  } catch (error) {
+    logger.error('Error getting link by tag:', error);
+    res.status(500).json({
+      error: 'InternalServerError',
+      message: 'Failed to get link by tag',
     });
   }
 }

@@ -40,7 +40,14 @@ export interface PlayerLink {
   id: number;
   user_id: number;
   player_tag: string;
+  twitter?: string;
+  twitch?: string;
   linked_at: string;
+}
+
+export interface PlayerLinkUpdatePayload {
+  twitter?: string;
+  twitch?: string;
 }
 
 export interface PlayerLinkCreatePayload {

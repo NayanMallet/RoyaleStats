@@ -16,7 +16,9 @@ export const apiEndpoints = {
   },
   link: {
     create: `${API_GATEWAY_BASE_URL}/api/link`,
+    update: (userId: number) => `${API_GATEWAY_BASE_URL}/api/link/${userId}`,
     get: (userId: number) => `${API_GATEWAY_BASE_URL}/api/link/${userId}`,
+    getByTag: (tag: string) => `${API_GATEWAY_BASE_URL}/api/link/tag/${encodeURIComponent(tag)}`,
     delete: (userId: number) => `${API_GATEWAY_BASE_URL}/api/link/${userId}`,
   },
 }

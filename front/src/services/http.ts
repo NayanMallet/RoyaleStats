@@ -13,7 +13,7 @@ function getAuthToken(): string | null {
 
 async function request<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   const token = getAuthToken()
-  
+
   const res = await fetch(input, {
     headers: {
       'Content-Type': 'application/json',
@@ -42,5 +42,7 @@ export const http = {
     request<T>(url, { method: 'POST', body: JSON.stringify(body), ...init }),
   put: <T>(url: string, body: unknown, init?: RequestInit) =>
     request<T>(url, { method: 'PUT', body: JSON.stringify(body), ...init }),
+  patch: <T>(url: string, body: unknown, init?: RequestInit) =>
+    request<T>(url, { method: 'PATCH', body: JSON.stringify(body), ...init }),
   delete: <T>(url: string, init?: RequestInit) => request<T>(url, { method: 'DELETE', ...init }),
 }

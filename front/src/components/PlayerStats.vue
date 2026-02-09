@@ -29,7 +29,10 @@ import {
   Sparkles,
   Star,
   Globe,
+  Twitter,
+  Twitch,
 } from 'lucide-vue-next'
+import { linkService, type PlayerLink } from '@/services/link.service'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,6 +44,7 @@ const emit = defineEmits(['player-loaded'])
 const playerTag = ref('')
 const loading = ref(false)
 const player = ref<PlayerProfile | null>(null)
+const linkedProfile = ref<PlayerLink | null>(null)
 const allCards = ref<ApiCard[]>([])
 const selectedCard = ref<ApiCard | null>(null)
 
@@ -118,7 +122,14 @@ async function handleSearch(tagInput: string): Promise<PlayerProfile | null> {
   try {
     loading.value = true
     player.value = null
-    player.value = await fetchPlayer(tag)
+    linkedProfile.value = null
+    const [playerData, linkData] = await Promise.all([
+      fetchPlayer(tag),
+      linkService.getLinkByTag(tag).catch(() => null)
+    ])
+    
+    player.value = playerData
+    linkedProfile.value = linkData
 
     // Background: Ingest battles for meta analysis
     fetchPlayerBattles(tag).then((battles) => {
@@ -301,6 +312,29 @@ const heroImage = computed(() => {
                   class="text-slate-400 font-mono font-bold text-lg bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50"
                   >{{ player.tag }}</span
                 >
+                
+                <!-- Social Links -->
+                <div v-if="linkedProfile" class="flex items-center gap-2">
+                  <a
+                    v-if="linkedProfile.twitter"
+                    :href="`https://twitter.com/${linkedProfile.twitter}`"
+                    target="_blank"
+                    class="p-1.5 bg-[#1DA1F2]/20 text-[#1DA1F2] rounded-lg hover:bg-[#1DA1F2]/30 transition-colors"
+                    title="Twitter"
+                  >
+                    <Twitter class="w-4 h-4" />
+                  </a>
+                  <a
+                    v-if="linkedProfile.twitch"
+                    :href="`https://twitch.tv/${linkedProfile.twitch}`"
+                    target="_blank"
+                    class="p-1.5 bg-[#9146FF]/20 text-[#9146FF] rounded-lg hover:bg-[#9146FF]/30 transition-colors"
+                    title="Twitch"
+                  >
+                    <Twitch class="w-4 h-4" />
+                  </a>
+                </div>
+
                 <span
                   v-if="player.clan"
                   @click="openClanModal(player.clan.tag)"
