@@ -199,13 +199,13 @@ const handleUpdate = async () => {
               <Save v-else class="mr-2 h-5 w-5" />
               Enregistrer les modifications
             </Button>
-            <Button
+            <!-- <Button
               @click="router.push('/')"
               variant="outline"
               class="h-12 rounded-xl border-slate-200 hover:bg-slate-50"
             >
               Annuler
-            </Button>
+            </Button> -->
           </div>
         </CardContent>
       </Card>
