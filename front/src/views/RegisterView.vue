@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, ArrowLeft, UserPlus } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
 import AppLogo from '@/statics/Logo.png'
 import { authService } from '@/services/auth.service'
 import { HttpError } from '@/services/http'
@@ -16,22 +15,43 @@ const username = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const usernameError = ref('')
+const emailError = ref('')
+const passwordError = ref('')
+const confirmPasswordError = ref('')
 
 const handleRegister = async () => {
-  if (!username.value || !email.value || !password.value || !confirmPassword.value) {
-    toast.error('Veuillez remplir tous les champs')
-    return
+  usernameError.value = ''
+  emailError.value = ''
+  passwordError.value = ''
+  confirmPasswordError.value = ''
+
+  let hasError = false
+
+  if (!username.value) {
+    usernameError.value = 'Le pseudo est requis'
+    hasError = true
+  }
+  if (!email.value) {
+    emailError.value = 'L\'email est requis'
+    hasError = true
+  }
+  if (!password.value) {
+    passwordError.value = 'Le mot de passe est requis'
+    hasError = true
+  } else if (password.value.length < 6) {
+    passwordError.value = 'Le mot de passe doit contenir au moins 6 caractères'
+    hasError = true
+  }
+  if (!confirmPassword.value) {
+    confirmPasswordError.value = 'Veuillez confirmer le mot de passe'
+    hasError = true
+  } else if (password.value !== confirmPassword.value) {
+    confirmPasswordError.value = 'Les mots de passe ne correspondent pas'
+    hasError = true
   }
 
-  if (password.value !== confirmPassword.value) {
-    toast.error('Les mots de passe ne correspondent pas')
-    return
-  }
-
-  if (password.value.length < 6) {
-    toast.error('Le mot de passe doit contenir au moins 6 caractères')
-    return
-  }
+  if (hasError) return
 
   isLoading.value = true
   try {
@@ -41,17 +61,16 @@ const handleRegister = async () => {
       password: password.value,
     })
 
-    toast.success('Compte créé avec succès ! Vous pouvez maintenant vous connecter.')
     router.push('/login')
   } catch (error) {
     if (error instanceof HttpError) {
       if (error.status === 409) {
-        toast.error('Un compte existe déjà avec cet email')
+        emailError.value = 'Un compte existe déjà avec cet email'
       } else {
-        toast.error("Erreur lors de l'inscription")
+        emailError.value = "Erreur lors de l'inscription au serveur"
       }
     } else {
-      toast.error("Erreur lors de l'inscription")
+      emailError.value = "Erreur lors de l'inscription au serveur"
     }
     console.error('Register error:', error)
   } finally {
@@ -107,8 +126,14 @@ const handleRegister = async () => {
               v-model="username"
               type="text"
               placeholder="KingRoyale123"
-              class="h-11 rounded-xl bg-slate-50 border-slate-200 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
+              :class="[
+                'h-11 rounded-xl bg-slate-50 transition-all font-medium',
+                usernameError
+                  ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                  : 'border-slate-200 focus:ring-orange-500/20 focus:border-orange-500'
+              ]"
             />
+            <p v-if="usernameError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ usernameError }}</p>
           </div>
 
           <div class="space-y-2">
@@ -122,8 +147,14 @@ const handleRegister = async () => {
               v-model="email"
               type="email"
               placeholder="exemple@email.com"
-              class="h-11 rounded-xl bg-slate-50 border-slate-200 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
+              :class="[
+                'h-11 rounded-xl bg-slate-50 transition-all font-medium',
+                emailError
+                  ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                  : 'border-slate-200 focus:ring-orange-500/20 focus:border-orange-500'
+              ]"
             />
+            <p v-if="emailError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ emailError }}</p>
           </div>
 
           <div class="space-y-2">
@@ -137,8 +168,14 @@ const handleRegister = async () => {
               v-model="password"
               type="password"
               placeholder="••••••••"
-              class="h-11 rounded-xl bg-slate-50 border-slate-200 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
+              :class="[
+                'h-11 rounded-xl bg-slate-50 transition-all font-medium',
+                passwordError
+                  ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                  : 'border-slate-200 focus:ring-orange-500/20 focus:border-orange-500'
+              ]"
             />
+            <p v-if="passwordError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ passwordError }}</p>
           </div>
 
           <div class="space-y-2">
@@ -152,8 +189,14 @@ const handleRegister = async () => {
               v-model="confirmPassword"
               type="password"
               placeholder="••••••••"
-              class="h-11 rounded-xl bg-slate-50 border-slate-200 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
+              :class="[
+                'h-11 rounded-xl bg-slate-50 transition-all font-medium',
+                confirmPasswordError
+                  ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                  : 'border-slate-200 focus:ring-orange-500/20 focus:border-orange-500'
+              ]"
             />
+            <p v-if="confirmPasswordError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ confirmPasswordError }}</p>
           </div>
 
           <Button

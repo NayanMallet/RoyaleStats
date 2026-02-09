@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, ArrowLeft, LogIn } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
 import AppLogo from '@/statics/Logo.png'
 import { authService } from '@/services/auth.service'
 import { HttpError } from '@/services/http'
@@ -16,10 +15,19 @@ const authStore = useAuthStore()
 const isLoading = ref(false)
 const email = ref('')
 const password = ref('')
+const emailError = ref('')
+const passwordError = ref('')
 
 const handleLogin = async () => {
-  if (!email.value || !password.value) {
-    toast.error('Veuillez remplir tous les champs')
+  emailError.value = ''
+  passwordError.value = ''
+
+  if (!email.value) {
+    emailError.value = 'L\'email est requis'
+    return
+  }
+  if (!password.value) {
+    passwordError.value = 'Le mot de passe est requis'
     return
   }
 
@@ -31,17 +39,17 @@ const handleLogin = async () => {
     })
 
     authStore.setAuth(response.user, response.token)
-    toast.success('Connexion réussie !')
     router.push('/')
   } catch (error) {
     if (error instanceof HttpError) {
       if (error.status === 401) {
-        toast.error('Email ou mot de passe incorrect')
+        emailError.value = 'Email ou mot de passe incorrect'
+        passwordError.value = 'Email ou mot de passe incorrect'
       } else {
-        toast.error('Erreur lors de la connexion')
+        emailError.value = 'Erreur lors de la connexion au serveur'
       }
     } else {
-      toast.error('Erreur lors de la connexion')
+      emailError.value = 'Erreur lors de la connexion au serveur'
     }
     console.error('Login error:', error)
   } finally {
@@ -96,8 +104,14 @@ const handleLogin = async () => {
               v-model="email"
               type="email"
               placeholder="exemple@email.com"
-              class="h-12 rounded-xl bg-slate-50 border-slate-200 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+              :class="[
+                'h-12 rounded-xl bg-slate-50 transition-all font-medium',
+                emailError
+                  ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                  : 'border-slate-200 focus:ring-blue-500/20 focus:border-blue-500'
+              ]"
             />
+            <p v-if="emailError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ emailError }}</p>
           </div>
 
           <div class="space-y-2">
@@ -118,8 +132,14 @@ const handleLogin = async () => {
               v-model="password"
               type="password"
               placeholder="••••••••"
-              class="h-12 rounded-xl bg-slate-50 border-slate-200 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+              :class="[
+                'h-12 rounded-xl bg-slate-50 transition-all font-medium',
+                passwordError
+                  ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                  : 'border-slate-200 focus:ring-blue-500/20 focus:border-blue-500'
+              ]"
             />
+            <p v-if="passwordError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ passwordError }}</p>
           </div>
 
           <Button
