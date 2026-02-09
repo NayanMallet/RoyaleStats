@@ -14,6 +14,14 @@
 
 `localhost:8080`
 
+# Swagger / OpenAPI
+
+- Accès à la documentation Swagger (via l'API Gateway):
+  - Interface: http://localhost:3000/docs
+  - Spécification brute (JSON): http://localhost:3000/openapi.json
+
+Ces routes sont disponibles en local et dans Docker (le conteneur api-gateway expose le port 3000). La documentation décrit les points d’entrée exposés par l’API Gateway et proxy vers les microservices (users, items, clash, link, meta, public).
+
 # Documentation
 
 ##  **Contexte du projet**

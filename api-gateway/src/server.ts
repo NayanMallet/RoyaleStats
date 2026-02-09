@@ -6,6 +6,10 @@ import { proxies } from './proxy';
 import { errorHandler } from './middleware/errorHandler';
 
 import path from 'path';
+import openapiSpec from './openapi';
+// Use require to avoid potential type mismatch with Express 5 types
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const swaggerUi = require('swagger-ui-express');
 
 // Load .env from workspace root
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -35,6 +39,12 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Swagger UI and spec
+app.get('/openapi.json', (req, res) => {
+  res.json(openapiSpec);
+});
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
 // Route proxies to microservices
 app.use('/api/users', proxies.users);
