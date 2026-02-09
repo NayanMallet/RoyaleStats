@@ -16,7 +16,7 @@ export function initDatabase(): Database.Database {
     CREATE TABLE IF NOT EXISTS player_links (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL UNIQUE,
-      player_tag TEXT NOT NULL,
+      player_tag TEXT NOT NULL UNIQUE,
       linked_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 

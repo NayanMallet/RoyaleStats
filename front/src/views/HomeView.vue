@@ -110,6 +110,14 @@ const handleLeaderboardClanSelection = (tag: string) => {
   searchQuery.value = tag
   triggerSearch()
 }
+
+const handleQuickAccessProfile = () => {
+  if (authStore.linkedPlayerTag) {
+    searchType.value = 'player'
+    searchQuery.value = authStore.linkedPlayerTag
+    triggerSearch(authStore.linkedPlayerTag)
+  }
+}
 </script>
 
 <template>
@@ -240,6 +248,20 @@ const handleLeaderboardClanSelection = (tag: string) => {
       <!-- Right: Auth Buttons or User Menu -->
       <div class="flex items-center gap-3 flex-shrink-0 mr-6">
         <template v-if="authStore.isAuthenticated">
+          <Button
+            v-if="authStore.hasLinkedPlayer"
+            @click="handleQuickAccessProfile"
+            class="h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold px-5 shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
+            </svg>
+            Mon profil CR
+          </Button>
           <UserMenu />
         </template>
         <template v-else>

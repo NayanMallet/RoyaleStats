@@ -14,4 +14,9 @@ export const apiEndpoints = {
     list: `${API_GATEWAY_BASE_URL}/api/items`,
     create: `${API_GATEWAY_BASE_URL}/api/items`,
   },
+  link: {
+    create: `${API_GATEWAY_BASE_URL}/api/link`,
+    get: (userId: number) => `${API_GATEWAY_BASE_URL}/api/link/${userId}`,
+    delete: (userId: number) => `${API_GATEWAY_BASE_URL}/api/link/${userId}`,
+  },
 }

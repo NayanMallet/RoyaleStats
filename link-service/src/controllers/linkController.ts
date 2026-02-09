@@ -58,6 +58,17 @@ export async function createLink(req: Request, res: Response) {
       });
     }
 
+    // Check if player_tag is already linked to another user
+    const tagLinked = db
+      .prepare('SELECT * FROM player_links WHERE player_tag = ?')
+      .get(`#${normalized}`);
+    if (tagLinked) {
+      return res.status(409).json({
+        error: 'ConflictError',
+        message: 'This player tag is already linked to another account',
+      });
+    }
+
     // Create link
     const result = db
       .prepare('INSERT INTO player_links (user_id, player_tag) VALUES (?, ?)')

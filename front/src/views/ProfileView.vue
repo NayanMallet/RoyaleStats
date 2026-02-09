@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { Button } from '@/components/ui/button'
@@ -8,11 +8,14 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ArrowLeft, Save, Loader2, Mail, User as UserIcon, Lock } from 'lucide-vue-next'
+import { ArrowLeft, Save, Loader2, Mail, User as UserIcon, Lock, Link as LinkIcon } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { authService } from '@/services/auth.service'
 import { HttpError } from '@/services/http'
 import profilePicture from '@/assets/pp.jpg'
+import LinkPlayerDialog from '@/components/LinkPlayerDialog.vue'
+import LinkedPlayer from '@/components/LinkedPlayer.vue'
+import { linkService, type PlayerLink } from '@/services/link.service'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -20,6 +23,11 @@ const authStore = useAuthStore()
 const isLoading = ref(false)
 const name = ref(authStore.user?.name || '')
 const email = ref(authStore.user?.email || '')
+
+// Link management
+const showLinkDialog = ref(false)
+const playerLink = ref<PlayerLink | null>(null)
+const loadingLink = ref(false)
 
 const userInitials = computed(() => {
   const user = authStore.user
@@ -72,6 +80,43 @@ const handleUpdate = async () => {
     isLoading.value = false
   }
 }
+
+// Link management functions
+const fetchLink = async () => {
+  loadingLink.value = true
+  try {
+    const link = await linkService.getLink()
+    playerLink.value = link
+    if (link) {
+      authStore.setLinkedPlayerTag(link.player_tag)
+    }
+  } catch (error) {
+    console.error('Error fetching link:', error)
+  } finally {
+    loadingLink.value = false
+  }
+}
+
+const handleLinked = (tag: string) => {
+  toast.success('Compte lié avec succès !')
+  fetchLink()
+}
+
+const handleUnlinked = () => {
+  toast.success('Compte dissocié avec succès')
+  playerLink.value = null
+  authStore.setLinkedPlayerTag(null)
+}
+
+const handleViewProfile = (playerTag: string) => {
+  router.push('/')
+  // The home view will handle the search based on the tag
+  // We could also pass it via route params if needed
+}
+
+onMounted(() => {
+  fetchLink()
+})
 </script>
 
 <template>
@@ -186,6 +231,46 @@ const handleUpdate = async () => {
                 </div>
               </div>
             </div>
+
+            <Separator />
+
+            <!-- Clash Royale Link Section -->
+            <div>
+              <h3 class="text-lg font-bold text-slate-700 mb-4">Compte Clash Royale</h3>
+              <div v-if="loadingLink" class="flex items-center justify-center p-8">
+                <Loader2 class="w-6 h-6 animate-spin text-blue-600" />
+              </div>
+              <LinkedPlayer
+                v-else-if="playerLink"
+                :link="playerLink"
+                @unlinked="handleUnlinked"
+                @view-profile="handleViewProfile"
+              />
+              <Card v-else class="border-dashed border-2 border-slate-300 bg-slate-50/30">
+                <CardContent class="pt-6">
+                  <div class="text-center space-y-4">
+                    <div class="flex justify-center">
+                      <div class="p-4 bg-blue-100 rounded-full">
+                        <LinkIcon class="w-8 h-8 text-blue-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <p class="font-semibold text-slate-700 mb-1">Aucun compte lié</p>
+                      <p class="text-sm text-slate-500">
+                        Liez votre compte Clash Royale pour un accès rapide à votre profil
+                      </p>
+                    </div>
+                    <Button
+                      @click="showLinkDialog = true"
+                      class="h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                    >
+                      <LinkIcon class="w-4 h-4 mr-2" />
+                      Lier mon compte
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           <!-- Action Buttons -->
@@ -209,6 +294,9 @@ const handleUpdate = async () => {
           </div>
         </CardContent>
       </Card>
+
+      <!-- Link Dialog -->
+      <LinkPlayerDialog :show="showLinkDialog" @close="showLinkDialog = false" @linked="handleLinked" />
 
       <!-- Additional Cards (Optional) -->
       <div class="mt-6 grid gap-4 md:grid-cols-2">

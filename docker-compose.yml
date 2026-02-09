@@ -6,7 +6,7 @@ services:
       dockerfile: public-api/Dockerfile
     ports:
       - '3001:3001'
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
   user-service:
     platform: linux/amd64
@@ -21,11 +21,11 @@ services:
     volumes:
       - ./data/user-service:/data/user-service
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3002/health']
+      test: [ 'CMD', 'wget', '--spider', '-q', 'http://localhost:3002/health' ]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
   item-service:
     platform: linux/amd64
@@ -40,11 +40,11 @@ services:
     volumes:
       - ./data/item-service:/data/item-service
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3003/health']
+      test: [ 'CMD', 'wget', '--spider', '-q', 'http://localhost:3003/health' ]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
   clash-data-service:
     platform: linux/amd64
@@ -55,11 +55,11 @@ services:
     ports:
       - '3004:3004'
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3004/health']
+      test: [ 'CMD', 'wget', '--spider', '-q', 'http://localhost:3004/health' ]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
   link-service:
     platform: linux/amd64
@@ -71,16 +71,17 @@ services:
       - '3005:3005'
     environment:
       - LINK_DB_FILE=/data/link-service/database.sqlite
+      - CLASH_DATA_SERVICE_URL=http://clash-data-service:3004
     volumes:
       - ./data/link-service:/data/link-service
     depends_on:
       - clash-data-service
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3005/health']
+      test: [ 'CMD', 'wget', '--spider', '-q', 'http://localhost:3005/health' ]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
   meta-tracker-service:
     platform: linux/amd64
@@ -96,11 +97,11 @@ services:
     volumes:
       - ./data/meta-tracker-service:/data/meta-tracker-service
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3006/health']
+      test: [ 'CMD', 'wget', '--spider', '-q', 'http://localhost:3006/health' ]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
   api-gateway:
     env_file: .env
@@ -116,7 +117,7 @@ services:
       - clash-data-service
       - link-service
       - meta-tracker-service
-    networks: [microservices-net]
+    networks: [ microservices-net ]
     environment:
       - USER_SERVICE_URL=http://user-service:3002
       - ITEM_SERVICE_URL=http://item-service:3003
@@ -133,7 +134,7 @@ services:
       - '8080:80'
     depends_on:
       - api-gateway
-    networks: [microservices-net]
+    networks: [ microservices-net ]
 
 networks:
   microservices-net:
