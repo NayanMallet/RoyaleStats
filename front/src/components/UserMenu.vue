@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import profilePicture from '@/assets/pp.jpg'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -47,7 +48,7 @@ const goToProfile = () => {
         class="relative h-12 w-12 rounded-full hover:ring-2 hover:ring-blue-500/20 transition-all"
       >
         <Avatar class="h-12 w-12 border-2 border-white shadow-lg">
-          <AvatarImage src="" alt="Profile" />
+          <AvatarImage :src="profilePicture" alt="Profile" />
           <AvatarFallback
             class="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-sm"
           >

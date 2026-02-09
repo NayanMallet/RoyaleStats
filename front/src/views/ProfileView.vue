@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ArrowLeft, Save, Loader2, Mail, User as UserIcon, Lock } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { authService } from '@/services/auth.service'
 import { HttpError } from '@/services/http'
+import profilePicture from '@/assets/pp.jpg'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -105,6 +106,7 @@ const handleUpdate = async () => {
           <div class="flex items-center gap-6">
             <!-- Avatar -->
             <Avatar class="h-24 w-24 border-4 border-white shadow-xl">
+              <AvatarImage :src="profilePicture" alt="Profile" />
               <AvatarFallback
                 class="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-2xl"
               >
