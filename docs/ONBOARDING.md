@@ -33,6 +33,7 @@ Ce parcours mène un nouvel arrivant de `git clone` à sa première pull request
 - [ ] [README.md](../README.md) : vue d'ensemble.
 - [ ] [ARCHITECTURE.md](ARCHITECTURE.md) : services, routes, données, limites connues.
 - [ ] [PERSONAS.md](PERSONAS.md) : pour qui on développe, et la contrainte d'écran 800 × 600.
+- [ ] [STORYMAP.md](STORYMAP.md) : le parcours utilisateur et ce qui est livré dans chaque tranche.
 - [ ] [GUIDELINES.md](GUIDELINES.md) : conventions de code, design system, Definition of Done.
 - [ ] [CONTRIBUTING.md](../.github/CONTRIBUTING.md) : branches, commits, pull requests.
 

@@ -31,6 +31,7 @@ docker compose up --build
 | Connaître les conventions de code                 | [docs/GUIDELINES.md](docs/GUIDELINES.md)                                                            |
 | Contribuer (branches, commits, pull requests)     | [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)                                                  |
 | Savoir pour qui on développe                      | [docs/PERSONAS.md](docs/PERSONAS.md)                                                                |
+| Voir le découpage du backlog en releases          | [docs/STORYMAP.md](docs/STORYMAP.md)                                                                |
 | Travailler sur le front                           | [front/README.md](front/README.md)                                                                  |
 | Consulter l'API                                   | Swagger : <http://localhost:3000/docs> · spécification brute : <http://localhost:3000/openapi.json> |
 | Suivre le backlog                                 | [Tableau Jira, projet `RST`](https://pablopjl64.atlassian.net/browse/RST)                           |
