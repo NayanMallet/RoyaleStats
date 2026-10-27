@@ -49,14 +49,14 @@ flowchart LR
 
 La Gateway retire son préfixe avant de transmettre la requête. La référence à jour reste le Swagger : <http://localhost:3000/docs>.
 
-| Préfixe Gateway             | Service cible            | Routes principales                                                                                                                                   |
-| --------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api/users`                | user-service `/users`    | `POST /register`, `POST /login`, `GET\|PUT\|DELETE /me`, `GET /`                                                                                     |
-| `/api/link`                 | link-service `/link`     | `POST /`, `GET /tag/:tag`, `GET\|PATCH\|DELETE /:userId`                                                                                             |
-| `/api/clash`                | clash-data-service `/`   | `GET /players/:tag`, `GET /players/:tag/battles`, `GET /cards`, `GET /clans/:tag`, `GET /leaderboards`, `GET /locations/global/pathoflegend/players` |
-| `/api/meta`                 | meta-tracker-service `/` | `GET /snapshot`, `POST /analyze/deck`, `GET /recommend/:playerTag`, `POST /ingest/battles`                                                           |
-| `/api/royaleapi`            | royaleapi.com            | Relais des classements publics                                                                                                                       |
-| `/api/items`, `/api/public` | item-service, public-api | Héritage du TP                                                                                                                                       |
+| Préfixe Gateway             | Service cible            | Routes principales                                                                                                                                                           |
+| --------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/users`                | user-service `/users`    | `POST /register`, `POST /login`, `GET\|PUT\|DELETE /me`, `GET /`                                                                                                             |
+| `/api/link`                 | link-service `/link`     | `POST /`, `GET /tag/:tag`, `GET\|PATCH\|DELETE /:userId`                                                                                                                     |
+| `/api/clash`                | clash-data-service `/`   | `GET /players/:tag`, `GET /players/:tag/battles`, `GET /cards`, `GET /clans/:tag`, `GET /leaderboards`, `GET /leaderboard/:id`, `GET /locations/global/pathoflegend/players` |
+| `/api/meta`                 | meta-tracker-service `/` | `GET /snapshot`, `POST /analyze/deck`, `GET /recommend/:playerTag`, `POST /ingest/battles`                                                                                   |
+| `/api/royaleapi`            | royaleapi.com            | Relais des classements publics                                                                                                                                               |
+| `/api/items`, `/api/public` | item-service, public-api | Héritage du TP                                                                                                                                                               |
 
 ## Données
 
