@@ -6,7 +6,7 @@ FROM base AS builder
 WORKDIR /app
 
 # Install build dependencies for native modules
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 py3-setuptools make g++
 
 # Copy workspace files
 COPY pnpm-workspace.yaml package.json ./
