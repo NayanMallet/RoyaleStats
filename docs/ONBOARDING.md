@@ -76,11 +76,11 @@ Recherchez un joueur sur le front, puis retrouvez chaque étape dans le code :
 
 ## Qui contacter
 
-| Sujet                                           | Interlocuteur     |
-| ----------------------------------------------- | ----------------- |
-| Architecture, revue de code, blocage technique  | Tech lead         |
-| Front, design system                            | Développeur front |
-| API, services, base de données                  | Développeur back  |
-| Priorités, tickets Jira, critères d'acceptation | Chef de projet    |
+| Sujet                                       | Interlocuteur                              |
+| ------------------------------------------- | ------------------------------------------ |
+| Front, design system, composants            | Développeurs front                         |
+| API, services, base de données              | Développeur back                           |
+| Docker, architecture, revue de code         | Toute l'équipe, sur le canal de discussion |
+| Contenu d'un ticket, critères d'acceptation | Auteur du ticket dans Jira                 |
 
 Les noms correspondant à chaque rôle sont dans la section [Équipe du README](../README.md#équipe).
