@@ -22,6 +22,7 @@ RST-
 - [ ] Les critères d'acceptation du ticket sont vérifiés
 - [ ] Les tests sont ajoutés ou mis à jour, et passent
 - [ ] `pnpm lint`, `pnpm --filter front lint` et `pnpm --filter front type-check` passent
+- [ ] `pnpm test` passe, et `pnpm --filter front test:e2e` pour un changement d'interface
 - [ ] `docker compose up --build` démarre sans erreur
 - [ ] La documentation est à jour (README, `docs/`, Swagger, `.env.example`) si nécessaire
 - [ ] Aucun secret ni fichier `.env` n'est commité

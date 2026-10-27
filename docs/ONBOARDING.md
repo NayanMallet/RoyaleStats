@@ -22,6 +22,7 @@ Ce parcours mène un nouvel arrivant de `git clone` à sa première pull request
 
 - [ ] Créer **sa propre** clé API Clash Royale, liée à son IP : [INSTALL.md §1](INSTALL.md#1-créer-sa-clé-api-clash-royale).
 - [ ] Suivre [INSTALL.md](INSTALL.md) jusqu'à la section « Vérifier l'installation » incluse.
+- [ ] Lancer `pnpm test` (tests unitaires) puis `pnpm --filter front test:e2e` (tests de bout en bout, stack Docker démarrée).
 - [ ] Ouvrir <http://localhost:8080>, rechercher son propre tag (ou un joueur du classement) et un clan.
 - [ ] Ouvrir le Swagger sur <http://localhost:3000/docs> et exécuter `GET /api/clash/cards` avec « Try it out ».
 

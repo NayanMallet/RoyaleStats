@@ -16,21 +16,26 @@ Les règles d'architecture (le front ne parle qu'à la Gateway, seul `clash-data
 
 ## Style et qualité du code
 
-Avant de commiter, à la racine :
+Le style est fixé par Prettier : guillemets simples, 100 caractères par ligne, indentation de 2 espaces ; point-virgule à la racine et dans les services (`.prettierrc`), sans point-virgule dans le front (`front/.prettierrc.json`).
+
+### Vérifications automatiques à chaque commit
+
+`pnpm install` installe deux hooks Git (Husky) :
+
+- **pre-commit** : `lint-staged` lance ESLint (`--fix`) et Prettier sur les fichiers indexés uniquement. Une erreur ESLint bloque le commit.
+- **commit-msg** : `scripts/check-commit-msg.cjs` refuse un message qui ne respecte pas le format `<emoji> <type>(<portée>): <sujet>` de [CONTRIBUTING.md](../.github/CONTRIBUTING.md#nommer-les-commits).
+
+### Commandes
 
 ```bash
-pnpm format   # Prettier sur tout le dépôt
-pnpm lint     # ESLint
+pnpm lint                       # ESLint sur le back (services, gateway, shared)
+pnpm lint:fix                   # idem, avec corrections automatiques
+pnpm --filter front lint        # ESLint sur le front (corrige automatiquement)
+pnpm --filter front type-check  # vérification des types du front
+pnpm format                     # Prettier sur tout le dépôt
 ```
 
-Et pour le front :
-
-```bash
-pnpm --filter front lint
-pnpm --filter front type-check
-```
-
-Le style est fixé par `.prettierrc` : guillemets simples, point-virgule, virgules finales, 100 caractères par ligne, indentation de 2 espaces.
+Règles ESLint communes au front et au back : une variable ou un import inutilisé est une **erreur** (préfixez par `_` un paramètre imposé mais inutilisé, comme `_next` dans un middleware d'erreur Express) ; `any` est un **avertissement** : à éviter dans le nouveau code, à corriger quand vous touchez un fichier.
 
 Ne mélangez pas reformatage et changement fonctionnel : un reformatage va dans un commit `style` à part.
 
@@ -107,7 +112,36 @@ Pour le nouveau code, gardez le SQL dans `database.ts` ou `services/`, pas dans 
 
 ## Tests
 
-Le projet n'a pas encore de tests automatisés. La mise en place de **Vitest** (tests unitaires, front et back) et de **Playwright** (tests de bout en bout, dont un projet en 800 × 600) est en cours. En attendant, vérifiez vos changements à la main et décrivez vos vérifications dans la PR.
+| Type            | Outil                           | Emplacement                                           | Commande                       |
+| --------------- | ------------------------------- | ----------------------------------------------------- | ------------------------------ |
+| Unitaires front | Vitest + Vue Test Utils (jsdom) | `front/src/**/__tests__/*.spec.ts`                    | `pnpm --filter front test`     |
+| Unitaires back  | Vitest                          | `<service>/src/**/*.test.ts`, à côté du fichier testé | `pnpm --filter <service> test` |
+| Bout en bout    | Playwright                      | `front/e2e/*.spec.ts`                                 | `pnpm --filter front test:e2e` |
+| Fumée Docker    | Bash + curl                     | `scripts/test-docker.sh`                              | `scripts/test-docker.sh`       |
+
+`pnpm test` à la racine lance tous les tests unitaires. Exemples à suivre : `front/src/services/__tests__/http.spec.ts` (service avec `fetch` simulé), `front/src/components/__tests__/Button.spec.ts` (composant), `clash-data-service/src/cache.test.ts` (horloge simulée), `api-gateway/src/middleware/errorHandler.test.ts` (middleware Express).
+
+### Règles
+
+- Chaque correction de bug s'accompagne d'un test qui échouait avant la correction.
+- Un test vérifie un comportement observable (ce que renvoie la fonction, ce qu'affiche le composant), pas un détail d'implémentation.
+- Aucun test unitaire n'appelle le réseau : simulez `fetch` (`vi.stubGlobal`) ou le client HTTP.
+- Nommez les tests par le comportement attendu : `returns null once the TTL has expired`, `affiche le titre et le champ de recherche`.
+- Pour un service Express à tester avec `supertest`, séparez la création de l'app (`app.ts`, exportée) de son démarrage (`server.ts`, `app.listen`).
+
+### Tests de bout en bout
+
+Les tests Playwright tournent contre la stack Docker (<http://localhost:8080>), dans deux configurations : `chromium` (écran de bureau) et `crt-800x600` (persona Gérard). Le helper `expectNoHorizontalScroll` de `front/e2e/helpers.ts` vérifie l'absence de défilement horizontal.
+
+```bash
+pnpm --filter front exec playwright install chromium   # une seule fois
+docker compose up -d
+pnpm --filter front test:e2e
+pnpm --filter front test:e2e --project=crt-800x600     # uniquement en 800 × 600
+pnpm --filter front exec playwright show-report        # rapport HTML après un échec
+```
+
+Pour viser le serveur de développement : `E2E_BASE_URL=http://localhost:5173 pnpm --filter front test:e2e`.
 
 ## Definition of Ready
 
@@ -124,7 +158,7 @@ Un ticket passe en « À valider » quand :
 
 - tous les critères d'acceptation sont vérifiés ;
 - les tests correspondants sont écrits et passent ;
-- `pnpm lint`, `pnpm --filter front lint` et `pnpm --filter front type-check` passent ;
+- `pnpm lint`, `pnpm --filter front lint`, `pnpm --filter front type-check` et `pnpm test` passent ;
 - la documentation concernée est à jour (README, `docs/`, Swagger, `.env.example`) ;
 - la PR est relue et fusionnée dans `develop` ;
 - une preuve (capture, requêtes, résultats de test) est jointe au ticket Jira.

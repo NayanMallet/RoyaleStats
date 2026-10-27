@@ -137,7 +137,7 @@ L'emoji peut être saisi directement ou sous sa forme gitmoji (`:sparkles:`, `:b
 
 - Remplissez le modèle proposé à l'ouverture de la PR (`.github/pull_request_template.md`) : ticket Jira, ce qui change, comment tester.
 - Ajoutez une capture d'écran pour toute modification d'interface, dont une à 800 × 600.
-- Vérifiez que `pnpm format`, `pnpm lint` et `docker compose up --build` passent sans erreur.
+- Vérifiez que `pnpm lint`, `pnpm --filter front lint`, `pnpm test` et `docker compose up --build` passent sans erreur. Les hooks Git vérifient déjà le lint et le format des messages à chaque commit.
 - Respectez la [Definition of Done](../docs/GUIDELINES.md#definition-of-done).
 - Mettez à jour la documentation concernée : `README.md`, `.env.example`, spécification OpenAPI de la gateway.
 - Faites relire la PR par un autre membre de l'équipe avant de la fusionner.
