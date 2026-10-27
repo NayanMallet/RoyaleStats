@@ -45,10 +45,8 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
-.dockerignore
 
-# Husky
-.husky/
-/user-service/database.sqlite
-/item-service/database.sqlite
+# Local databases (generated at runtime, never committed)
 data/
+*.sqlite
+*.sqlite-journal
