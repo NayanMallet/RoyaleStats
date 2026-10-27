@@ -160,5 +160,5 @@ Un ticket passe en « À valider » quand :
 - les tests correspondants sont écrits et passent ;
 - `pnpm lint`, `pnpm --filter front lint`, `pnpm --filter front type-check` et `pnpm test` passent ;
 - la documentation concernée est à jour (README, `docs/`, Swagger, `.env.example`) ;
-- la PR est relue et fusionnée dans `develop` ;
+- la CI est verte, la PR est relue et fusionnée dans `develop` ;
 - une preuve (capture, requêtes, résultats de test) est jointe au ticket Jira.

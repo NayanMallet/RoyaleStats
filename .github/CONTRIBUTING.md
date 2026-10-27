@@ -143,6 +143,19 @@ L'emoji peut être saisi directement ou sous sa forme gitmoji (`:sparkles:`, `:b
 - Faites relire la PR par un autre membre de l'équipe avant de la fusionner.
 - Fusionnez avec un commit de merge, sans squash, puis supprimez la branche.
 
+## Intégration continue
+
+Chaque pull request vers `develop` ou `main`, et chaque push sur ces branches, lance le workflow `.github/workflows/ci.yml` :
+
+| Job                                 | Contenu                                                                                                                      |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Lint, types, unit tests & build** | ESLint (back et front), type-check du front, tests unitaires Vitest, build TypeScript des services et build du front         |
+| **Docker stack & E2E**              | Construction et démarrage de la stack, tests de fumée (`scripts/test-docker.sh`), tests Playwright en bureau et en 800 × 600 |
+
+Les deux jobs doivent être verts pour fusionner : ils sont déclarés comme _status checks_ obligatoires dans le ruleset `protect-main-develop`. En cas d'échec, les logs Docker et le rapport Playwright sont disponibles dans l'onglet _Actions_ de la PR.
+
+La CI ne dispose pas de clé API Clash Royale (la clé est liée à une IP) : le test qui appelle l'API officielle est ignoré (`SKIP_CLASH_API=1`).
+
 ## Publier une version
 
 1. Ouvrez une PR de `develop` vers `main` quand `develop` est stable.
