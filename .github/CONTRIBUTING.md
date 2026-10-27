@@ -1,9 +1,10 @@
 # Contribuer à RoyaleStats
 
-Ce guide décrit la stratégie de branches, le nommage des commits et le parcours d'une contribution. Deux autres documents le complètent :
+Ce guide décrit la stratégie de branches, le nommage des commits et le parcours d'une contribution. D'autres documents le complètent :
 
+- [ONBOARDING.md](../docs/ONBOARDING.md) : parcours d'un nouvel arrivant
 - [INSTALL.md](../docs/INSTALL.md) : installer et lancer le projet
-- [GUIDELINE.md](../docs/GUIDELINE.md) : organisation du dépôt, style de code, tests
+- [GUIDELINES.md](../docs/GUIDELINES.md) : conventions de code, design system, Definition of Done
 
 ## Stratégie de branches
 
@@ -40,23 +41,25 @@ gitGraph
 
 ### Branches permanentes
 
-| Branche   | Rôle                                                              | Qui y pousse             |
-| --------- | ----------------------------------------------------------------- | ------------------------ |
-| `main`    | Version stable, celle qu'on présente. Chaque fusion est taguée.   | Personne : PR uniquement |
-| `develop` | Intégration du travail en cours. Doit toujours démarrer et builder. | Personne : PR uniquement |
+| Branche   | Rôle                                                                                             | Qui y pousse             |
+| --------- | ------------------------------------------------------------------------------------------------ | ------------------------ |
+| `main`    | Version stable, celle qu'on présente. Chaque fusion est taguée.                                  | Personne : PR uniquement |
+| `develop` | Intégration du travail en cours. Doit toujours démarrer et builder. Branche par défaut du dépôt. | Personne : PR uniquement |
+
+Ces deux branches sont protégées par une règle GitHub (_ruleset_ `protect-main-develop`) : suppression et force-push interdits, pull request avec une approbation obligatoire. Un administrateur peut contourner l'approbation lorsqu'il est seul sur le projet ; le contournement reste visible dans la PR.
 
 ### Branches de travail
 
 Elles sont courtes : une branche par fonctionnalité ou correction, supprimée une fois fusionnée.
 
-| Préfixe     | Usage                                        | Part de   | Fusionne dans        |
-| ----------- | -------------------------------------------- | --------- | -------------------- |
-| `feature/`  | Nouvelle fonctionnalité                      | `develop` | `develop`            |
-| `fix/`      | Correction d'un bug présent sur `develop`    | `develop` | `develop`            |
-| `chore/`    | Outillage, configuration, documentation      | `develop` | `develop`            |
-| `hotfix/`   | Correction urgente d'un bug présent sur `main` | `main`    | `main` puis `develop` |
+| Préfixe    | Usage                                          | Part de   | Fusionne dans         |
+| ---------- | ---------------------------------------------- | --------- | --------------------- |
+| `feature/` | Nouvelle fonctionnalité                        | `develop` | `develop`             |
+| `fix/`     | Correction d'un bug présent sur `develop`      | `develop` | `develop`             |
+| `chore/`   | Outillage, configuration, documentation        | `develop` | `develop`             |
+| `hotfix/`  | Correction urgente d'un bug présent sur `main` | `main`    | `main` puis `develop` |
 
-Le nom suit le format `<préfixe>/<sujet-court>`, en minuscules et avec des tirets : `feature/meta-tracker`, `fix/clan-badges`, `chore/setup-prisma`.
+Le nom suit le format `<préfixe>/<clé-jira>-<sujet-court>`, en minuscules et avec des tirets : `feature/RST-42-page-404`, `fix/RST-57-clan-badges`. La clé Jira peut être omise pour un ticket d'outillage sans Story (`chore/onboarding-docs`).
 
 Il n'y a pas de branche par équipe ou par couche (`front`, `back`) : une branche partagée longtemps accumule les conflits et les commits de merge. Le travail front passe par des branches `feature/` comme le reste.
 
@@ -106,7 +109,7 @@ Exemples tirés de l'historique :
   - sans majuscule au début,
   - sans point à la fin.
 - **Description** : détaille les motivations derrière le changement. Mêmes règles que pour le sujet.
-- **Footer** : signale les changements importants (_breaking changes_) et référence les issues / PR fermées par le commit, voir [fermer des issues avec un commit](https://help.github.com/en/github/managing-your-work-on-github/closing-issues-using-keywords).
+- **Footer** : signale les changements importants (_breaking changes_), référence le ticket Jira (`Refs: RST-42`) et les issues / PR fermées par le commit, voir [fermer des issues avec un commit](https://help.github.com/en/github/managing-your-work-on-github/closing-issues-using-keywords).
 
 L'emoji peut être saisi directement ou sous sa forme gitmoji (`:sparkles:`, `:bug:`, …), mais le `type` reste obligatoire : un emoji seul ne suffit pas.
 
@@ -132,8 +135,10 @@ L'emoji peut être saisi directement ou sous sa forme gitmoji (`:sparkles:`, `:b
 
 ## Pull requests
 
-- Décrivez ce qui change, pourquoi, et comment le tester. Ajoutez une capture d'écran pour toute modification d'interface.
-- Vérifiez que `pnpm format`, `pnpm lint` et `docker-compose up --build` passent sans erreur.
+- Remplissez le modèle proposé à l'ouverture de la PR (`.github/pull_request_template.md`) : ticket Jira, ce qui change, comment tester.
+- Ajoutez une capture d'écran pour toute modification d'interface, dont une à 800 × 600.
+- Vérifiez que `pnpm format`, `pnpm lint` et `docker compose up --build` passent sans erreur.
+- Respectez la [Definition of Done](../docs/GUIDELINES.md#definition-of-done).
 - Mettez à jour la documentation concernée : `README.md`, `.env.example`, spécification OpenAPI de la gateway.
 - Faites relire la PR par un autre membre de l'équipe avant de la fusionner.
 - Fusionnez avec un commit de merge, sans squash, puis supprimez la branche.
