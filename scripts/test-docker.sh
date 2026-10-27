@@ -4,12 +4,15 @@
 #
 # Usage: scripts/test-docker.sh [--down]
 #   --down   stop the stack at the end (useful in CI)
+# Environment:
+#   SKIP_CLASH_API=1   skip the check that calls the official Clash Royale API
+#                      (CI runners have no IP-bound API key)
 #
 # Exit code: 0 if every check passes, 1 otherwise.
 
 set -uo pipefail
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 STOP_AT_END=false
 [[ "${1:-}" == "--down" ]] && STOP_AT_END=true
@@ -92,7 +95,11 @@ check "me with token" 200 GET "$GATEWAY/api/users/me" "" "$TOKEN"
 check "me without token" 401 GET "$GATEWAY/api/users/me"
 check "delete smoke account" 204 DELETE "$GATEWAY/api/users/me" "" "$TOKEN"
 
-check "clash cards (requires a valid CLASH_ROYALE_API_KEY)" 200 GET "$GATEWAY/api/clash/cards"
+if [[ "${SKIP_CLASH_API:-0}" == "1" ]]; then
+  echo "  - clash cards skipped (SKIP_CLASH_API=1)"
+else
+  check "clash cards (requires a valid CLASH_ROYALE_API_KEY)" 200 GET "$GATEWAY/api/clash/cards"
+fi
 check "meta snapshot" 200 GET "$GATEWAY/api/meta/snapshot"
 check "swagger spec" 200 GET "$GATEWAY/openapi.json"
 
