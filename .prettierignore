@@ -1,2 +1,5 @@
 node_modules
 dist
+# Generated files: formatted by their own tools
+pnpm-lock.yaml
+storybook-static
