@@ -119,6 +119,32 @@ Chaque service crée ses tables au démarrage (`CREATE TABLE IF NOT EXISTS`). Le
 | Liste des cartes    | 24 h   |
 | Clans, classements  | 10 min |
 
+## Orchestration (Docker Compose)
+
+Chaque service expose `/health` et possède un healthcheck. Un service ne démarre que lorsque ceux dont il dépend sont `healthy` (`depends_on` avec `condition: service_healthy`) :
+
+```mermaid
+flowchart LR
+  CD[clash-data-service] --> LS[link-service]
+  CD --> MT[meta-tracker-service]
+  US[user-service] --> G[api-gateway]
+  IS[item-service] --> G
+  PA[public-api] --> G
+  CD --> G
+  LS --> G
+  MT --> G
+  G --> F[front]
+```
+
+| Réglage     | Valeur                                                               | Rôle                                             |
+| ----------- | -------------------------------------------------------------------- | ------------------------------------------------ |
+| Healthcheck | toutes les 10 s, 5 essais, 15 s de démarrage                         | Détecter un service qui ne répond plus           |
+| `restart`   | `unless-stopped`                                                     | Redémarrer automatiquement un service qui plante |
+| Limites     | 0,5 CPU et 256 Mo par service Node, 0,25 CPU et 128 Mo pour le front | Empêcher un service de monopoliser la machine    |
+| Logs        | `json-file`, 3 fichiers de 10 Mo maximum                             | Éviter de remplir le disque                      |
+
+Les réglages communs sont définis une seule fois dans `docker-compose.yml` (ancres YAML `x-node-service` et `x-healthcheck`).
+
 ## Implémenté et prévu
 
 | Sujet               | État actuel                                              | Prévu                                                                          |

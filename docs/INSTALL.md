@@ -45,6 +45,7 @@ pnpm --filter front exec playwright install chromium
 ```bash
 docker compose up --build          # toute la stack, logs au premier plan
 docker compose up -d --build       # idem, en arrière-plan
+docker compose up -d --build --wait  # idem, et attend que tous les services soient healthy
 docker compose logs -f user-service    # suivre les logs d'un service
 docker compose up -d --build link-service   # reconstruire un seul service après modification
 docker compose down                # tout arrêter
@@ -75,7 +76,7 @@ Le script attend que chaque service réponde, puis passe par la Gateway comme le
 
 Pour une vérification à la main :
 
-- `docker compose ps --format "table {{.Service}}\t{{.Status}}"` : `user-service`, `item-service`, `clash-data-service`, `link-service` et `meta-tracker-service` doivent être `(healthy)` ; `api-gateway`, `front` et `public-api`, sans healthcheck, doivent être `Up`.
+- `docker compose ps --format "table {{.Service}}\t{{.Status}}"` : les 8 services doivent être `(healthy)` (comptez environ 30 secondes après le démarrage).
 - Sur <http://localhost:8080>, la recherche d'un tag de joueur (le vôtre, visible dans le jeu sous votre pseudo, ou un joueur du classement) doit afficher un profil.
 
 ## 5. Développer le front avec rechargement à chaud
@@ -97,6 +98,7 @@ Le serveur Vite relaie tous les appels `/api/*` vers l'API Gateway (`http://loca
 | `Cannot find module 'shared'`                                                                                       | Paquet `shared` non compilé                                           | `pnpm --filter shared build`                                                    |
 | `port is already allocated`                                                                                         | Un autre processus utilise le port                                    | `lsof -i :3000` puis arrêter le processus, ou `docker compose down`             |
 | Un service reste `unhealthy` ou redémarre en boucle                                                                 | Erreur au démarrage                                                   | `docker compose logs <service> --tail=50`                                       |
+| `dependency failed to start: container … is unhealthy`                                                              | Un service dont dépend un autre ne passe pas `healthy`                | `docker compose logs <service> --tail=50` sur le service cité                   |
 | Erreur `better-sqlite3` / `NODE_MODULE_VERSION` en local                                                            | Module natif compilé pour une autre version de Node                   | `nvm use` puis `pnpm rebuild better-sqlite3`                                    |
 | Repartir d'une base vide                                                                                            | —                                                                     | `docker compose down`, supprimer `data/<service>/database.sqlite`, relancer     |
 | Une modification n'apparaît pas dans Docker                                                                         | Image non reconstruite                                                | `docker compose up -d --build <service>`                                        |

@@ -5,7 +5,7 @@ La storymap organise le backlog selon le parcours de l'utilisateur. On la lit en
 - **De gauche à droite**, les **activités** : ce que l'utilisateur fait dans RoyaleStats, dans l'ordre où il le découvre.
 - **De haut en bas**, les **tranches de livraison** : chaque tranche est un produit utilisable de bout en bout, plus riche que la précédente.
 
-Chaque Story porte le label Jira de sa tranche (`release-mvp`, `release-r2`, `release-r3`) et, quand un persona l'a fait naître, le label du persona ([PERSONAS.md](PERSONAS.md)).
+Chaque Story est rattachée dans Jira à la release de sa tranche (`MVP`, `R2 — Fiabilisation`, `R3 — Engagement`, onglet _Releases_ du projet) et porte le label correspondant (`release-mvp`, `release-r2`, `release-r3`). Quand un persona l'a fait naître, elle porte aussi le label de ce persona ([PERSONAS.md](PERSONAS.md)).
 
 | Persona                               | Repère |
 | ------------------------------------- | ------ |
@@ -48,9 +48,9 @@ Objectif : transformer la consultation en coaching, avec l'analyse de deck (la k
 ## Retrouver une tranche dans Jira
 
 ```jql
-project = RST AND labels = release-mvp ORDER BY priority DESC
-project = RST AND labels = release-r2 ORDER BY priority DESC
-project = RST AND labels = release-r3 ORDER BY priority DESC
+project = RST AND fixVersion = "MVP" ORDER BY priority DESC
+project = RST AND fixVersion = "R2 — Fiabilisation" ORDER BY priority DESC
+project = RST AND fixVersion = "R3 — Engagement" ORDER BY priority DESC
 project = RST AND labels in (persona-mobile, persona-800x600, persona-gamification) ORDER BY key
 ```
 
@@ -58,6 +58,6 @@ Les Stories transverses d'Error Management sont regroupées dans l'Epic [RST-32]
 
 ## Faire vivre la storymap
 
-- Une nouvelle Story se place sous une activité et dans une tranche : ajoutez-la au tableau et posez le label `release-*` correspondant dans Jira.
-- Une Story qui change de tranche change de label et de ligne, dans la même PR que la mise à jour de ce fichier.
+- Une nouvelle Story se place sous une activité et dans une tranche : ajoutez-la au tableau, rattachez-la à la release correspondante dans Jira et posez le label `release-*`.
+- Une Story qui change de tranche change de release, de label et de ligne, dans la même PR que la mise à jour de ce fichier.
 - Si une activité reste vide dans le MVP, c'est un choix assumé : il doit pouvoir se justifier par les personas.

@@ -1,16 +1,43 @@
+# Orchestration de la stack RoyaleStats.
+# Ordre de démarrage : services métier → api-gateway → front, chaque étape attend que
+# les services dont elle dépend soient "healthy" (healthcheck sur /health).
+
+x-node-service: &node-service
+  env_file: .env
+  restart: unless-stopped
+  networks: [microservices-net]
+  deploy:
+    resources:
+      limits:
+        cpus: '0.50'
+        memory: 256M
+  logging:
+    driver: json-file
+    options:
+      max-size: '10m'
+      max-file: '3'
+
+x-healthcheck: &healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 15s
+
 services:
   public-api:
-    env_file: .env
+    <<: *node-service
     build:
       context: .
       dockerfile: public-api/Dockerfile
     ports:
       - '3001:3001'
-    networks: [ microservices-net ]
+    healthcheck:
+      <<: *healthcheck
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3001/health']
 
   user-service:
+    <<: *node-service
     platform: linux/amd64
-    env_file: .env
     build:
       context: .
       dockerfile: user-service/Dockerfile
@@ -21,15 +48,12 @@ services:
     volumes:
       - ./data/user-service:/data/user-service
     healthcheck:
-      test: [ 'CMD', 'wget', '--spider', '-q', 'http://localhost:3002/health' ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks: [ microservices-net ]
+      <<: *healthcheck
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3002/health']
 
   item-service:
+    <<: *node-service
     platform: linux/amd64
-    env_file: .env
     build:
       context: .
       dockerfile: item-service/Dockerfile
@@ -40,30 +64,24 @@ services:
     volumes:
       - ./data/item-service:/data/item-service
     healthcheck:
-      test: [ 'CMD', 'wget', '--spider', '-q', 'http://localhost:3003/health' ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks: [ microservices-net ]
+      <<: *healthcheck
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3003/health']
 
   clash-data-service:
+    <<: *node-service
     platform: linux/amd64
-    env_file: .env
     build:
       context: .
       dockerfile: clash-data-service/Dockerfile
     ports:
       - '3004:3004'
     healthcheck:
-      test: [ 'CMD', 'wget', '--spider', '-q', 'http://localhost:3004/health' ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks: [ microservices-net ]
+      <<: *healthcheck
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3004/health']
 
   link-service:
+    <<: *node-service
     platform: linux/amd64
-    env_file: .env
     build:
       context: .
       dockerfile: link-service/Dockerfile
@@ -75,17 +93,15 @@ services:
     volumes:
       - ./data/link-service:/data/link-service
     depends_on:
-      - clash-data-service
+      clash-data-service:
+        condition: service_healthy
     healthcheck:
-      test: [ 'CMD', 'wget', '--spider', '-q', 'http://localhost:3005/health' ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks: [ microservices-net ]
+      <<: *healthcheck
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3005/health']
 
   meta-tracker-service:
+    <<: *node-service
     platform: linux/amd64
-    env_file: .env
     build:
       context: .
       dockerfile: meta-tracker-service/Dockerfile
@@ -96,28 +112,20 @@ services:
       - CLASH_DATA_SERVICE_URL=http://clash-data-service:3004
     volumes:
       - ./data/meta-tracker-service:/data/meta-tracker-service
+    depends_on:
+      clash-data-service:
+        condition: service_healthy
     healthcheck:
-      test: [ 'CMD', 'wget', '--spider', '-q', 'http://localhost:3006/health' ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks: [ microservices-net ]
+      <<: *healthcheck
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3006/health']
 
   api-gateway:
-    env_file: .env
+    <<: *node-service
     build:
       context: .
       dockerfile: api-gateway/Dockerfile
     ports:
       - '3000:3000'
-    depends_on:
-      - public-api
-      - user-service
-      - item-service
-      - clash-data-service
-      - link-service
-      - meta-tracker-service
-    networks: [ microservices-net ]
     environment:
       - USER_SERVICE_URL=http://user-service:3002
       - ITEM_SERVICE_URL=http://item-service:3003
@@ -125,6 +133,22 @@ services:
       - LINK_SERVICE_URL=http://link-service:3005
       - META_TRACKER_SERVICE_URL=http://meta-tracker-service:3006
       - PUBLIC_API_URL=http://public-api:3001
+    depends_on:
+      public-api:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      item-service:
+        condition: service_healthy
+      clash-data-service:
+        condition: service_healthy
+      link-service:
+        condition: service_healthy
+      meta-tracker-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3000/health']
 
   front:
     build:
@@ -132,9 +156,24 @@ services:
       dockerfile: front/Dockerfile
     ports:
       - '8080:80'
+    restart: unless-stopped
+    networks: [microservices-net]
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     depends_on:
-      - api-gateway
-    networks: [ microservices-net ]
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1/']
 
 networks:
   microservices-net:
