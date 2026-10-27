@@ -65,7 +65,7 @@ const fetchPlayerName = async () => {
   loadingName.value = true
   try {
     const tag = props.link.player_tag.replace('#', '')
-    const API_GATEWAY_BASE_URL = import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:3000'
+    const API_GATEWAY_BASE_URL = import.meta.env.VITE_API_GATEWAY_URL ?? ''
     const response = await fetch(`${API_GATEWAY_BASE_URL}/api/clash/players/%23${tag}`)
     if (response.ok) {
       const data = await response.json()

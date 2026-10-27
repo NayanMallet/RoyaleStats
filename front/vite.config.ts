@@ -1,47 +1,24 @@
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
-import path from 'node:path'
+// In development, every /api/* call goes through the API Gateway, exactly like nginx does in Docker.
+// The Gateway must be running (docker compose up -d). Override its URL with API_GATEWAY_DEV_URL if needed.
+const API_GATEWAY_DEV_URL = process.env.API_GATEWAY_DEV_URL ?? 'http://localhost:3000'
 
-export default defineConfig(({ mode }) => {
-  // Load env from parent directory (root of the repo)
-  const env = loadEnv(mode, path.resolve(process.cwd(), '..'), 'VITE_')
-  const CR_KEY = env.VITE_CLASHROYALE_API_KEY
-
-  return {
-    plugins: [vue(), tailwindcss(), vueDevTools()],
-    resolve: {
-      alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
-    },
-    server: {
-      proxy: {
-        '/api/clash': {
-          target: 'https://api.clashroyale.com/v1',
-          changeOrigin: true,
-          rewrite: (p) => p.replace(/^\/api\/clash/, ''),
-          configure: (proxy) => {
-            proxy.on('proxyReq', (proxyReq) => {
-              proxyReq.setHeader('Authorization', `Bearer ${CR_KEY}`)
-            })
-          },
-        },
-        '/api/royaleapi': {
-          target: 'https://royaleapi.com',
-          changeOrigin: true,
-          rewrite: (p) => p.replace(/^\/api\/royaleapi/, ''),
-          headers: {
-            'User-Agent':
-              'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            Referer: 'https://royaleapi.com/',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Cache-Control': 'no-cache',
-            Pragma: 'no-cache',
-          },
-        },
+export default defineConfig({
+  plugins: [vue(), tailwindcss(), vueDevTools()],
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: API_GATEWAY_DEV_URL,
+        changeOrigin: true,
       },
     },
-  }
+  },
 })

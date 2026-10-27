@@ -61,13 +61,16 @@ Les bases SQLite sont créées au premier démarrage dans `data/<service>/databa
 ## 4. Vérifier l'installation
 
 ```bash
-docker compose ps --format "table {{.Service}}\t{{.Status}}"
+scripts/test-docker.sh          # construit, démarre, attend les 8 services, puis teste l'API
+scripts/test-docker.sh --down   # idem, puis arrête la stack
 ```
 
-- `user-service`, `item-service`, `clash-data-service`, `link-service` et `meta-tracker-service` doivent être **`(healthy)`** (comptez environ 20 secondes après le démarrage).
-- `api-gateway`, `front` et `public-api` n'ont pas de healthcheck : ils doivent être `Up`.
-- `curl -s localhost:3000/health` doit renvoyer `{"status":"ok",...}`.
-- Sur <http://localhost:8080>, la recherche d'un tag de joueur (le vôtre, visible dans le jeu sous votre pseudo, ou un joueur du classement) doit afficher un profil : cela valide toute la chaîne jusqu'à l'API Clash Royale.
+Le script attend que chaque service réponde, puis passe par la Gateway comme le front : inscription, doublon d'email (409), connexion, mauvais mot de passe (401), `GET /me` avec et sans token, suppression du compte de test, cartes Clash Royale (valide la clé API), snapshot du Meta Tracker et spécification Swagger. Il termine par `All checks passed.` et un code de sortie 0, ou liste les vérifications en échec avec un code 1.
+
+Pour une vérification à la main :
+
+- `docker compose ps --format "table {{.Service}}\t{{.Status}}"` : `user-service`, `item-service`, `clash-data-service`, `link-service` et `meta-tracker-service` doivent être `(healthy)` ; `api-gateway`, `front` et `public-api`, sans healthcheck, doivent être `Up`.
+- Sur <http://localhost:8080>, la recherche d'un tag de joueur (le vôtre, visible dans le jeu sous votre pseudo, ou un joueur du classement) doit afficher un profil.
 
 ## 5. Développer le front avec rechargement à chaud
 
@@ -77,16 +80,17 @@ Laissez la stack Docker tourner pour l'API, puis :
 pnpm --filter front dev       # http://localhost:5173
 ```
 
-Le détail est dans [front/README.md](../front/README.md).
+Le serveur Vite relaie tous les appels `/api/*` vers l'API Gateway (`http://localhost:3000`), exactement comme nginx dans Docker : le front se comporte de la même façon dans les deux modes. Aucune clé API n'est nécessaire côté front. Le détail est dans [front/README.md](../front/README.md).
 
 ## Dépannage
 
-| Symptôme                                                  | Cause probable                                           | Solution                                                                        |
-| --------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Recherche de joueur en erreur, logs `Clash API error 403` | Clé absente, invalide ou IP différente de celle déclarée | Vérifier `CLASH_ROYALE_API_KEY` dans `.env` ; recréer la clé avec l'IP actuelle |
-| `Cannot find module 'shared'`                             | Paquet `shared` non compilé                              | `pnpm --filter shared build`                                                    |
-| `port is already allocated`                               | Un autre processus utilise le port                       | `lsof -i :3000` puis arrêter le processus, ou `docker compose down`             |
-| Un service reste `unhealthy` ou redémarre en boucle       | Erreur au démarrage                                      | `docker compose logs <service> --tail=50`                                       |
-| Erreur `better-sqlite3` / `NODE_MODULE_VERSION` en local  | Module natif compilé pour une autre version de Node      | `nvm use` puis `pnpm rebuild better-sqlite3`                                    |
-| Repartir d'une base vide                                  | —                                                        | `docker compose down`, supprimer `data/<service>/database.sqlite`, relancer     |
-| Une modification n'apparaît pas dans Docker               | Image non reconstruite                                   | `docker compose up -d --build <service>`                                        |
+| Symptôme                                                                                                            | Cause probable                                                        | Solution                                                                        |
+| ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Recherche de joueur en erreur, logs `Clash API error 403`, ou `scripts/test-docker.sh` en échec sur « clash cards » | Clé absente, invalide ou IP différente de celle déclarée              | Vérifier `CLASH_ROYALE_API_KEY` dans `.env` ; recréer la clé avec l'IP actuelle |
+| `env: node: No such file or directory` au lancement d'un script pnpm                                                | Node n'est pas dans le PATH du terminal (nvm sans version par défaut) | `nvm install` puis `nvm alias default 22`, et rouvrir le terminal               |
+| `Cannot find module 'shared'`                                                                                       | Paquet `shared` non compilé                                           | `pnpm --filter shared build`                                                    |
+| `port is already allocated`                                                                                         | Un autre processus utilise le port                                    | `lsof -i :3000` puis arrêter le processus, ou `docker compose down`             |
+| Un service reste `unhealthy` ou redémarre en boucle                                                                 | Erreur au démarrage                                                   | `docker compose logs <service> --tail=50`                                       |
+| Erreur `better-sqlite3` / `NODE_MODULE_VERSION` en local                                                            | Module natif compilé pour une autre version de Node                   | `nvm use` puis `pnpm rebuild better-sqlite3`                                    |
+| Repartir d'une base vide                                                                                            | —                                                                     | `docker compose down`, supprimer `data/<service>/database.sqlite`, relancer     |
+| Une modification n'apparaît pas dans Docker                                                                         | Image non reconstruite                                                | `docker compose up -d --build <service>`                                        |

@@ -124,24 +124,60 @@ export async function getClan(req: Request, res: Response) {
   }
 }
 
-export async function getLeaderboard(req: Request, res: Response) {
+export async function getLeaderboards(req: Request, res: Response) {
   try {
-    const cacheKey = 'leaderboard:global';
+    const cacheKey = 'leaderboards:list';
 
     const cached = cache.get(cacheKey);
     if (cached) {
       return res.json(cached);
     }
 
-    const data = await fetchFromClashAPI('/locations/global/rankings/players');
+    // List of season leaderboards (id + name)
+    const data = await fetchFromClashAPI('/leaderboards');
+    cache.set(cacheKey, data, 60 * 60 * 1000); // 1 hour
+
+    res.json(data);
+  } catch (error) {
+    logger.error('Error fetching leaderboards list:', error);
+    res.status(500).json({
+      error: 'ClashAPIError',
+      message: (error as Error).message || 'Failed to fetch leaderboards',
+    });
+  }
+}
+
+export async function getLeaderboardRankings(req: Request, res: Response) {
+  try {
+    const { leaderboardId } = req.params;
+    if (typeof leaderboardId !== 'string' || !/^\d+$/.test(leaderboardId)) {
+      return res.status(400).json({
+        error: 'ValidationError',
+        message: 'leaderboardId must be a numeric id',
+      });
+    }
+
+    const requestedLimit = Number(req.query.limit ?? 20);
+    const limit = Number.isInteger(requestedLimit)
+      ? Math.min(Math.max(requestedLimit, 1), 200)
+      : 20;
+    const cacheKey = `leaderboard:${leaderboardId}:${limit}`;
+
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const data = await fetchFromClashAPI(`/leaderboard/${leaderboardId}?limit=${limit}`);
     cache.set(cacheKey, data, 10 * 60 * 1000); // 10 minutes
 
     res.json(data);
   } catch (error) {
-    logger.error('Error fetching leaderboard:', error);
-    res.status(500).json({
+    logger.error('Error fetching leaderboard rankings:', error);
+    const statusCode = (error as any).message?.includes('not found') ? 404 : 500;
+    res.status(statusCode).json({
       error: 'ClashAPIError',
-      message: (error as Error).message || 'Failed to fetch leaderboard',
+      message: (error as Error).message || 'Failed to fetch leaderboard rankings',
     });
   }
 }

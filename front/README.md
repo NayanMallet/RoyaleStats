@@ -27,9 +27,12 @@ Dans Docker, le front est compilé puis servi par nginx sur <http://localhost:80
 
 ## Configuration
 
-| Variable               | Rôle                                                  | Valeur par défaut       |
-| ---------------------- | ----------------------------------------------------- | ----------------------- |
-| `VITE_API_GATEWAY_URL` | URL de l'API Gateway utilisée par `src/config/api.ts` | `http://localhost:3000` |
+Le front appelle l'API avec des chemins relatifs (`/api/...`). En développement, le proxy de Vite (`vite.config.ts`) les relaie vers l'API Gateway ; dans Docker, c'est nginx (`nginx.conf`). Les deux modes se comportent donc de la même façon.
+
+| Variable               | Rôle                                                                                                                          | Valeur par défaut       |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `API_GATEWAY_DEV_URL`  | Cible du proxy Vite en développement (lue au lancement de `pnpm dev`)                                                         | `http://localhost:3000` |
+| `VITE_API_GATEWAY_URL` | Préfixe des URLs d'API dans `src/config/api.ts`, uniquement si le front et la Gateway sont servis sur des domaines différents | vide (chemins relatifs) |
 
 Les variables préfixées par `VITE_` sont intégrées au code envoyé au navigateur : n'y mettez jamais de secret.
 
