@@ -33,7 +33,7 @@ docker compose up --build
 | Savoir pour qui on développe                      | [docs/PERSONAS.md](docs/PERSONAS.md)                                                                |
 | Travailler sur le front                           | [front/README.md](front/README.md)                                                                  |
 | Consulter l'API                                   | Swagger : <http://localhost:3000/docs> · spécification brute : <http://localhost:3000/openapi.json> |
-| Suivre le backlog                                 | Jira, projet `RST` : _lien à ajouter_                                                               |
+| Suivre le backlog                                 | [Tableau Jira, projet `RST`](https://pablopjl64.atlassian.net/browse/RST)                           |
 
 ## Architecture en bref
 
@@ -74,8 +74,8 @@ Le détail (routes, données, flux, limites connues) est dans [docs/ARCHITECTURE
 
 ## Équipe
 
-| Membre        | GitHub                                         | Rôle          |
-| ------------- | ---------------------------------------------- | ------------- |
-| _à compléter_ | [@NayanMallet](https://github.com/NayanMallet) | _à compléter_ |
-| _à compléter_ | [@ManaxBIP](https://github.com/ManaxBIP)       | _à compléter_ |
-| _à compléter_ | [@NotGrafik](https://github.com/NotGrafik)     | _à compléter_ |
+| Membre           | GitHub                                         | Rôle              |
+| ---------------- | ---------------------------------------------- | ----------------- |
+| Nayan Mallet     | [@NayanMallet](https://github.com/NayanMallet) | Développeur back  |
+| Dalyll Reguia    | [@ManaxBIP](https://github.com/ManaxBIP)       | Développeur front |
+| Pablo Jean Louis | [@NotGrafik](https://github.com/NotGrafik)     | Développeur front |
