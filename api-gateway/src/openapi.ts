@@ -178,12 +178,54 @@ const openapiSpec = {
           '404': { description: 'Not found' },
         },
       },
+      patch: {
+        tags: ['Links'],
+        summary: 'Update social links (Twitter, Twitch) of a linked player',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  twitter: { type: 'string', example: 'https://twitter.com/player' },
+                  twitch: { type: 'string', example: 'https://twitch.tv/player' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Link updated' },
+          '404': { description: 'Not found' },
+        },
+      },
       delete: {
         tags: ['Links'],
         summary: 'Delete link by user id',
         responses: {
           '204': { description: 'Deleted' },
           '404': { description: 'Not found' },
+        },
+      },
+    },
+    '/api/link/tag/{tag}': {
+      parameters: [
+        {
+          in: 'path',
+          name: 'tag',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Player tag, with or without leading # (URL-encoded)',
+        },
+      ],
+      get: {
+        tags: ['Links'],
+        summary: 'Get the RoyaleStats link of a Clash Royale player tag',
+        responses: {
+          '200': { description: 'Link info' },
+          '400': { description: 'Invalid tag' },
+          '404': { description: 'No link for this tag' },
         },
       },
     },
@@ -229,8 +271,28 @@ const openapiSpec = {
     '/api/clash/leaderboards': {
       get: {
         tags: ['Clash'],
-        summary: 'Get leaderboards',
-        responses: { '200': { description: 'Leaderboards' } },
+        summary: 'List season leaderboards (id and name)',
+        responses: { '200': { description: 'Leaderboards list' } },
+      },
+    },
+    '/api/clash/leaderboard/{leaderboardId}': {
+      parameters: [
+        { in: 'path', name: 'leaderboardId', required: true, schema: { type: 'integer' } },
+        {
+          in: 'query',
+          name: 'limit',
+          required: false,
+          schema: { type: 'integer', minimum: 1, maximum: 200, default: 20 },
+        },
+      ],
+      get: {
+        tags: ['Clash'],
+        summary: 'Get player rankings of a season leaderboard',
+        responses: {
+          '200': { description: 'Leaderboard rankings' },
+          '400': { description: 'Invalid leaderboard id' },
+          '404': { description: 'Leaderboard not found' },
+        },
       },
     },
     '/api/clash/locations/global/pathoflegend/players': {
