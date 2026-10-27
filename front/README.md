@@ -1,48 +1,61 @@
-# front
+# RoyaleStats — Front
 
-This template should help get you started developing with Vue 3 in Vite.
+Interface web de RoyaleStats : Vue 3, Vite, TypeScript, Pinia, Vue Router, Tailwind CSS 4 et shadcn-vue.
 
-## Recommended IDE Setup
+Les conventions (structure, design system, appels HTTP, responsive 800 × 600) sont dans [docs/GUIDELINES.md](../docs/GUIDELINES.md#front).
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Lancer le front
 
-## Recommended Browser Setup
+En développement, avec rechargement à chaud. La stack Docker doit tourner pour fournir l'API (`docker compose up -d` à la racine) :
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-pnpm install
+```bash
+pnpm --filter front dev          # http://localhost:5173
 ```
 
-### Compile and Hot-Reload for Development
+Dans Docker, le front est compilé puis servi par nginx sur <http://localhost:8080> ; nginx relaie `/api/*` vers l'API Gateway (`nginx.conf`).
 
-```sh
-pnpm dev
+## Scripts
+
+| Commande (depuis la racine)      | Rôle                                                         |
+| -------------------------------- | ------------------------------------------------------------ |
+| `pnpm --filter front dev`        | Serveur de développement Vite                                |
+| `pnpm --filter front build`      | Vérification des types puis build de production dans `dist/` |
+| `pnpm --filter front preview`    | Sert le build de production en local                         |
+| `pnpm --filter front type-check` | Vérification des types avec `vue-tsc`                        |
+| `pnpm --filter front lint`       | ESLint avec correction automatique                           |
+| `pnpm --filter front format`     | Prettier sur `src/`                                          |
+
+## Configuration
+
+| Variable               | Rôle                                                  | Valeur par défaut       |
+| ---------------------- | ----------------------------------------------------- | ----------------------- |
+| `VITE_API_GATEWAY_URL` | URL de l'API Gateway utilisée par `src/config/api.ts` | `http://localhost:3000` |
+
+Les variables préfixées par `VITE_` sont intégrées au code envoyé au navigateur : n'y mettez jamais de secret.
+
+## Structure
+
+```
+src/
+├── views/           # une vue par route
+├── components/      # composants métier
+│   └── ui/          # design system shadcn-vue (généré, ne pas modifier à la main)
+├── services/        # appels HTTP (http.ts + un fichier par domaine)
+├── stores/          # stores Pinia
+├── config/api.ts    # URLs de l'API
+├── router/          # routes et garde d'authentification
+├── types/           # types TypeScript
+└── style.css        # Tailwind et variables du thème
 ```
 
-### Type-Check, Compile and Minify for Production
+## Ajouter un composant du design system
 
-```sh
-pnpm build
+```bash
+cd front
+pnpm dlx shadcn-vue@latest add <composant>    # par exemple : dialog, table, skeleton
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## Outils conseillés
 
-```sh
-pnpm lint
-```
+- VS Code avec l'extension [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar), ou WebStorm.
+- Extension navigateur [Vue.js devtools](https://devtools.vuejs.org/).
