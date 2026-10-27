@@ -28,7 +28,7 @@ app.get('/health', (req, res) => {
 app.use('/users', userRoutes);
 
 // Error handling
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   logger.error('Unhandled error:', err);
   res.status(500).json({
     error: 'InternalServerError',

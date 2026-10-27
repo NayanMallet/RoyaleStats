@@ -6,7 +6,7 @@ import { logger } from 'shared';
 // Helper to normalize player tags
 function normalizeTag(tag: string): string {
   // Remove # if present
-  let normalized = tag.startsWith('#') ? tag.slice(1) : tag;
+  const normalized = tag.startsWith('#') ? tag.slice(1) : tag;
   // Uppercase
   return normalized.toUpperCase();
 }

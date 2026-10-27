@@ -1,6 +1,5 @@
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { logger } from 'shared';
-import { Request } from 'express';
 
 // Service URLs (use env vars for local dev or defaults for Docker)
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://user-service:3002';
@@ -37,7 +36,7 @@ function createServiceProxy(
           });
         }
       },
-      proxyRes: (proxyRes: any, req: any, res: any) => {
+      proxyRes: (proxyRes: any, req: any, _res: any) => {
         logger.info(`[PROXY RESPONSE] ${req.method} ${req.url} - ${proxyRes.statusCode}`);
       },
       error: (err: any, req: any, res: any) => {
