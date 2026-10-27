@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, types, unit tests & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter shared build
+
+      - name: Lint back end
+        run: pnpm lint
+
+      - name: Lint front
+        run: pnpm --filter front exec eslint .
+
+      - name: Type-check front
+        run: pnpm --filter front type-check
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build services
+        run: pnpm -r --filter '!front' build
+
+      - name: Build front
+        run: pnpm --filter front build-only
+
+  e2e:
+    name: Docker stack & E2E
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare environment file
+        run: |
+          cp .env.example .env
+          sed -i "s/^JWT_SECRET=.*/JWT_SECRET=ci-$(openssl rand -hex 16)/" .env
+
+      - name: Build, start the stack and run smoke tests
+        run: scripts/test-docker.sh
+        env:
+          SKIP_CLASH_API: '1'
+
+      - name: Install Playwright browser
+        run: pnpm --filter front exec playwright install --with-deps chromium
+
+      - name: E2E tests (desktop and 800x600)
+        run: pnpm --filter front test:e2e
+
+      - name: Docker logs
+        if: failure()
+        run: docker compose logs --tail=200
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: front/playwright-report
+          retention-days: 7
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down
