@@ -26,17 +26,19 @@ Dans Docker, le front est compilé puis servi par nginx sur <http://localhost:80
 
 ## Scripts
 
-| Commande (depuis la racine)      | Rôle                                                         |
-| -------------------------------- | ------------------------------------------------------------ |
-| `pnpm --filter front dev`        | Serveur de développement Vite                                |
-| `pnpm --filter front build`      | Vérification des types puis build de production dans `dist/` |
-| `pnpm --filter front preview`    | Sert le build de production en local                         |
-| `pnpm --filter front type-check` | Vérification des types avec `vue-tsc`                        |
-| `pnpm --filter front lint`       | ESLint avec correction automatique                           |
-| `pnpm --filter front test`       | Tests unitaires (Vitest)                                     |
-| `pnpm --filter front test:watch` | Tests unitaires en mode surveillance                         |
-| `pnpm --filter front test:e2e`   | Tests de bout en bout (Playwright), stack Docker démarrée    |
-| `pnpm --filter front format`     | Prettier sur `src/`                                          |
+| Commande (depuis la racine)           | Rôle                                                         |
+| ------------------------------------- | ------------------------------------------------------------ |
+| `pnpm --filter front dev`             | Serveur de développement Vite                                |
+| `pnpm --filter front build`           | Vérification des types puis build de production dans `dist/` |
+| `pnpm --filter front preview`         | Sert le build de production en local                         |
+| `pnpm --filter front type-check`      | Vérification des types avec `vue-tsc`                        |
+| `pnpm --filter front lint`            | ESLint avec correction automatique                           |
+| `pnpm --filter front test`            | Tests unitaires (Vitest)                                     |
+| `pnpm --filter front test:watch`      | Tests unitaires en mode surveillance                         |
+| `pnpm --filter front test:e2e`        | Tests de bout en bout (Playwright), stack Docker démarrée    |
+| `pnpm --filter front storybook`       | Storybook (design system) sur <http://localhost:6006>        |
+| `pnpm --filter front build-storybook` | Build statique de Storybook dans `storybook-static/`         |
+| `pnpm --filter front format`          | Prettier sur `src/`                                          |
 
 ## Configuration
 
@@ -61,8 +63,19 @@ src/
 ├── config/api.ts    # URLs de l'API
 ├── router/          # routes et garde d'authentification
 ├── types/           # types TypeScript
+├── stories/         # Storybook : atoms, molecules, organisms, templates, pages + mocks
 └── style.css        # Tailwind et variables du thème
 ```
+
+## Storybook
+
+Storybook documente les composants selon l'Atomic Design (Atoms → Molecules → Organisms → Templates → Pages). Il ne dépend pas de la stack Docker : les appels API sont simulés story par story.
+
+```bash
+pnpm --filter front storybook    # http://localhost:6006
+```
+
+La page **Introduction** de Storybook explique l'organisation et le mock d'API ; les règles d'écriture sont dans [docs/GUIDELINES.md](../docs/GUIDELINES.md#storybook-et-atomic-design).
 
 ## Ajouter un composant du design system
 
