@@ -17,14 +17,11 @@ import { toast } from 'vue-sonner'
 import {
   Trophy,
   Swords,
-  Crown,
   Shield,
   Target,
-  Search,
   Loader2,
   Users,
   Zap,
-  TrendingUp,
   X,
   Sparkles,
   Star,
@@ -35,8 +32,6 @@ import {
 import { linkService, type PlayerLink } from '@/services/link.service'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
 const emit = defineEmits(['player-loaded'])
 
@@ -62,7 +57,7 @@ const openClanModal = async (tag: string): Promise<ClanDetails | null> => {
     initBadges()
     selectedClan.value = await fetchClan(tag)
     return selectedClan.value
-  } catch (e) {
+  } catch {
     toast.error('Impossible de charger les infos du clan')
     showClanModal.value = false
     return null
@@ -240,7 +235,7 @@ const filteredBadges = computed(() => {
 // Use favorite card or first deck card for Hero Background
 const heroImage = computed(() => {
   if (!player.value) return null
-  // @ts-ignore
+  // @ts-expect-error currentFavouriteCard is missing from the PlayerProfile type
   const fav = player.value.currentFavouriteCard
   if (fav) return fav.iconUrls.heroMedium || fav.iconUrls.medium
 

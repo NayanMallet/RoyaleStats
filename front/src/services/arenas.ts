@@ -55,7 +55,7 @@ export function getArenaDetails(id: number | string, apiName?: string): ArenaDet
   // console.log('[getArenaDetails] Input:', { id, apiName });
 
   // 1. Resolve Name (French)
-  let numericId = typeof id === 'number' ? id : parseInt(id as string, 10)
+  const numericId = typeof id === 'number' ? id : parseInt(id as string, 10)
 
   // Prioritize Name lookup because API IDs for Leagues can be confusing/reused (e.g. 54000016 for Dragon Spa)
   let arenaInfo

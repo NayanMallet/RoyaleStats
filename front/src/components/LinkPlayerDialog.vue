@@ -7,7 +7,7 @@ import { X, Link as LinkIcon, Loader2, AlertCircle } from 'lucide-vue-next'
 import { linkService } from '@/services/link.service'
 import { useAuthStore } from '@/stores/auth'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
 }>()
 

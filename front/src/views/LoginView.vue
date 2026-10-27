@@ -47,7 +47,7 @@ const handleLogin = async () => {
       if (link) {
         authStore.setLinkedPlayerTag(link.player_tag)
       }
-    } catch (e) {
+    } catch {
       // Ignore error - user might not have a linked player
     }
 

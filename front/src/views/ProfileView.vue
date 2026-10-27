@@ -97,7 +97,7 @@ const fetchLink = async () => {
   }
 }
 
-const handleLinked = (tag: string) => {
+const handleLinked = () => {
   toast.success('Compte lié avec succès !')
   fetchLink()
 }
@@ -106,10 +106,6 @@ const handleUnlinked = () => {
   toast.success('Compte dissocié avec succès')
   playerLink.value = null
   authStore.setLinkedPlayerTag(null)
-}
-
-const handleViewProfile = (playerTag: string) => {
-  router.push({ path: '/', query: { search: playerTag, type: 'player' } })
 }
 
 onMounted(() => {

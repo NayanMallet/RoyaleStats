@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { Button } from '@/components/ui/button'
-import { LogOut, User, Settings } from 'lucide-vue-next'
+import { LogOut, User } from 'lucide-vue-next'
 import {
   DropdownMenu,
   DropdownMenuContent,
