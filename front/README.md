@@ -23,6 +23,9 @@ Dans Docker, le front est compilé puis servi par nginx sur <http://localhost:80
 | `pnpm --filter front preview`    | Sert le build de production en local                         |
 | `pnpm --filter front type-check` | Vérification des types avec `vue-tsc`                        |
 | `pnpm --filter front lint`       | ESLint avec correction automatique                           |
+| `pnpm --filter front test`       | Tests unitaires (Vitest)                                     |
+| `pnpm --filter front test:watch` | Tests unitaires en mode surveillance                         |
+| `pnpm --filter front test:e2e`   | Tests de bout en bout (Playwright), stack Docker démarrée    |
 | `pnpm --filter front format`     | Prettier sur `src/`                                          |
 
 ## Configuration

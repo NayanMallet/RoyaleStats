@@ -217,7 +217,7 @@ const getCategoryColor = (cat: Category) => {
     >
       <!-- Category Card Generator -->
       <div
-        v-for="(cat, idx) in ['ranked', 'trophy', 'merge', '2v2']"
+        v-for="cat in ['ranked', 'trophy', 'merge', '2v2']"
         :key="cat"
         @click="activeCategory = cat as Category"
         class="group relative h-48 rounded-[2rem] overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-2 border-white/20"

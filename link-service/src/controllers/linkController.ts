@@ -9,7 +9,7 @@ const CLASH_DATA_SERVICE_URL =
 
 // Helper to normalize player tags
 function normalizeTag(tag: string): string {
-  let normalized = tag.startsWith('#') ? tag.slice(1) : tag;
+  const normalized = tag.startsWith('#') ? tag.slice(1) : tag;
   return normalized.toUpperCase();
 }
 
@@ -107,8 +107,8 @@ export async function updateLink(req: Request, res: Response) {
 
     // Update link
     // Only update fields that are provided
-    let updates = [];
-    let params = [];
+    const updates = [];
+    const params = [];
 
     if (twitter !== undefined) {
       updates.push('twitter = ?');
@@ -125,7 +125,9 @@ export async function updateLink(req: Request, res: Response) {
       db.prepare(`UPDATE player_links SET ${updates.join(', ')} WHERE user_id = ?`).run(...params);
     }
 
-    const link = db.prepare('SELECT * FROM player_links WHERE user_id = ?').get(userId) as PlayerLink;
+    const link = db
+      .prepare('SELECT * FROM player_links WHERE user_id = ?')
+      .get(userId) as PlayerLink;
 
     logger.info(`Link updated for user ${userId}`);
     res.json(link);
@@ -199,9 +201,9 @@ export async function getLinkByTag(req: Request, res: Response) {
 
     const db = getDatabase();
     // We store tags with # in database
-    const link = db.prepare('SELECT * FROM player_links WHERE player_tag = ?').get(`#${normalized}`) as
-      | PlayerLink
-      | undefined;
+    const link = db
+      .prepare('SELECT * FROM player_links WHERE player_tag = ?')
+      .get(`#${normalized}`) as PlayerLink | undefined;
 
     if (!link) {
       return res.status(404).json({

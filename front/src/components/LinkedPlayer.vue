@@ -34,8 +34,6 @@ const formatHandle = (handle: string) => {
 const handleSaveSocials = async () => {
   loading.value = true
   try {
-    const twitter = twitterHandle.value ? formatHandle(twitterHandle.value) : undefined
-    const twitch = twitchHandle.value ? formatHandle(twitchHandle.value) : undefined
     
     // If empty string, send empty string to clear it, or undefined if not changed
     // Actually we should send empty string if we want to clear it

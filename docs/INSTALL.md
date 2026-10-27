@@ -27,12 +27,18 @@ git clone https://github.com/NayanMallet/RoyaleStats.git
 cd RoyaleStats
 nvm use
 corepack enable
-pnpm install                  # installe tout le monorepo
+pnpm install                  # installe tout le monorepo et les hooks Git (Husky)
 pnpm --filter shared build    # à refaire après chaque modification de shared/
 cp .env.example .env          # puis renseigner CLASH_ROYALE_API_KEY
 ```
 
 Le fichier `.env` ne doit jamais être commité. Toute nouvelle variable doit être ajoutée à `.env.example`, avec un commentaire.
+
+Pour les tests de bout en bout, installez aussi le navigateur de Playwright (une seule fois) :
+
+```bash
+pnpm --filter front exec playwright install chromium
+```
 
 ## 3. Lancer le projet
 

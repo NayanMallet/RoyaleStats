@@ -8,7 +8,7 @@ import { errorHandler } from './middleware/errorHandler';
 import path from 'path';
 import openapiSpec from './openapi';
 // Use require to avoid potential type mismatch with Express 5 types
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const swaggerUi = require('swagger-ui-express');
 
 // Load .env from workspace root
