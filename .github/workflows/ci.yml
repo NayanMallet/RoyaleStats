@@ -53,6 +53,9 @@ jobs:
       - name: Build front
         run: pnpm --filter front build-only
 
+      - name: Build Storybook
+        run: pnpm --filter front build-storybook
+
   e2e:
     name: Docker stack & E2E
     needs: quality
