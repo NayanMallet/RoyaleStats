@@ -43,3 +43,31 @@ export const emptyMetaSnapshot: MetaSnapshot = {
   generatedAt: '2026-10-27T08:00:00.000Z',
   topCards: [],
 }
+
+/** Raw Path of Legend rankings, as returned by GET /api/clash/locations/global/pathoflegend/players. */
+export const demoPathOfLegendRankings = {
+  items: [
+    { tag: '#9LYC2R0C', name: 'Mohamed Light', rank: 1, eloRating: 3412 },
+    { tag: '#2PP8VJ9Q', name: 'Karim Benali', rank: 2, eloRating: 3388 },
+    { tag: '#80RGVCJ2', name: 'Sacha', rank: 3, eloRating: 3351 },
+    { tag: '#LQ9QP0Y8', name: 'Gérard', rank: 4, eloRating: 3297 },
+    { tag: '#Y2RJ8U0L', name: 'Morten', rank: 5, eloRating: 3260 },
+  ],
+}
+
+/** Raw RoyaleAPI level 16 rankings, as returned by GET /api/royaleapi/players/level/16?json=1. */
+export const demoTrophyRankings = {
+  data: [
+    { rank: 1, name: 'Surgical Goblin', tag: '#P0LYJC8C', trophies: 12_850 },
+    { rank: 2, name: 'Mugi', tag: '#Q8CVR2UR', trophies: 12_731 },
+    { rank: 3, name: 'Ryley', tag: '#J0L8UQ9C', trophies: 12_604 },
+  ],
+}
+
+/** Season leaderboards, as returned by GET /api/clash/leaderboards. */
+export const demoSeasonLeaderboards = {
+  items: [
+    { id: 170000005, name: 'Merge Tactics' },
+    { id: 170000006, name: '2v2 League' },
+  ],
+}
