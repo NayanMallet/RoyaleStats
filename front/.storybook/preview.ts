@@ -5,6 +5,7 @@ import { MINIMAL_VIEWPORTS } from 'storybook/viewport'
 import { Toaster } from '@/components/ui/sonner'
 import { installFetchMock, type MockRoute } from '@/stories/mocks/api'
 import { applyAuthState, type AuthState } from '@/stories/mocks/auth'
+import { applyTheme, type Theme } from '@/stories/mocks/theme'
 import '@/style.css'
 
 // Same plugins as src/main.ts. The router uses an in-memory history so that stories
@@ -24,17 +25,41 @@ setup((app) => {
 const preview: Preview = {
   tags: ['autodocs'],
 
-  // Runs before each story: auth state + API mocks declared by the story, cleaned up afterwards.
-  beforeEach: ({ parameters }) => {
+  // Light/dark switch in the toolbar, same themes as the app (.dark class on <html>).
+  globalTypes: {
+    theme: {
+      description: 'Thème de l’application',
+      toolbar: {
+        title: 'Thème',
+        icon: 'mirror',
+        items: [
+          { value: 'light', title: 'Clair', icon: 'sun' },
+          { value: 'dark', title: 'Sombre', icon: 'moon' },
+        ],
+        dynamicTitle: true,
+      },
+    },
+  },
+  initialGlobals: { theme: 'light' },
+
+  // Runs before each story: theme, auth state and API mocks declared by the story,
+  // the fetch mock being restored afterwards.
+  beforeEach: ({ globals, parameters }) => {
+    applyTheme(pinia, globals.theme as Theme | undefined)
     applyAuthState(pinia, parameters.auth as AuthState | undefined)
     return installFetchMock((parameters.mockApi as MockRoute[] | undefined) ?? [])
   },
 
-  // vue-sonner needs a <Toaster /> in the tree to display toast() calls.
   decorators: [
+    // Theme colors on the wrapper too: on Docs pages, stories render on Storybook's own background.
+    // vue-sonner needs a <Toaster /> in the tree to display toast() calls.
     () => ({
       components: { Toaster },
-      template: '<div><story /><Toaster rich-colors position="top-center" /></div>',
+      template: `
+        <div class="bg-background text-foreground">
+          <story />
+          <Toaster rich-colors position="top-center" />
+        </div>`,
     }),
   ],
 

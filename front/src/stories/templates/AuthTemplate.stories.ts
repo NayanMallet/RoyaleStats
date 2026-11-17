@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 /**
  * Gabarit des pages d'authentification (connexion, inscription).
@@ -29,12 +30,14 @@ export const Default: Story = {
       Field,
       FieldLabel,
       Input,
+      ThemeToggle,
     },
     template: `
-      <div class="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
+      <div class="relative min-h-screen w-full flex items-center justify-center bg-background p-4">
+        <ThemeToggle class="absolute right-4 top-4" />
         <Card class="w-full max-w-md">
           <CardHeader class="items-center text-center">
-            <div class="mx-auto mb-2 size-16 rounded-2xl bg-slate-200" aria-hidden="true"></div>
+            <div class="mx-auto mb-2 size-16 rounded-2xl bg-muted" aria-hidden="true"></div>
             <CardTitle>[Titre de la page]</CardTitle>
             <CardDescription>[Sous-titre explicatif]</CardDescription>
           </CardHeader>
