@@ -35,10 +35,27 @@ if (!file) {
   process.exit(2);
 }
 
-const header = fs
+const lines = fs
   .readFileSync(file, 'utf8')
   .split('\n')
-  .find((line) => line.trim() !== '' && !line.startsWith('#'));
+  .filter((line) => !line.startsWith('#'));
+const header = lines.find((line) => line.trim() !== '');
+
+// Markers that make GitHub skip the CI workflows. The same list is enforced on
+// pull requests by .github/workflows/no-skip-ci.yml.
+const SKIP_CI =
+  /\[\s*(skip\s+ci|ci\s+skip|no\s+ci|skip\s+actions|actions\s+skip)\s*\]|skip-checks\s*:\s*true/i;
+const skipLine = lines.find((line) => SKIP_CI.test(line));
+if (skipLine) {
+  console.error(`
+✖ Message de commit refusé : marqueur de saut de CI interdit.
+    ${skipLine.trim()}
+
+  La CI doit tourner sur chaque commit. Retirez [skip ci], [ci skip], [no ci],
+  [skip actions], [actions skip] ou skip-checks: true du message.
+`);
+  process.exit(1);
+}
 
 if (!header || GIT_GENERATED.test(header) || PATTERN.test(header)) {
   process.exit(0);
