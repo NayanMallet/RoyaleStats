@@ -28,6 +28,7 @@ dist/
 build/
 .out/
 .temp/
+storybook-static/
 
 # Environment variables
 .env

@@ -39,7 +39,7 @@ function shuffleArray<T>(array: T[]) {
     .map(({ value }) => value)
 }
 
-let pollingInterval: number | undefined
+let pollingInterval: ReturnType<typeof setInterval> | undefined
 
 onMounted(async () => {
   // Initial fetch

@@ -21,6 +21,7 @@ RST-
 - [ ] Les commits suivent la convention de [CONTRIBUTING.md](../.github/CONTRIBUTING.md#nommer-les-commits)
 - [ ] Les critères d'acceptation du ticket sont vérifiés
 - [ ] Les tests sont ajoutés ou mis à jour, et passent
+- [ ] Tout nouveau composant a sa story Storybook, rangée par niveau d'Atomic Design ([GUIDELINES.md](../docs/GUIDELINES.md#storybook-et-atomic-design))
 - [ ] `pnpm lint`, `pnpm --filter front lint` et `pnpm --filter front type-check` passent
 - [ ] `pnpm test` passe, et `pnpm --filter front test:e2e` pour un changement d'interface
 - [ ] `docker compose up --build` démarre sans erreur

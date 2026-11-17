@@ -35,6 +35,7 @@ docker compose up --build
 | Savoir pour qui on développe                      | [docs/PERSONAS.md](docs/PERSONAS.md)                                                                |
 | Voir le découpage du backlog en releases          | [docs/STORYMAP.md](docs/STORYMAP.md)                                                                |
 | Travailler sur le front                           | [front/README.md](front/README.md)                                                                  |
+| Parcourir le design system (Atomic Design)        | Storybook : `pnpm --filter front storybook` puis <http://localhost:6006>                            |
 | Consulter l'API                                   | Swagger : <http://localhost:3000/docs> · spécification brute : <http://localhost:3000/openapi.json> |
 | Suivre le backlog                                 | [Tableau Jira, projet `RST`](https://pablopjl64.atlassian.net/browse/RST)                           |
 
@@ -73,7 +74,7 @@ Le détail (routes, données, flux, limites connues) est dans [docs/ARCHITECTURE
 
 - **Front** : Vue 3, Vite, TypeScript, Pinia, Vue Router, Tailwind CSS 4, shadcn-vue (reka-ui), vee-validate + zod, vue-sonner
 - **Back** : Node.js 22, Express 5, TypeScript, better-sqlite3, http-proxy-middleware, swagger-ui-express
-- **Outillage** : pnpm workspaces, Docker Compose, ESLint, Prettier, Husky
+- **Outillage** : pnpm workspaces, Docker Compose, ESLint, Prettier, Husky, Vitest, Playwright, Storybook
 
 ## Équipe
 

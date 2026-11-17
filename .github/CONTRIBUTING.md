@@ -147,10 +147,10 @@ L'emoji peut être saisi directement ou sous sa forme gitmoji (`:sparkles:`, `:b
 
 Chaque pull request vers `develop` ou `main`, et chaque push sur ces branches, lance le workflow `.github/workflows/ci.yml` :
 
-| Job                                 | Contenu                                                                                                                      |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **Lint, types, unit tests & build** | ESLint (back et front), type-check du front, tests unitaires Vitest, build TypeScript des services et build du front         |
-| **Docker stack & E2E**              | Construction et démarrage de la stack, tests de fumée (`scripts/test-docker.sh`), tests Playwright en bureau et en 800 × 600 |
+| Job                                 | Contenu                                                                                                                            |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Lint, types, unit tests & build** | ESLint (back et front), type-check du front, tests unitaires Vitest, build TypeScript des services, build du front et de Storybook |
+| **Docker stack & E2E**              | Construction et démarrage de la stack, tests de fumée (`scripts/test-docker.sh`), tests Playwright en bureau et en 800 × 600       |
 
 Les deux jobs doivent être verts pour fusionner : ils sont déclarés comme _status checks_ obligatoires dans le ruleset `protect-main-develop`.
 

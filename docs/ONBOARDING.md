@@ -36,6 +36,7 @@ Ce parcours mène un nouvel arrivant de `git clone` à sa première pull request
 - [ ] [STORYMAP.md](STORYMAP.md) : le parcours utilisateur et ce qui est livré dans chaque tranche.
 - [ ] [GUIDELINES.md](GUIDELINES.md) : conventions de code, design system, Definition of Done.
 - [ ] [CONTRIBUTING.md](../.github/CONTRIBUTING.md) : branches, commits, pull requests.
+- [ ] Storybook (`pnpm --filter front storybook`, <http://localhost:6006>) : parcourez les composants de l'Atomic Design, des atomes aux pages, et testez-les dans les viewports des personas.
 
 ### Suivre une requête de bout en bout
 

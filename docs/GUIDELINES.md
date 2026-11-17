@@ -53,6 +53,7 @@ Ne mélangez pas reformatage et changement fonctionnel : un reformatage va dans 
 | `config/`        | URLs de l'API (`api.ts`)                                       | Aucune URL en dur ailleurs                  |
 | `types/`         | Types TypeScript partagés du front                             | —                                           |
 | `lib/utils.ts`   | Utilitaire `cn()` pour combiner des classes Tailwind           | —                                           |
+| `stories/`       | Stories Storybook rangées par niveau d'Atomic Design + mocks   | Voir « Storybook et Atomic Design »         |
 
 ### Composants
 
@@ -68,6 +69,28 @@ Le design system repose sur **shadcn-vue** (style `new-york`, couleur de base `n
 - **Ne pas modifier `components/ui/` à la main** : pour adapter un composant, créez un composant métier qui l'enveloppe. Cela permet de régénérer `ui/` sans perdre de travail.
 - **Couleurs** : utilisez les classes liées aux variables du thème (`bg-background`, `text-foreground`, `text-muted-foreground`, `bg-primary`, `text-destructive`, `border-border`…), pas de couleur en dur. Le code existant utilise encore des classes `slate-*` : migrez-les quand vous touchez au fichier.
 - **Icônes** : `lucide-vue-next`. **Notifications** : `toast` de `vue-sonner`. **Formulaires** : `vee-validate` + `zod` avec les composants `ui/field`.
+
+### Storybook et Atomic Design
+
+Chaque composant est documenté dans Storybook (`pnpm --filter front storybook`, <http://localhost:6006>). Les stories suivent l'**Atomic Design** et sont rangées par niveau dans `src/stories/` :
+
+| Niveau (titre de la story) | Ce qu'on y met                                                     | Composants concernés                                              |
+| -------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `Atoms/…`                  | Un composant de base, sans logique métier                          | `components/ui/` : Button, Input, Label, Avatar…                  |
+| `Molecules/…`              | Quelques atomes assemblés pour une fonction simple                 | FormField, SearchBar, InfoCard, `UserMenu.vue`, `ThemeToggle.vue` |
+| `Organisms/…`              | Un bloc autonome de l'interface, souvent branché sur l'API         | `Leaderboards.vue`, `LinkedPlayer.vue`, `MetaStats.vue`…          |
+| `Templates/…`              | Une mise en page qui place les organismes, avec du contenu factice | AuthTemplate, DashboardTemplate                                   |
+| `Pages/…`                  | Une vue réelle de `views/`, alimentée par des réponses simulées    | `LoginView.vue`, `RegisterView.vue`, `ProfileView.vue`            |
+
+Règles :
+
+- **Tout nouveau composant arrive avec sa story**, dans le dossier de son niveau (`src/stories/organisms/MonComposant.stories.ts`, titre `Organisms/MonComposant`). Reste à couvrir dans le code existant : `PlayerStats.vue` et `HomeView.vue`.
+- **Une story par état utile** : nominal, chargement, vide, erreur. Les états d'erreur sont documentés ici avant d'être testés en E2E.
+- **Aucun appel réseau réel** : la story déclare ses réponses dans `parameters.mockApi` et l'état de connexion dans `parameters.auth` (`'guest'`, `'user'` ou `'linked'`). Les appels vers un autre domaine (RoyaleAPI, GitHub…) sont interceptés aussi et se simulent avec une `RegExp` sur l'URL complète. Les données factices sont dans `src/stories/mocks/fixtures.ts`.
+- **Vérifier les deux thèmes** avec le sélecteur « Thème » de la barre d'outils (clair, sombre).
+- **Vérifier les personas** avec les viewports de la barre d'outils : « Gérard — écran 800×600 », « Gérard — surface utile 780×470 » et « Karim — mobile 393×851 ».
+- **Accessibilité** : l'onglet Accessibility (axe-core) doit être vide pour tout nouveau composant. La dette existante est suivie dans Jira.
+- Les interactions (saisie, clic, message attendu) s'écrivent dans une `play` function avec `storybook/test` ; le résultat s'affiche dans l'onglet Interactions.
 
 ### Appels HTTP et état
 
