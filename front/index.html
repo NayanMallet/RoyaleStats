@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Apply the theme before the first paint, while the Vue app is loading.
+      let theme
+      try {
+        theme = localStorage.getItem('royale_stats_theme')
+      } catch {
+        // The system preference still works when storage is unavailable.
+      }
+      document.documentElement.classList.toggle(
+        'dark',
+        theme === 'dark' ||
+          (theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches),
+      )
+    </script>
     <title>RoyaleStats</title>
   </head>
 

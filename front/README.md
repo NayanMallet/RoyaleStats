@@ -4,6 +4,16 @@ Interface web de RoyaleStats : Vue 3, Vite, TypeScript, Pinia, Vue Router, Tailw
 
 Les conventions (structure, design system, appels HTTP, responsive 800 × 600) sont dans [docs/GUIDELINES.md](../docs/GUIDELINES.md#front).
 
+## Thème clair et sombre
+
+Le bouton lune/soleil est disponible sur l'accueil, la connexion, l'inscription et le profil.
+Au premier accès, le thème suit la préférence du système et ses changements. Un choix manuel est
+conservé dans le navigateur (`royale_stats_theme`) et reste actif après navigation ou rechargement.
+La préférence se synchronise aussi entre les onglets. Supprimer cette clé rétablit le suivi du système.
+
+Le store `src/stores/theme.ts` gère le thème ; les couleurs des écrans reposent sur les variables
+de `src/style.css`. Une initialisation dans `index.html` applique le thème avant le premier affichage.
+
 ## Lancer le front
 
 En développement, avec rechargement à chaud. La stack Docker doit tourner pour fournir l'API (`docker compose up -d` à la racine) :

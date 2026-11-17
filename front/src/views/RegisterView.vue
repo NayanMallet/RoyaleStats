@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,7 +34,7 @@ const handleRegister = async () => {
     hasError = true
   }
   if (!email.value) {
-    emailError.value = 'L\'email est requis'
+    emailError.value = "L'email est requis"
     hasError = true
   }
   if (!password.value) {
@@ -81,12 +82,13 @@ const handleRegister = async () => {
 
 <template>
   <div
-    class="min-h-screen w-full flex items-center justify-center bg-slate-50 relative overflow-hidden font-sans py-12"
+    class="min-h-screen w-full flex items-center justify-center bg-background relative overflow-hidden font-sans py-12"
   >
+    <ThemeToggle class="absolute right-4 top-4 z-20" />
     <!-- Background Elements -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
       <div
-        class="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-orange-100/50 to-transparent"
+        class="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-clan-soft/50 to-transparent"
       ></div>
       <div
         class="absolute bottom-0 right-0 w-[500px] h-[500px] bg-orange-200/20 rounded-full blur-3xl"
@@ -105,12 +107,12 @@ const handleRegister = async () => {
       </div>
 
       <div
-        class="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white/50 overflow-hidden p-8 sm:p-12"
+        class="bg-card/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-surface-shadow/50 border border-card/50 overflow-hidden p-8 sm:p-12"
       >
         <!-- Header -->
         <div class="text-center mb-8">
-          <h1 class="text-3xl font-black text-slate-800 tracking-tight mb-2">Créer un compte</h1>
-          <p class="text-slate-500 font-medium">Rejoignez l'élite de RoyaleStats</p>
+          <h1 class="text-3xl font-black text-foreground tracking-tight mb-2">Créer un compte</h1>
+          <p class="text-muted-foreground font-medium">Rejoignez l'élite de RoyaleStats</p>
         </div>
 
         <!-- Form -->
@@ -118,7 +120,7 @@ const handleRegister = async () => {
           <div class="space-y-2">
             <Label
               for="username"
-              class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1"
+              class="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1"
               >Pseudo</Label
             >
             <Input
@@ -127,19 +129,21 @@ const handleRegister = async () => {
               type="text"
               placeholder="KingRoyale123"
               :class="[
-                'h-11 rounded-xl bg-slate-50 transition-all font-medium',
+                'h-11 rounded-xl bg-background transition-all font-medium',
                 usernameError
                   ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                  : 'border-slate-200 focus:ring-orange-500/20 focus:border-orange-500'
+                  : 'border-border focus:ring-orange-500/20 focus:border-orange-500',
               ]"
             />
-            <p v-if="usernameError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ usernameError }}</p>
+            <p v-if="usernameError" class="text-xs font-medium text-destructive ml-1 mt-1">
+              {{ usernameError }}
+            </p>
           </div>
 
           <div class="space-y-2">
             <Label
               for="email"
-              class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1"
+              class="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1"
               >Email</Label
             >
             <Input
@@ -148,19 +152,21 @@ const handleRegister = async () => {
               type="email"
               placeholder="exemple@email.com"
               :class="[
-                'h-11 rounded-xl bg-slate-50 transition-all font-medium',
+                'h-11 rounded-xl bg-background transition-all font-medium',
                 emailError
                   ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                  : 'border-slate-200 focus:ring-orange-500/20 focus:border-orange-500'
+                  : 'border-border focus:ring-orange-500/20 focus:border-orange-500',
               ]"
             />
-            <p v-if="emailError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ emailError }}</p>
+            <p v-if="emailError" class="text-xs font-medium text-destructive ml-1 mt-1">
+              {{ emailError }}
+            </p>
           </div>
 
           <div class="space-y-2">
             <Label
               for="password"
-              class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1"
+              class="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1"
               >Mot de passe</Label
             >
             <Input
@@ -169,19 +175,21 @@ const handleRegister = async () => {
               type="password"
               placeholder="••••••••"
               :class="[
-                'h-11 rounded-xl bg-slate-50 transition-all font-medium',
+                'h-11 rounded-xl bg-background transition-all font-medium',
                 passwordError
                   ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                  : 'border-slate-200 focus:ring-orange-500/20 focus:border-orange-500'
+                  : 'border-border focus:ring-orange-500/20 focus:border-orange-500',
               ]"
             />
-            <p v-if="passwordError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ passwordError }}</p>
+            <p v-if="passwordError" class="text-xs font-medium text-destructive ml-1 mt-1">
+              {{ passwordError }}
+            </p>
           </div>
 
           <div class="space-y-2">
             <Label
               for="confirmPassword"
-              class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1"
+              class="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1"
               >Confirmer</Label
             >
             <Input
@@ -190,13 +198,15 @@ const handleRegister = async () => {
               type="password"
               placeholder="••••••••"
               :class="[
-                'h-11 rounded-xl bg-slate-50 transition-all font-medium',
+                'h-11 rounded-xl bg-background transition-all font-medium',
                 confirmPasswordError
                   ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                  : 'border-slate-200 focus:ring-orange-500/20 focus:border-orange-500'
+                  : 'border-border focus:ring-orange-500/20 focus:border-orange-500',
               ]"
             />
-            <p v-if="confirmPasswordError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ confirmPasswordError }}</p>
+            <p v-if="confirmPasswordError" class="text-xs font-medium text-destructive ml-1 mt-1">
+              {{ confirmPasswordError }}
+            </p>
           </div>
 
           <Button
@@ -213,13 +223,10 @@ const handleRegister = async () => {
         </form>
 
         <!-- Footer -->
-        <div class="mt-8 pt-6 border-t border-slate-100 text-center">
-          <p class="text-sm text-slate-500 font-medium">
+        <div class="mt-8 pt-6 border-t border-border text-center">
+          <p class="text-sm text-muted-foreground font-medium">
             Déjà un compte ?
-            <router-link
-              to="/login"
-              class="text-orange-600 font-bold hover:text-orange-700 hover:underline"
-            >
+            <router-link to="/login" class="text-clan font-bold hover:text-clan hover:underline">
               Se connecter
             </router-link>
           </p>
@@ -231,7 +238,7 @@ const handleRegister = async () => {
         <router-link to="/">
           <Button
             variant="ghost"
-            class="text-slate-500 hover:text-slate-800 hover:bg-white/50 rounded-xl gap-2"
+            class="text-muted-foreground hover:text-foreground hover:bg-card/50 rounded-xl gap-2"
           >
             <ArrowLeft class="w-4 h-4" /> Retour à l'accueil
           </Button>

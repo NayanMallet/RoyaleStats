@@ -32,7 +32,7 @@ const players_trophy = ref<LeaderboardPlayer[]>([])
 const players_merge = ref<LeaderboardPlayer[]>([])
 const players_2v2 = ref<LeaderboardPlayer[]>([])
 
-function shuffleArray(array: any[]) {
+function shuffleArray<T>(array: T[]) {
   return array
     .map((value) => ({ value, sort: Math.random() }))
     .sort((a, b) => a.sort - b.sort)
@@ -81,9 +81,9 @@ async function fetchAllLeaderboards() {
 
     // Helper to find max ID for a given name
     const findMaxId = (name: string) => {
-      const matches = locations.filter((l: any) => l.name === name)
+      const matches = locations.filter((location) => location.name === name)
       if (!matches.length) return null
-      return Math.max(...matches.map((l: any) => l.id))
+      return Math.max(...matches.map((location) => location.id))
     }
 
     const mergeId = findMaxId('Merge Tactics')
@@ -177,13 +177,13 @@ const getCategoryColor = (cat: Category) => {
     <div class="flex items-center justify-between mb-8 px-4" v-if="activeCategory">
       <Button
         variant="ghost"
-        class="gap-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 rounded-xl"
+        class="gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl"
         @click="activeCategory = null"
       >
         <ChevronLeft class="w-5 h-5" /> Retour
       </Button>
       <h2
-        class="text-2xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-3"
+        class="text-2xl font-black text-foreground uppercase tracking-tight flex items-center gap-3"
       >
         <img
           :src="
@@ -206,8 +206,10 @@ const getCategoryColor = (cat: Category) => {
       v-if="!activeCategory"
       class="text-center space-y-2 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700"
     >
-      <h2 class="text-4xl font-black text-slate-800 tracking-tight">Classements</h2>
-      <p class="text-slate-500 font-medium text-lg">Explorez les meilleurs joueurs mondiaux</p>
+      <h2 class="text-4xl font-black text-foreground tracking-tight">Classements</h2>
+      <p class="text-muted-foreground font-medium text-lg">
+        Explorez les meilleurs joueurs mondiaux
+      </p>
     </div>
 
     <!-- CATEGORY SELECTION Grid -->
@@ -296,15 +298,15 @@ const getCategoryColor = (cat: Category) => {
     <!-- LEADERBOARD LIST View -->
     <div
       v-else
-      class="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white/50 overflow-hidden mx-4 animate-in zoom-in-95 duration-300"
+      class="bg-card/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-surface-shadow/50 border border-card/50 overflow-hidden mx-4 animate-in zoom-in-95 duration-300"
     >
       <div v-if="loading" class="flex justify-center py-32">
-        <Loader2 class="w-10 h-10 animate-spin text-blue-600" />
+        <Loader2 class="w-10 h-10 animate-spin text-info" />
       </div>
 
       <div v-else class="flex flex-col">
         <div
-          class="grid grid-cols-12 gap-4 px-6 sm:px-8 py-4 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50"
+          class="grid grid-cols-12 gap-4 px-6 sm:px-8 py-4 border-b border-border text-xs font-bold text-muted-foreground uppercase tracking-wider bg-background/50"
         >
           <div class="col-span-2 sm:col-span-1 text-center">#</div>
           <div class="col-span-8 sm:col-span-5">Joueur</div>
@@ -318,7 +320,7 @@ const getCategoryColor = (cat: Category) => {
           v-for="(player, index) in getActiveList"
           :key="player.tag"
           @click="selectPlayer(player.tag)"
-          class="grid grid-cols-12 gap-4 px-6 sm:px-8 py-4 items-center hover:bg-blue-50/50 transition-colors border-b border-slate-50 last:border-0 cursor-pointer group"
+          class="grid grid-cols-12 gap-4 px-6 sm:px-8 py-4 items-center hover:bg-info-soft/50 transition-colors border-b border-border last:border-0 cursor-pointer group"
         >
           <!-- Rank -->
           <div class="col-span-2 sm:col-span-1 flex justify-center">
@@ -327,7 +329,7 @@ const getCategoryColor = (cat: Category) => {
               :class="
                 index < 3
                   ? 'bg-yellow-400 text-yellow-900 shadow-sm'
-                  : 'text-slate-500 bg-slate-200/50'
+                  : 'text-muted-foreground bg-accent/50'
               "
             >
               {{ index + 1 }}
@@ -337,20 +339,20 @@ const getCategoryColor = (cat: Category) => {
           <!-- Player Info -->
           <div class="col-span-8 sm:col-span-5 flex items-center gap-3 min-w-0">
             <div
-              class="font-bold text-slate-700 text-base group-hover:text-blue-600 transition-colors truncate"
+              class="font-bold text-foreground text-base group-hover:text-info transition-colors truncate"
             >
               {{ player.name }}
             </div>
             <span
               v-if="index < 3"
-              class="hidden md:inline-flex px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 text-[9px] font-bold uppercase tracking-wide border border-yellow-200"
+              class="hidden md:inline-flex px-1.5 py-0.5 rounded-md bg-warning-soft text-warning text-[9px] font-bold uppercase tracking-wide border border-warning-border"
               >Top {{ index + 1 }}</span
             >
           </div>
 
           <!-- Clan Info -->
           <div
-            class="hidden sm:flex col-span-4 items-center gap-2 text-slate-500 font-medium text-sm group/clan cursor-pointer hover:bg-slate-200/60 rounded-lg py-1 px-2 -ml-2 w-fit transition-all duration-200"
+            class="hidden sm:flex col-span-4 items-center gap-2 text-muted-foreground font-medium text-sm group/clan cursor-pointer hover:bg-accent/60 rounded-lg py-1 px-2 -ml-2 w-fit transition-all duration-200"
             @click.stop="player.clan ? selectClan(player.clan.tag) : null"
           >
             <img
@@ -361,16 +363,18 @@ const getCategoryColor = (cat: Category) => {
             />
             <Shield
               v-else-if="player.clan"
-              class="w-3.5 h-3.5 text-slate-400 group-hover/clan:text-orange-500 transition-colors"
+              class="w-3.5 h-3.5 text-muted-foreground group-hover/clan:text-clan transition-colors"
             />
-            <span class="truncate group-hover/clan:text-slate-900 transition-colors">{{
+            <span class="truncate group-hover/clan:text-foreground transition-colors">{{
               player.clan?.name || '-'
             }}</span>
           </div>
 
           <!-- Score -->
           <div></div>
-          <div class="hidden sm:flex font-black text-lg text-slate-800 flex-row items-center gap-1">
+          <div
+            class="hidden sm:flex font-black text-lg text-foreground flex-row items-center gap-1"
+          >
             <img
               v-if="activeCategory === 'ranked'"
               src="https://kboosting.com/img/29327/c/champion-medals-500x500.png"

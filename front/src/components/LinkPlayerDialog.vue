@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { X, Link as LinkIcon, Loader2, AlertCircle } from 'lucide-vue-next'
 import { linkService } from '@/services/link.service'
+import { HttpError } from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
 
 defineProps<{
@@ -45,10 +46,10 @@ const handleLink = async () => {
     emit('linked', link.player_tag)
     emit('close')
     playerTag.value = ''
-  } catch (err: any) {
-    if (err.status === 404) {
+  } catch (err) {
+    if (err instanceof HttpError && err.status === 404) {
       error.value = 'Joueur introuvable dans Clash Royale'
-    } else if (err.status === 409) {
+    } else if (err instanceof HttpError && err.status === 409) {
       error.value = 'Ce tag est déjà lié à un autre compte'
     } else {
       error.value = 'Une erreur est survenue. Veuillez réessayer.'
@@ -73,18 +74,18 @@ const handleClose = () => {
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
     @click.self="handleClose"
   >
-    <Card class="w-full max-w-md bg-white shadow-2xl animate-in zoom-in-95 duration-200">
+    <Card class="w-full max-w-md bg-card shadow-2xl animate-in zoom-in-95 duration-200">
       <CardHeader class="relative">
         <button
           @click="handleClose"
           :disabled="loading"
-          class="absolute right-4 top-4 p-2 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
+          class="absolute right-4 top-4 p-2 rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
         >
-          <X class="w-4 h-4 text-slate-500" />
+          <X class="w-4 h-4 text-muted-foreground" />
         </button>
         <div class="flex items-center gap-3">
-          <div class="p-3 bg-blue-100 rounded-xl">
-            <LinkIcon class="w-6 h-6 text-blue-600" />
+          <div class="p-3 bg-info-soft rounded-xl">
+            <LinkIcon class="w-6 h-6 text-info" />
           </div>
           <div>
             <CardTitle>Lier mon compte Clash Royale</CardTitle>
@@ -95,7 +96,7 @@ const handleClose = () => {
 
       <CardContent class="space-y-4">
         <div class="space-y-2">
-          <label class="text-sm font-semibold text-slate-700">Tag du joueur</label>
+          <label class="text-sm font-semibold text-foreground">Tag du joueur</label>
           <Input
             v-model="playerTag"
             placeholder="#TAG (ex: #2PP)"
@@ -103,14 +104,17 @@ const handleClose = () => {
             class="h-12 text-base"
             @keyup.enter="handleLink"
           />
-          <p class="text-xs text-slate-500">
+          <p class="text-xs text-muted-foreground">
             Vous trouverez votre tag dans Clash Royale, dans votre profil
           </p>
         </div>
 
-        <div v-if="error" class="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-          <AlertCircle class="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-          <p class="text-sm text-red-800">{{ error }}</p>
+        <div
+          v-if="error"
+          class="p-3 bg-destructive/10 border border-destructive/25 rounded-lg flex items-start gap-2"
+        >
+          <AlertCircle class="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+          <p class="text-sm text-destructive">{{ error }}</p>
         </div>
 
         <div class="flex gap-3 pt-2">

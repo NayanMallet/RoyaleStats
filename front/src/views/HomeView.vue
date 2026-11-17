@@ -5,6 +5,7 @@ import PlayerStats from '@/components/PlayerStats.vue'
 import Leaderboards from '@/components/Leaderboards.vue'
 import HowToFindTag from '@/components/HowToFindTag.vue'
 import UserMenu from '@/components/UserMenu.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 import AppLogo from '@/statics/Logo.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -145,12 +146,12 @@ onMounted(async () => {
   >
     <!-- ... (background) -->
     <div
-      class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-50 to-transparent -z-10"
+      class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-info-soft to-transparent -z-10"
     />
 
     <!-- Global Navbar -->
     <header
-      class="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative z-50 animate-in fade-in slide-in-from-top-4 duration-700"
+      class="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 relative z-50 animate-in fade-in slide-in-from-top-4 duration-700"
     >
       <!-- Left: Logo -->
       <div class="flex-shrink-0">
@@ -163,19 +164,19 @@ onMounted(async () => {
       </div>
 
       <!-- Center: Search Bar with Integrated Switcher -->
-      <div class="flex-1 w-full md:max-w-3xl flex items-center justify-center">
+      <div class="flex-1 min-w-0 w-full lg:max-w-3xl flex items-center justify-center">
         <div
-          class="flex w-full items-center bg-white/90 backdrop-blur-md p-1.5 rounded-2xl shadow-xl shadow-blue-900/5 border border-white/20 transition-all focus-within:ring-4 focus-within:ring-blue-500/10 group"
+          class="flex w-full items-center bg-card/90 backdrop-blur-md p-1.5 rounded-2xl shadow-xl shadow-blue-900/5 border border-white/20 transition-all focus-within:ring-4 focus-within:ring-blue-500/10 group"
         >
           <!-- Switcher Integrated -->
-          <div class="flex bg-slate-100/80 p-1 rounded-xl mr-2 flex-shrink-0">
+          <div class="flex bg-muted/80 p-1 rounded-xl mr-2 flex-shrink-0">
             <button
               @click="searchType = 'player'"
               class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all"
               :class="
                 searchType === 'player'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'
+                  ? 'bg-card text-info shadow-sm'
+                  : 'text-muted-foreground hover:text-muted-foreground hover:bg-accent/50'
               "
             >
               Joueur
@@ -185,23 +186,23 @@ onMounted(async () => {
               class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all"
               :class="
                 searchType === 'clan'
-                  ? 'bg-white text-orange-600 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'
+                  ? 'bg-card text-clan shadow-sm'
+                  : 'text-muted-foreground hover:text-muted-foreground hover:bg-accent/50'
               "
             >
               Clan
             </button>
           </div>
 
-          <div class="relative w-full">
+          <div class="relative min-w-0 w-full">
             <Search
               class="absolute left-2 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors"
-              :class="searchType === 'player' ? 'text-blue-500' : 'text-orange-600'"
+              :class="searchType === 'player' ? 'text-info' : 'text-clan'"
             />
             <Input
               v-model="searchQuery"
               :placeholder="searchType === 'player' ? '#TAG Joueur' : '#TAG Clan'"
-              class="pl-10 h-12 bg-transparent border-none text-lg font-medium focus-visible:ring-0 placeholder:text-slate-300 w-full"
+              class="pl-10 h-12 bg-transparent border-none text-lg font-medium focus-visible:ring-0 placeholder:text-muted-foreground w-full"
               @keyup.enter="triggerSearch()"
               @focus="isFocused = true"
               @blur="handleBlur"
@@ -210,10 +211,10 @@ onMounted(async () => {
             <!-- History Dropdown -->
             <div
               v-if="isFocused && filteredHistory.length > 0"
-              class="absolute top-14 left-0 w-full bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200"
+              class="absolute top-14 left-0 w-full bg-card rounded-xl shadow-xl border border-border overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200"
             >
               <div
-                class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 bg-slate-50/50"
+                class="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2 bg-background/50"
               >
                 <History class="w-3 h-3" /> Récent
               </div>
@@ -221,19 +222,19 @@ onMounted(async () => {
                 v-for="item in filteredHistory"
                 :key="item.tag"
                 @click="triggerSearch(item.tag)"
-                class="px-4 py-2.5 hover:bg-slate-50 cursor-pointer flex items-center justify-between group transition-colors"
+                class="px-4 py-2.5 hover:bg-background cursor-pointer flex items-center justify-between group transition-colors"
               >
                 <div class="flex items-center gap-2">
-                  <Clock class="w-3.5 h-3.5 text-slate-400" />
+                  <Clock class="w-3.5 h-3.5 text-muted-foreground" />
                   <div class="flex flex-col">
                     <span
-                      class="font-bold text-slate-700 text-sm group-hover:text-blue-600 transition-colors"
+                      class="font-bold text-foreground text-sm group-hover:text-info transition-colors"
                     >
                       {{ item.name || item.tag }}
                     </span>
                     <span
                       v-if="item.name"
-                      class="text-[10px] font-mono font-bold text-slate-400 uppercase"
+                      class="text-[10px] font-mono font-bold text-muted-foreground uppercase"
                     >
                       {{ item.tag }}
                     </span>
@@ -241,7 +242,7 @@ onMounted(async () => {
                 </div>
                 <button
                   @click.stop="removeFromHistory(item)"
-                  class="p-1 rounded-full hover:bg-slate-200 text-slate-300 hover:text-red-500 transition-colors"
+                  class="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-destructive transition-colors"
                 >
                   <X class="w-3 h-3" />
                 </button>
@@ -265,19 +266,18 @@ onMounted(async () => {
       </div>
 
       <!-- Right: Auth Buttons or User Menu -->
-      <div class="flex items-center gap-3 flex-shrink-0 mr-6">
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <ThemeToggle />
         <template v-if="authStore.isAuthenticated">
           <Button
             v-if="authStore.hasLinkedPlayer"
             @click="handleQuickAccessProfile"
             class="h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold px-5 shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
           >
-            <svg
-              class="w-5 h-5 mr-2"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"
+              />
             </svg>
             Mon profil CR
           </Button>
@@ -287,7 +287,7 @@ onMounted(async () => {
           <router-link to="/login">
             <Button
               variant="ghost"
-              class="text-slate-600 h-12 font-bold hover:bg-gray-100 hover:text-slate-900 px-5"
+              class="text-muted-foreground h-12 font-bold hover:bg-accent hover:text-foreground px-5"
             >
               Connexion
             </Button>
@@ -309,15 +309,15 @@ onMounted(async () => {
       class="flex justify-center mb-8 animate-in fade-in slide-in-from-top-2 duration-500"
     >
       <div
-        class="bg-white/50 backdrop-blur-sm p-1 rounded-2xl border border-white/50 shadow-sm flex gap-1"
+        class="bg-card/50 backdrop-blur-sm p-1 rounded-2xl border border-card/50 shadow-sm flex gap-1"
       >
         <button
           @click="currentTab = 'leaderboards'"
           class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
           :class="
             currentTab === 'leaderboards'
-              ? 'bg-white text-blue-600 shadow-md scale-100'
-              : 'text-slate-500 hover:bg-white/50 hover:text-slate-700'
+              ? 'bg-card text-info shadow-md scale-100'
+              : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
           "
         >
           <Trophy class="w-4 h-4" />
@@ -328,8 +328,8 @@ onMounted(async () => {
           class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
           :class="
             currentTab === 'meta'
-              ? 'bg-white text-emerald-600 shadow-md scale-100'
-              : 'text-slate-500 hover:bg-white/50 hover:text-slate-700'
+              ? 'bg-card text-success shadow-md scale-100'
+              : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
           "
         >
           <TrendingUp class="w-4 h-4" />
@@ -354,7 +354,7 @@ onMounted(async () => {
     <!-- Player Stats -->
     <PlayerStats ref="playerStatsRef" @player-loaded="isPlayerLoaded = $event" />
 
-    <footer class="mt-12 text-center text-xs text-slate-300">
+    <footer class="mt-12 text-center text-xs text-muted-foreground">
       Clash Royale est une marque de Supercell. Ce site n'est pas affilié à Supercell.
     </footer>
   </div>

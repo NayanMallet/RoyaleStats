@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,7 +25,7 @@ const handleLogin = async () => {
   passwordError.value = ''
 
   if (!email.value) {
-    emailError.value = 'L\'email est requis'
+    emailError.value = "L'email est requis"
     return
   }
   if (!password.value) {
@@ -72,12 +73,13 @@ const handleLogin = async () => {
 
 <template>
   <div
-    class="min-h-screen w-full flex items-center justify-center bg-slate-50 relative overflow-hidden font-sans"
+    class="min-h-screen w-full flex items-center justify-center bg-background relative overflow-hidden font-sans"
   >
+    <ThemeToggle class="absolute right-4 top-4 z-20" />
     <!-- Background Elements -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
       <div
-        class="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-100/50 to-transparent"
+        class="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-info-soft/50 to-transparent"
       ></div>
       <div class="absolute -top-40 -right-40 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl"></div>
       <div class="absolute top-40 -left-20 w-72 h-72 bg-purple-400/20 rounded-full blur-3xl"></div>
@@ -95,12 +97,12 @@ const handleLogin = async () => {
       </div>
 
       <div
-        class="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white/50 overflow-hidden p-8 sm:p-12"
+        class="bg-card/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-surface-shadow/50 border border-card/50 overflow-hidden p-8 sm:p-12"
       >
         <!-- Header -->
         <div class="text-center mb-10">
-          <h1 class="text-3xl font-black text-slate-800 tracking-tight mb-2">Bon retour !</h1>
-          <p class="text-slate-500 font-medium">Connectez-vous à votre compte</p>
+          <h1 class="text-3xl font-black text-foreground tracking-tight mb-2">Bon retour !</h1>
+          <p class="text-muted-foreground font-medium">Connectez-vous à votre compte</p>
         </div>
 
         <!-- Form -->
@@ -108,7 +110,7 @@ const handleLogin = async () => {
           <div class="space-y-2">
             <Label
               for="email"
-              class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1"
+              class="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1"
               >Email</Label
             >
             <Input
@@ -117,25 +119,25 @@ const handleLogin = async () => {
               type="email"
               placeholder="exemple@email.com"
               :class="[
-                'h-12 rounded-xl bg-slate-50 transition-all font-medium',
+                'h-12 rounded-xl bg-background transition-all font-medium',
                 emailError
                   ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                  : 'border-slate-200 focus:ring-blue-500/20 focus:border-blue-500'
+                  : 'border-border focus:ring-blue-500/20 focus:border-blue-500',
               ]"
             />
-            <p v-if="emailError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ emailError }}</p>
+            <p v-if="emailError" class="text-xs font-medium text-destructive ml-1 mt-1">
+              {{ emailError }}
+            </p>
           </div>
 
           <div class="space-y-2">
             <div class="flex items-center justify-between">
               <Label
                 for="password"
-                class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1"
+                class="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1"
                 >Mot de passe</Label
               >
-              <a
-                href="#"
-                class="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
+              <a href="#" class="text-xs font-bold text-info hover:text-info hover:underline"
                 >Oublié ?</a
               >
             </div>
@@ -145,18 +147,20 @@ const handleLogin = async () => {
               type="password"
               placeholder="••••••••"
               :class="[
-                'h-12 rounded-xl bg-slate-50 transition-all font-medium',
+                'h-12 rounded-xl bg-background transition-all font-medium',
                 passwordError
                   ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                  : 'border-slate-200 focus:ring-blue-500/20 focus:border-blue-500'
+                  : 'border-border focus:ring-blue-500/20 focus:border-blue-500',
               ]"
             />
-            <p v-if="passwordError" class="text-xs font-medium text-red-600 ml-1 mt-1">{{ passwordError }}</p>
+            <p v-if="passwordError" class="text-xs font-medium text-destructive ml-1 mt-1">
+              {{ passwordError }}
+            </p>
           </div>
 
           <Button
             type="submit"
-            class="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-lg font-bold shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 active:scale-[0.98] transition-all mt-4"
+            class="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 active:scale-[0.98] transition-all mt-4"
             :disabled="isLoading"
           >
             <Loader2 v-if="isLoading" class="mr-2 h-5 w-5 animate-spin" />
@@ -168,13 +172,10 @@ const handleLogin = async () => {
         </form>
 
         <!-- Footer -->
-        <div class="mt-8 pt-6 border-t border-slate-100 text-center">
-          <p class="text-sm text-slate-500 font-medium">
+        <div class="mt-8 pt-6 border-t border-border text-center">
+          <p class="text-sm text-muted-foreground font-medium">
             Pas encore de compte ?
-            <router-link
-              to="/register"
-              class="text-blue-600 font-bold hover:text-blue-700 hover:underline"
-            >
+            <router-link to="/register" class="text-info font-bold hover:text-info hover:underline">
               Créer un compte
             </router-link>
           </p>
@@ -186,7 +187,7 @@ const handleLogin = async () => {
         <router-link to="/">
           <Button
             variant="ghost"
-            class="text-slate-500 hover:text-slate-800 hover:bg-white/50 rounded-xl gap-2"
+            class="text-muted-foreground hover:text-foreground hover:bg-card/50 rounded-xl gap-2"
           >
             <ArrowLeft class="w-4 h-4" /> Retour à l'accueil
           </Button>

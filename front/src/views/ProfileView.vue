@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ThemeToggle from '@/components/ThemeToggle.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -8,7 +9,15 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ArrowLeft, Save, Loader2, Mail, User as UserIcon, Lock, Link as LinkIcon } from 'lucide-vue-next'
+import {
+  ArrowLeft,
+  Save,
+  Loader2,
+  Mail,
+  User as UserIcon,
+  Lock,
+  Link as LinkIcon,
+} from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { authService } from '@/services/auth.service'
 import { HttpError } from '@/services/http'
@@ -32,7 +41,7 @@ const loadingLink = ref(false)
 const userInitials = computed(() => {
   const user = authStore.user
   if (!user || !user.name) return 'U'
-  const names = user.name.split(' ').filter(n => n.length > 0)
+  const names = user.name.split(' ').filter((n) => n.length > 0)
   if (names.length >= 2) {
     const first = names[0] as string
     const second = names[1] as string
@@ -114,11 +123,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen w-full bg-slate-50 relative overflow-hidden">
+  <div class="min-h-screen w-full bg-background relative overflow-hidden">
     <!-- Background Elements -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
       <div
-        class="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-100/50 to-transparent"
+        class="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-info-soft/50 to-transparent"
       ></div>
       <div class="absolute -top-40 -right-40 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl"></div>
       <div class="absolute top-60 -left-20 w-72 h-72 bg-purple-400/20 rounded-full blur-3xl"></div>
@@ -127,24 +136,25 @@ onMounted(() => {
     <!-- Content -->
     <div class="relative z-10 max-w-4xl mx-auto px-4 py-8">
       <!-- Back Button -->
-      <div class="mb-6">
+      <div class="mb-6 flex items-center justify-between gap-3">
         <Button
           @click="router.push('/')"
           variant="ghost"
-          class="text-slate-600 hover:text-slate-900 hover:bg-white/50 rounded-xl gap-2"
+          class="text-muted-foreground hover:text-foreground hover:bg-card/50 rounded-xl gap-2"
         >
           <ArrowLeft class="w-4 h-4" /> Retour à l'accueil
         </Button>
+        <ThemeToggle />
       </div>
 
       <!-- Profile Card -->
       <Card
-        class="bg-white/80 backdrop-blur-xl border-white/50 shadow-2xl animate-in fade-in zoom-in-95 duration-500"
+        class="bg-card/80 backdrop-blur-xl border-card/50 shadow-2xl animate-in fade-in zoom-in-95 duration-500"
       >
         <CardHeader class="space-y-1 pb-6">
           <div class="flex items-center gap-6">
             <!-- Avatar -->
-            <Avatar class="h-24 w-24 border-4 border-white shadow-xl">
+            <Avatar class="h-24 w-24 border-4 border-card shadow-xl">
               <AvatarImage :src="profilePicture" alt="Profile" />
               <AvatarFallback
                 class="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-2xl"
@@ -154,7 +164,7 @@ onMounted(() => {
             </Avatar>
 
             <div class="flex-1">
-              <CardTitle class="text-3xl font-black text-slate-800">Mon Profil</CardTitle>
+              <CardTitle class="text-3xl font-black text-foreground">Mon Profil</CardTitle>
               <CardDescription class="text-base mt-2"
                 >Gérez vos informations personnelles</CardDescription
               >
@@ -168,11 +178,14 @@ onMounted(() => {
           <!-- User Info Section -->
           <div class="space-y-6">
             <div>
-              <h3 class="text-lg font-bold text-slate-700 mb-4">Informations du compte</h3>
+              <h3 class="text-lg font-bold text-foreground mb-4">Informations du compte</h3>
               <div class="grid gap-4">
                 <!-- Name -->
                 <div class="space-y-2">
-                  <Label for="name" class="text-sm font-bold text-slate-600 flex items-center gap-2">
+                  <Label
+                    for="name"
+                    class="text-sm font-bold text-muted-foreground flex items-center gap-2"
+                  >
                     <UserIcon class="w-4 h-4" />
                     Nom
                   </Label>
@@ -181,7 +194,7 @@ onMounted(() => {
                     v-model="name"
                     type="text"
                     placeholder="Votre nom"
-                    class="h-12 rounded-xl bg-slate-50/50 border-slate-200 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    class="h-12 rounded-xl bg-background/50 border-border focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
 
@@ -189,7 +202,7 @@ onMounted(() => {
                 <div class="space-y-2">
                   <Label
                     for="email"
-                    class="text-sm font-bold text-slate-600 flex items-center gap-2"
+                    class="text-sm font-bold text-muted-foreground flex items-center gap-2"
                   >
                     <Mail class="w-4 h-4" />
                     Email
@@ -199,7 +212,7 @@ onMounted(() => {
                     v-model="email"
                     type="email"
                     placeholder="votre@email.com"
-                    class="h-12 rounded-xl bg-slate-50/50 border-slate-200 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    class="h-12 rounded-xl bg-background/50 border-border focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
               </div>
@@ -209,17 +222,20 @@ onMounted(() => {
 
             <!-- Account Details -->
             <div>
-              <h3 class="text-lg font-bold text-slate-700 mb-3">Détails du compte</h3>
-              <div class="bg-slate-50/50 rounded-xl p-4 space-y-2">
+              <h3 class="text-lg font-bold text-foreground mb-3">Détails du compte</h3>
+              <div class="bg-background/50 rounded-xl p-4 space-y-2">
                 <div class="flex justify-between items-center text-sm">
-                  <span class="text-slate-500 font-medium">Date de création</span>
-                  <span class="font-bold text-slate-700">
+                  <span class="text-muted-foreground font-medium">Date de création</span>
+                  <span class="font-bold text-foreground">
                     {{ new Date(authStore.user?.created_at || '').toLocaleDateString('fr-FR') }}
                   </span>
                 </div>
-                <div v-if="authStore.user?.updated_at" class="flex justify-between items-center text-sm">
-                  <span class="text-slate-500 font-medium">Dernière modification</span>
-                  <span class="font-bold text-slate-700">
+                <div
+                  v-if="authStore.user?.updated_at"
+                  class="flex justify-between items-center text-sm"
+                >
+                  <span class="text-muted-foreground font-medium">Dernière modification</span>
+                  <span class="font-bold text-foreground">
                     {{ new Date(authStore.user.updated_at).toLocaleDateString('fr-FR') }}
                   </span>
                 </div>
@@ -230,9 +246,9 @@ onMounted(() => {
 
             <!-- Clash Royale Link Section -->
             <div>
-              <h3 class="text-lg font-bold text-slate-700 mb-4">Compte Clash Royale</h3>
+              <h3 class="text-lg font-bold text-foreground mb-4">Compte Clash Royale</h3>
               <div v-if="loadingLink" class="flex items-center justify-center p-8">
-                <Loader2 class="w-6 h-6 animate-spin text-blue-600" />
+                <Loader2 class="w-6 h-6 animate-spin text-info" />
               </div>
               <LinkedPlayer
                 v-else-if="playerLink"
@@ -240,17 +256,17 @@ onMounted(() => {
                 @unlinked="handleUnlinked"
                 @updated="fetchLink"
               />
-              <Card v-else class="border-dashed border-2 border-slate-300 bg-slate-50/30">
+              <Card v-else class="border-dashed border-2 border-border bg-background/30">
                 <CardContent class="pt-6">
                   <div class="text-center space-y-4">
                     <div class="flex justify-center">
-                      <div class="p-4 bg-blue-100 rounded-full">
-                        <LinkIcon class="w-8 h-8 text-blue-600" />
+                      <div class="p-4 bg-info-soft rounded-full">
+                        <LinkIcon class="w-8 h-8 text-info" />
                       </div>
                     </div>
                     <div>
-                      <p class="font-semibold text-slate-700 mb-1">Aucun compte lié</p>
-                      <p class="text-sm text-slate-500">
+                      <p class="font-semibold text-foreground mb-1">Aucun compte lié</p>
+                      <p class="text-sm text-muted-foreground">
                         Liez votre compte Clash Royale pour un accès rapide à votre profil
                       </p>
                     </div>
@@ -281,7 +297,7 @@ onMounted(() => {
             <!-- <Button
               @click="router.push('/')"
               variant="outline"
-              class="h-12 rounded-xl border-slate-200 hover:bg-slate-50"
+              class="h-12 rounded-xl border-border hover:bg-background"
             >
               Annuler
             </Button> -->
@@ -290,36 +306,52 @@ onMounted(() => {
       </Card>
 
       <!-- Link Dialog -->
-      <LinkPlayerDialog :show="showLinkDialog" @close="showLinkDialog = false" @linked="handleLinked" />
+      <LinkPlayerDialog
+        :show="showLinkDialog"
+        @close="showLinkDialog = false"
+        @linked="handleLinked"
+      />
 
       <!-- Additional Cards (Optional) -->
       <div class="mt-6 grid gap-4 md:grid-cols-2">
-        <Card class="bg-slate-100/50 backdrop-blur-md border-slate-300/50 relative overflow-hidden">
+        <Card class="bg-muted/50 backdrop-blur-md border-border/50 relative overflow-hidden">
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <Lock class="w-14 h-14 text-black/20" />
+            <Lock class="w-14 h-14 text-foreground/20" />
           </div>
           <CardHeader class="relative z-10 opacity-50">
-            <CardTitle class="text-lg font-bold text-slate-500">Sécurité</CardTitle>
-            <CardDescription class="text-slate-400">Gérez la sécurité de votre compte</CardDescription>
+            <CardTitle class="text-lg font-bold text-muted-foreground">Sécurité</CardTitle>
+            <CardDescription class="text-muted-foreground"
+              >Gérez la sécurité de votre compte</CardDescription
+            >
           </CardHeader>
           <CardContent class="relative z-10 opacity-50">
-            <Button variant="outline" class="w-full rounded-xl border-slate-300 text-slate-400 cursor-not-allowed" disabled>
+            <Button
+              variant="outline"
+              class="w-full rounded-xl border-border text-muted-foreground cursor-not-allowed"
+              disabled
+            >
               Changer le mot de passe
             </Button>
           </CardContent>
         </Card>
 
-        <Card class="bg-slate-100/50 backdrop-blur-md border-slate-300/50 relative overflow-hidden">
+        <Card class="bg-muted/50 backdrop-blur-md border-border/50 relative overflow-hidden">
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <Lock class="w-14 h-14 text-black/20" />
+            <Lock class="w-14 h-14 text-foreground/20" />
           </div>
           <CardHeader class="relative z-10 opacity-50">
-            <CardTitle class="text-lg font-bold text-slate-500">Préférences</CardTitle>
-            <CardDescription class="text-slate-400">Personnalisez votre expérience</CardDescription>
+            <CardTitle class="text-lg font-bold text-muted-foreground">Préférences</CardTitle>
+            <CardDescription class="text-muted-foreground"
+              >Personnalisez votre expérience</CardDescription
+            >
           </CardHeader>
           <CardContent class="relative z-10 opacity-50">
-            <Button variant="outline" class="w-full rounded-xl border-slate-300 text-slate-400 cursor-not-allowed" disabled> 
-              Notifications 
+            <Button
+              variant="outline"
+              class="w-full rounded-xl border-border text-muted-foreground cursor-not-allowed"
+              disabled
+            >
+              Notifications
             </Button>
           </CardContent>
         </Card>

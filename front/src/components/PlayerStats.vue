@@ -120,9 +120,9 @@ async function handleSearch(tagInput: string): Promise<PlayerProfile | null> {
     linkedProfile.value = null
     const [playerData, linkData] = await Promise.all([
       fetchPlayer(tag),
-      linkService.getLinkByTag(tag).catch(() => null)
+      linkService.getLinkByTag(tag).catch(() => null),
     ])
-    
+
     player.value = playerData
     linkedProfile.value = linkData
 
@@ -135,9 +135,9 @@ async function handleSearch(tagInput: string): Promise<PlayerProfile | null> {
     })
 
     return player.value
-  } catch (err: any) {
+  } catch (err) {
     console.error(err)
-    toast.error(err.message || 'Erreur lors de la récupération du joueur')
+    toast.error(err instanceof Error ? err.message : 'Erreur lors de la récupération du joueur')
     return null
   } finally {
     loading.value = false
@@ -255,7 +255,7 @@ const heroImage = computed(() => {
     <div v-if="player" class="animate-in fade-in slide-in-from-bottom-12 duration-1000 space-y-12">
       <!-- Hero Section -->
       <div
-        class="relative overflow-hidden rounded-[2.5rem] bg-slate-900 text-white shadow-2xl shadow-slate-900/20 group"
+        class="dark relative overflow-hidden rounded-[2.5rem] bg-slate-900 text-white shadow-2xl shadow-slate-900/20 group"
       >
         <!-- Hero Background -->
         <div
@@ -282,7 +282,7 @@ const heroImage = computed(() => {
               class="absolute inset-0 bg-yellow-400 rounded-full blur-2xl opacity-20 animate-pulse"
             ></div>
             <div
-              class="bg-gradient-to-b from-yellow-300 to-yellow-600 w-28 h-28 md:w-36 md:h-36 rounded-[2rem] flex items-center justify-center shadow-[0_0_40px_-10px_rgba(234,179,8,0.6)] border-4 border-yellow-200 relative transform rotate-3 hover:rotate-6 transition-transform"
+              class="bg-gradient-to-b from-yellow-300 to-yellow-600 w-28 h-28 md:w-36 md:h-36 rounded-[2rem] flex items-center justify-center shadow-[0_0_40px_-10px_rgba(234,179,8,0.6)] border-4 border-warning-border relative transform rotate-3 hover:rotate-6 transition-transform"
             >
               <span class="text-5xl md:text-6xl font-black text-white drop-shadow-lg">{{
                 player.expLevel
@@ -304,17 +304,17 @@ const heroImage = computed(() => {
               </h1>
               <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
                 <span
-                  class="text-slate-400 font-mono font-bold text-lg bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50"
+                  class="text-muted-foreground font-mono font-bold text-lg bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50"
                   >{{ player.tag }}</span
                 >
-                
+
                 <!-- Social Links -->
                 <div v-if="linkedProfile" class="flex items-center gap-2">
                   <a
                     v-if="linkedProfile.twitter"
                     :href="`https://twitter.com/${linkedProfile.twitter}`"
                     target="_blank"
-                    class="p-1.5 bg-[#1DA1F2]/20 text-[#1DA1F2] rounded-lg hover:bg-[#1DA1F2]/30 transition-colors"
+                    class="p-1.5 bg-[#1DA1F2]/20 text-info rounded-lg hover:bg-[#1DA1F2]/30 transition-colors"
                     title="Twitter"
                   >
                     <Twitter class="w-4 h-4" />
@@ -323,7 +323,7 @@ const heroImage = computed(() => {
                     v-if="linkedProfile.twitch"
                     :href="`https://twitch.tv/${linkedProfile.twitch}`"
                     target="_blank"
-                    class="p-1.5 bg-[#9146FF]/20 text-[#9146FF] rounded-lg hover:bg-[#9146FF]/30 transition-colors"
+                    class="p-1.5 bg-[#9146FF]/20 text-ranked rounded-lg hover:bg-[#9146FF]/30 transition-colors"
                     title="Twitch"
                   >
                     <Twitch class="w-4 h-4" />
@@ -340,10 +340,7 @@ const heroImage = computed(() => {
                     class="w-4 h-4 animate-spin text-orange-400"
                   />
                   <!-- Fallback Icon if Image Fails -->
-                  <Shield
-                    v-else-if="hasBadgeError"
-                    class="w-5 h-5 fill-orange-400 text-orange-600"
-                  />
+                  <Shield v-else-if="hasBadgeError" class="w-5 h-5 fill-orange-400 text-clan" />
                   <!-- Real Image -->
                   <img
                     v-else
@@ -370,18 +367,20 @@ const heroImage = computed(() => {
             >
               <div class="text-center md:text-left">
                 <div class="text-3xl font-black text-white">{{ player.trophies }}</div>
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                <div class="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                   Trophées
                 </div>
               </div>
               <div class="text-center md:text-left">
                 <div class="text-3xl font-black text-white">{{ player.bestTrophies }}</div>
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Record</div>
+                <div class="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                  Record
+                </div>
               </div>
 
               <div class="text-center md:text-left">
                 <div class="text-3xl font-black text-white">{{ player.wins }}</div>
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                <div class="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                   Victoires
                 </div>
               </div>
@@ -389,7 +388,7 @@ const heroImage = computed(() => {
                 <div class="text-3xl font-black text-white">
                   {{ getWinRate(player.wins, player.battleCount) }}
                 </div>
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                <div class="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                   Win Rate
                 </div>
               </div>
@@ -405,50 +404,50 @@ const heroImage = computed(() => {
           <!-- Path of Legends -->
           <div
             v-if="rankedStats?.current"
-            class="bg-white rounded-3xl p-8 shadow-xl border border-slate-100 relative overflow-hidden"
+            class="bg-card rounded-3xl p-8 shadow-xl border border-border relative overflow-hidden"
           >
             <div
-              class="absolute top-0 right-0 w-32 h-32 bg-purple-100 rounded-bl-full opacity-50 pointer-events-none"
+              class="absolute top-0 right-0 w-32 h-32 bg-ranked-soft rounded-bl-full opacity-50 pointer-events-none"
             ></div>
             <h3
-              class="flex items-center gap-3 text-2xl font-black text-slate-800 mb-6 relative z-10"
+              class="flex items-center gap-3 text-2xl font-black text-foreground mb-6 relative z-10"
             >
-              <Trophy class="w-6 h-6 text-purple-600 fill-purple-100" />
+              <Trophy class="w-6 h-6 text-ranked fill-ranked-soft" />
               Voie des Légendes
             </h3>
             <div class="grid md:grid-cols-3 gap-6 relative z-10">
               <div
-                class="bg-purple-50/50 rounded-2xl p-4 border border-purple-100 text-center hover:bg-purple-50 transition-colors"
+                class="bg-ranked-soft/50 rounded-2xl p-4 border border-ranked-border text-center hover:bg-ranked-soft transition-colors"
               >
-                <div class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2">
+                <div class="text-xs font-bold text-ranked uppercase tracking-wider mb-2">
                   Saison Actuelle
                 </div>
-                <div class="text-3xl font-black text-slate-800 mb-1">
+                <div class="text-3xl font-black text-foreground mb-1">
                   Ligue {{ rankedStats.current.leagueNumber }}
                 </div>
-                <div class="text-sm font-medium text-slate-500">
+                <div class="text-sm font-medium text-muted-foreground">
                   {{ rankedStats.current.trophies }} Médailles
                 </div>
               </div>
-              <div class="bg-white rounded-2xl p-4 border border-slate-100 text-center shadow-sm">
-                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <div class="bg-card rounded-2xl p-4 border border-border text-center shadow-sm">
+                <div class="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   Saison Précédente
                 </div>
-                <div class="text-2xl font-bold text-slate-700 mb-1">
+                <div class="text-2xl font-bold text-foreground mb-1">
                   Ligue {{ rankedStats.last?.leagueNumber ?? '-' }}
                 </div>
-                <div class="text-sm text-slate-400">
+                <div class="text-sm text-muted-foreground">
                   {{ rankedStats.last?.trophies ?? 0 }} Médailles
                 </div>
               </div>
-              <div class="bg-white rounded-2xl p-4 border border-slate-100 text-center shadow-sm">
-                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <div class="bg-card rounded-2xl p-4 border border-border text-center shadow-sm">
+                <div class="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   Meilleur Résultat
                 </div>
-                <div class="text-2xl font-bold text-slate-700 mb-1">
+                <div class="text-2xl font-bold text-foreground mb-1">
                   Ligue {{ rankedStats.best?.leagueNumber ?? '-' }}
                 </div>
-                <div class="text-sm text-slate-400">
+                <div class="text-sm text-muted-foreground">
                   {{ rankedStats.best?.trophies ?? 0 }} Médailles
                 </div>
               </div>
@@ -457,46 +456,46 @@ const heroImage = computed(() => {
 
           <!-- Stats Breakdown -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
+            <div class="bg-card rounded-3xl p-6 shadow-lg border border-border">
               <h4
-                class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"
+                class="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2"
               >
                 <Swords class="w-4 h-4" /> Statistiques Combats
               </h4>
               <div class="space-y-4">
                 <div class="flex justify-between items-center">
-                  <span class="text-slate-600 font-medium">Total Combats</span>
-                  <span class="font-bold text-slate-900">{{ player.battleCount }}</span>
+                  <span class="text-muted-foreground font-medium">Total Combats</span>
+                  <span class="font-bold text-foreground">{{ player.battleCount }}</span>
                 </div>
                 <div class="flex justify-between items-center">
-                  <span class="text-slate-600 font-medium">Victoires 3 Couronnes</span>
-                  <span class="font-bold text-purple-600">{{ player.threeCrownWins }}</span>
+                  <span class="text-muted-foreground font-medium">Victoires 3 Couronnes</span>
+                  <span class="font-bold text-ranked">{{ player.threeCrownWins }}</span>
                 </div>
                 <div class="flex justify-between items-center">
-                  <span class="text-slate-600 font-medium">Défaites</span>
+                  <span class="text-muted-foreground font-medium">Défaites</span>
                   <span class="font-bold text-rose-500">{{ player.losses }}</span>
                 </div>
               </div>
             </div>
 
-            <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
+            <div class="bg-card rounded-3xl p-6 shadow-lg border border-border">
               <h4
-                class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"
+                class="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2"
               >
                 <Sparkles class="w-4 h-4" /> Collection & Dons
               </h4>
               <div class="space-y-4">
                 <div class="flex justify-between items-center">
-                  <span class="text-slate-600 font-medium">Cartes Tournoi</span>
-                  <span class="font-bold text-slate-900">{{ player.tournamentCardsWon }}</span>
+                  <span class="text-muted-foreground font-medium">Cartes Tournoi</span>
+                  <span class="font-bold text-foreground">{{ player.tournamentCardsWon }}</span>
                 </div>
                 <div class="flex justify-between items-center">
-                  <span class="text-slate-600 font-medium">Cartes Défis</span>
-                  <span class="font-bold text-slate-900">{{ player.challengeCardsWon }}</span>
+                  <span class="text-muted-foreground font-medium">Cartes Défis</span>
+                  <span class="font-bold text-foreground">{{ player.challengeCardsWon }}</span>
                 </div>
                 <div class="flex justify-between items-center">
-                  <span class="text-slate-600 font-medium">Total Dons</span>
-                  <span class="font-bold text-green-600">{{ player.totalDonations }}</span>
+                  <span class="text-muted-foreground font-medium">Total Dons</span>
+                  <span class="font-bold text-success">{{ player.totalDonations }}</span>
                 </div>
               </div>
             </div>
@@ -528,14 +527,14 @@ const heroImage = computed(() => {
         <!-- Right Column: Deck & Badges -->
         <div class="space-y-8">
           <!-- Current Deck -->
-          <div class="bg-white rounded-3xl p-6 shadow-xl border border-slate-100">
+          <div class="bg-card rounded-3xl p-6 shadow-xl border border-border">
             <div class="flex items-center justify-between mb-6">
-              <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">
+              <h3 class="text-xl font-black text-foreground flex items-center gap-2">
                 <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
                 Deck Actuel
               </h3>
               <span
-                class="text-xs font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-md border border-blue-100"
+                class="text-xs font-bold bg-info-soft text-info px-2 py-1 rounded-md border border-info-border"
               >
                 Moy.
                 {{
@@ -554,7 +553,7 @@ const heroImage = computed(() => {
                 @click="openCardModal(card)"
               >
                 <div
-                  class="absolute inset-0 bg-slate-100 rounded-xl transform rotate-3 scale-90 opacity-0 group-hover:opacity-100 group-hover:rotate-6 transition-all duration-300"
+                  class="absolute inset-0 bg-muted rounded-xl transform rotate-3 scale-90 opacity-0 group-hover:opacity-100 group-hover:rotate-6 transition-all duration-300"
                 ></div>
                 <img
                   :src="card.iconUrls.medium"
@@ -562,7 +561,7 @@ const heroImage = computed(() => {
                 />
 
                 <div
-                  class="absolute -top-1 -right-1 bg-purple-600 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold border border-white z-20 shadow-sm"
+                  class="absolute -top-1 -right-1 bg-purple-600 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold border border-card z-20 shadow-sm"
                 >
                   {{ getElixirCost(card.name) }}
                 </div>
@@ -578,9 +577,9 @@ const heroImage = computed(() => {
           <!-- Badges Grid -->
           <div
             v-if="filteredBadges.length"
-            class="bg-white rounded-3xl p-6 shadow-xl border border-slate-100"
+            class="bg-card rounded-3xl p-6 shadow-xl border border-border"
           >
-            <h3 class="text-xl font-black text-slate-800 flex items-center gap-2 mb-6">
+            <h3 class="text-xl font-black text-foreground flex items-center gap-2 mb-6">
               <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
               Collection
             </h3>
@@ -588,7 +587,7 @@ const heroImage = computed(() => {
               <div
                 v-for="badge in filteredBadges.slice(0, 16)"
                 :key="badge.name"
-                class="aspect-square bg-slate-50 rounded-xl p-2 flex items-center justify-center border border-slate-100 hover:border-blue-200 transition-colors group cursor-help relative"
+                class="aspect-square bg-background rounded-xl p-2 flex items-center justify-center border border-border hover:border-info-border transition-colors group cursor-help relative"
               >
                 <img
                   :src="badge.iconUrls.large"
@@ -607,7 +606,7 @@ const heroImage = computed(() => {
                 @click="openBadgesModal"
                 variant="ghost"
                 size="sm"
-                class="text-xs text-slate-400 font-medium hover:text-slate-600"
+                class="text-xs text-muted-foreground font-medium hover:text-muted-foreground"
               >
                 + {{ filteredBadges.length - 16 }} autres badges
               </Button>
@@ -624,14 +623,14 @@ const heroImage = computed(() => {
       @click.self="closeBadgesModal"
     >
       <div
-        class="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300"
+        class="bg-card rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300"
       >
         <!-- Header -->
-        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 class="text-2xl font-black text-slate-800">Tous les Badges</h3>
+        <div class="p-6 border-b border-border flex justify-between items-center bg-background/50">
+          <h3 class="text-2xl font-black text-foreground">Tous les Badges</h3>
           <Button
             variant="ghost"
-            class="rounded-full w-10 h-10 p-0 hover:bg-slate-200 text-slate-500"
+            class="rounded-full w-10 h-10 p-0 hover:bg-accent text-muted-foreground"
             @click="closeBadgesModal"
           >
             <X class="w-6 h-6" />
@@ -647,7 +646,7 @@ const heroImage = computed(() => {
             class="flex flex-col items-center gap-2 group"
           >
             <div
-              class="relative w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 group-hover:border-blue-300 group-hover:bg-blue-50 transition-all"
+              class="relative w-20 h-20 bg-background rounded-2xl flex items-center justify-center border border-border group-hover:border-blue-300 group-hover:bg-info-soft transition-all"
             >
               <img
                 :src="badge.iconUrls.large"
@@ -655,14 +654,14 @@ const heroImage = computed(() => {
                 class="w-14 h-14 object-contain drop-shadow-sm group-hover:scale-110 transition-transform"
               />
               <div
-                class="absolute -top-2 -right-2 bg-slate-900 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-white"
+                class="absolute -top-2 -right-2 bg-slate-900 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-card"
                 v-if="badge.level"
               >
                 Lvl {{ badge.level }}
               </div>
             </div>
             <div
-              class="text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full"
+              class="text-[10px] font-bold text-muted-foreground uppercase tracking-tight text-center truncate w-full"
             >
               {{ badge.name }}
             </div>
@@ -678,11 +677,11 @@ const heroImage = computed(() => {
       @click.self="closeClanModal"
     >
       <div
-        class="bg-white rounded-[2rem] shadow-2xl w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300"
+        class="bg-card rounded-[2rem] shadow-2xl w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300"
       >
         <!-- Header -->
         <div
-          class="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row gap-6 items-center bg-slate-50/50"
+          class="p-6 md:p-8 border-b border-border flex flex-col md:flex-row gap-6 items-center bg-background/50"
         >
           <img
             v-if="getClanBadgeUrl(selectedClan.badgeId)"
@@ -691,56 +690,62 @@ const heroImage = computed(() => {
           />
           <div
             v-else
-            class="w-24 h-24 flex items-center justify-center bg-orange-100 rounded-full border-4 border-white shadow-lg"
+            class="w-24 h-24 flex items-center justify-center bg-clan-soft rounded-full border-4 border-card shadow-lg"
           >
-            <Shield class="w-12 h-12 text-orange-500" />
+            <Shield class="w-12 h-12 text-clan" />
           </div>
           <div class="flex-1 text-center md:text-left space-y-2">
-            <h3 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">
+            <h3 class="text-3xl md:text-4xl font-black text-foreground tracking-tight">
               {{ selectedClan.name }}
             </h3>
             <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
               <span
-                class="text-slate-400 font-mono font-bold bg-slate-200/50 px-2 py-1 rounded text-sm"
+                class="text-muted-foreground font-mono font-bold bg-accent/50 px-2 py-1 rounded text-sm"
                 >{{ selectedClan.tag }}</span
               >
               <span
-                class="flex items-center gap-1.5 text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-full"
+                class="flex items-center gap-1.5 text-muted-foreground font-bold text-sm bg-muted px-3 py-1 rounded-full"
               >
                 <Globe class="w-3.5 h-3.5" /> {{ selectedClan.location.name }}
               </span>
               <span
-                class="flex items-center gap-1.5 text-slate-600 font-bold text-sm bg-slate-100 px-3 py-1 rounded-full"
+                class="flex items-center gap-1.5 text-muted-foreground font-bold text-sm bg-muted px-3 py-1 rounded-full"
               >
                 <Users class="w-3.5 h-3.5" /> {{ selectedClan.members }}/50
               </span>
             </div>
-            <p class="text-slate-500 text-sm italic max-w-2xl">{{ selectedClan.description }}</p>
+            <p class="text-muted-foreground text-sm italic max-w-2xl">
+              {{ selectedClan.description }}
+            </p>
           </div>
           <div class="flex gap-4">
-            <div class="text-center px-4 py-2 bg-yellow-50 rounded-xl border border-yellow-100">
+            <div
+              class="text-center px-4 py-2 bg-warning-soft rounded-xl border border-warning-border"
+            >
               <div
-                class="text-2xl font-black text-slate-800 flex items-center justify-center gap-1"
+                class="text-2xl font-black text-foreground flex items-center justify-center gap-1"
               >
-                <Trophy class="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                <Trophy class="w-5 h-5 text-warning fill-yellow-500" />
                 {{ selectedClan.clanScore }}
               </div>
-              <div class="text-[10px] font-bold text-yellow-600 uppercase tracking-widest">
+              <div class="text-[10px] font-bold text-warning uppercase tracking-widest">
                 Score Clan
               </div>
             </div>
-            <div class="text-center px-4 py-2 bg-green-50 rounded-xl border border-green-100">
-              <div class="text-2xl font-black text-slate-800">
+            <div
+              class="text-center px-4 py-2 bg-success-soft rounded-xl border border-success-border"
+            >
+              <div class="text-2xl font-black text-foreground">
                 {{ selectedClan.donationsPerWeek }}
               </div>
-              <div class="text-[10px] font-bold text-green-600 uppercase tracking-widest">
+              <div class="text-[10px] font-bold text-success uppercase tracking-widest">
                 Dons / Sem.
               </div>
             </div>
           </div>
           <Button
             variant="ghost"
-            class="absolute top-4 right-4 rounded-full w-10 h-10 p-0 hover:bg-slate-200 text-slate-400"
+            class="absolute top-4 right-4 rounded-full w-10 h-10 p-0 hover:bg-accent text-muted-foreground"
             @click="closeClanModal"
           >
             <X class="w-6 h-6" />
@@ -751,7 +756,7 @@ const heroImage = computed(() => {
         <div class="flex-1 overflow-y-auto p-0">
           <table class="w-full text-left border-collapse">
             <thead
-              class="bg-slate-50 sticky top-0 z-10 shadow-sm text-xs font-bold text-slate-400 uppercase tracking-wider"
+              class="bg-background sticky top-0 z-10 shadow-sm text-xs font-bold text-muted-foreground uppercase tracking-wider"
             >
               <tr>
                 <th class="p-4 pl-8">#</th>
@@ -761,23 +766,23 @@ const heroImage = computed(() => {
                 <th class="p-4 pr-8 text-right hidden md:table-cell">Dons</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
+            <tbody class="divide-y divide-border">
               <tr
                 v-for="member in selectedClan.memberList"
                 :key="member.tag"
-                class="group hover:bg-blue-50/50 transition-colors cursor-pointer"
+                class="group hover:bg-info-soft/50 transition-colors cursor-pointer"
                 @click="handleMemberClick(member.tag)"
               >
-                <td class="p-4 pl-8 font-mono font-bold text-slate-400 w-16">
+                <td class="p-4 pl-8 font-mono font-bold text-muted-foreground w-16">
                   {{ member.clanRank }}
                 </td>
                 <td class="p-4">
                   <div
-                    class="font-bold text-slate-800 group-hover:text-blue-600 transition-colors text-lg"
+                    class="font-bold text-foreground group-hover:text-info transition-colors text-lg"
                   >
                     {{ member.name }}
                   </div>
-                  <div class="flex items-center gap-1.5 text-xs text-slate-400 md:hidden">
+                  <div class="flex items-center gap-1.5 text-xs text-muted-foreground md:hidden">
                     <span>{{
                       member.role === 'leader'
                         ? 'Chef'
@@ -790,16 +795,19 @@ const heroImage = computed(() => {
                     <span>•</span>
                     <span>{{ member.donations }} dons</span>
                   </div>
-                  <div class="text-[10px] text-slate-400 font-mono mt-0.5">{{ member.tag }}</div>
+                  <div class="text-[10px] text-muted-foreground font-mono mt-0.5">
+                    {{ member.tag }}
+                  </div>
                 </td>
                 <td class="p-4 hidden md:table-cell">
                   <span
                     :class="{
                       'px-2 py-1 rounded text-xs font-bold uppercase tracking-wider border': true,
-                      'bg-yellow-100 text-yellow-700 border-yellow-200': member.role === 'leader',
-                      'bg-orange-100 text-orange-700 border-orange-200': member.role === 'coLeader',
-                      'bg-blue-100 text-blue-700 border-blue-200': member.role === 'elder',
-                      'bg-slate-100 text-slate-600 border-slate-200': member.role === 'member',
+                      'bg-warning-soft text-warning border-warning-border':
+                        member.role === 'leader',
+                      'bg-clan-soft text-clan border-clan-border': member.role === 'coLeader',
+                      'bg-info-soft text-info border-info-border': member.role === 'elder',
+                      'bg-muted text-muted-foreground border-border': member.role === 'member',
                     }"
                   >
                     {{
@@ -814,17 +822,17 @@ const heroImage = computed(() => {
                   </span>
                 </td>
                 <td class="p-4 text-right">
-                  <div class="font-black text-slate-800 flex items-center justify-end gap-1.5">
+                  <div class="font-black text-foreground flex items-center justify-end gap-1.5">
                     {{ member.trophies }}
-                    <Trophy class="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                    <Trophy class="w-4 h-4 text-warning fill-yellow-500" />
                   </div>
-                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <div class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                     {{ member.arena.name }}
                   </div>
                 </td>
                 <td class="p-4 pr-8 text-right hidden md:table-cell">
-                  <div class="font-bold text-green-600">+{{ member.donations }}</div>
-                  <div class="text-[10px] text-slate-400">
+                  <div class="font-bold text-success">+{{ member.donations }}</div>
+                  <div class="text-[10px] text-muted-foreground">
                     Reçus: {{ member.donationsReceived }}
                   </div>
                 </td>
@@ -842,7 +850,7 @@ const heroImage = computed(() => {
       @click.self="closeCardModal"
     >
       <div
-        class="bg-gradient-to-b from-slate-800 to-slate-900 rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 relative border border-slate-700/50"
+        class="dark bg-gradient-to-b from-slate-800 to-slate-900 rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 relative border border-slate-700/50"
       >
         <Button
           variant="ghost"
@@ -889,7 +897,7 @@ const heroImage = computed(() => {
                 v-if="selectedCard.evolutionLevel"
                 class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/20 rounded-full border border-purple-500/30 backdrop-blur-md text-purple-300"
               >
-                <Zap class="w-3 h-3 text-purple-400 fill-purple-400" />
+                <Zap class="w-3 h-3 text-ranked fill-purple-400" />
                 <span class="text-xs font-bold uppercase tracking-wider">Évoluée</span>
               </div>
             </div>
@@ -900,7 +908,7 @@ const heroImage = computed(() => {
             <div
               class="bg-white/5 rounded-2xl p-3 text-center border border-white/5 hover:bg-white/10 transition-colors"
             >
-              <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+              <div class="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
                 Niveau
               </div>
               <div class="text-xl font-black text-white">
@@ -910,20 +918,20 @@ const heroImage = computed(() => {
             <div
               class="bg-white/5 rounded-2xl p-3 text-center border border-white/5 hover:bg-white/10 transition-colors"
             >
-              <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+              <div class="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
                 Élixir
               </div>
-              <div class="text-xl font-black text-purple-400 drop-shadow-glow">
+              <div class="text-xl font-black text-ranked drop-shadow-glow">
                 {{ getElixirCost(selectedCard.name) }}
               </div>
             </div>
             <div
               class="bg-white/5 rounded-2xl p-3 text-center border border-white/5 hover:bg-white/10 transition-colors"
             >
-              <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+              <div class="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
                 Évolution
               </div>
-              <div class="text-xl font-black text-slate-200">
+              <div class="text-xl font-black text-muted-foreground">
                 {{ selectedCard.evolutionLevel ? 'Oui' : 'Non' }}
               </div>
             </div>
@@ -931,25 +939,25 @@ const heroImage = computed(() => {
 
           <!-- Detailed List -->
           <div class="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-3">
-            <div class="flex justify-between items-center text-xs text-slate-300">
-              <span class="font-medium text-slate-500">Cartes collectées</span>
+            <div class="flex justify-between items-center text-xs text-muted-foreground">
+              <span class="font-medium text-muted-foreground">Cartes collectées</span>
               <span class="font-bold font-mono"
                 >{{ selectedCard.count }} / {{ selectedCard.maxLevel ? 'MAX' : '?' }}</span
               >
             </div>
-            <div class="flex justify-between items-center text-xs text-slate-300">
-              <span class="font-medium text-slate-500">Identifiant</span>
-              <span class="font-bold font-mono text-slate-600">#{{ selectedCard.id }}</span>
+            <div class="flex justify-between items-center text-xs text-muted-foreground">
+              <span class="font-medium text-muted-foreground">Identifiant</span>
+              <span class="font-bold font-mono text-muted-foreground">#{{ selectedCard.id }}</span>
             </div>
-            <div class="flex justify-between items-center text-xs text-slate-300">
-              <span class="font-medium text-slate-500">Niveau Max</span>
+            <div class="flex justify-between items-center text-xs text-muted-foreground">
+              <span class="font-medium text-muted-foreground">Niveau Max</span>
               <span class="font-bold text-yellow-400">{{
                 selectedCard.maxLevel ? selectedCard.maxLevel + 1 : '15'
               }}</span>
             </div>
             <!-- Note on stats -->
             <div
-              class="pt-2 mt-2 border-t border-white/5 text-[10px] text-slate-500 text-center italic"
+              class="pt-2 mt-2 border-t border-white/5 text-[10px] text-muted-foreground text-center italic"
             >
               * Les statistiques de combat (DPS, PV) ne sont pas disponibles via l'API publique.
             </div>

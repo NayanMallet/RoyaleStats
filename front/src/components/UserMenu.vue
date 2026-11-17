@@ -21,7 +21,7 @@ const router = useRouter()
 const userInitials = computed(() => {
   const user = authStore.user
   if (!user || !user.name) return 'U'
-  const names = user.name.split(' ').filter(n => n.length > 0)
+  const names = user.name.split(' ').filter((n) => n.length > 0)
   if (names.length >= 2) {
     const first = names[0] as string
     const second = names[1] as string
@@ -47,7 +47,7 @@ const goToProfile = () => {
         variant="ghost"
         class="relative h-12 w-12 rounded-full hover:ring-2 hover:ring-blue-500/20 transition-all"
       >
-        <Avatar class="h-12 w-12 border-2 border-white shadow-lg">
+        <Avatar class="h-12 w-12 border-2 border-card shadow-lg">
           <AvatarImage :src="profilePicture" alt="Profile" />
           <AvatarFallback
             class="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-sm"
@@ -58,27 +58,27 @@ const goToProfile = () => {
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent
-      class="w-56 rounded-2xl shadow-2xl border-white/50 bg-white/95 backdrop-blur-xl"
+      class="w-56 rounded-2xl shadow-2xl border-card/50 bg-card/95 backdrop-blur-xl"
       align="end"
     >
-      <DropdownMenuLabel class="font-bold text-slate-700">
+      <DropdownMenuLabel class="font-bold text-foreground">
         <div class="flex flex-col space-y-1">
           <p class="text-sm font-bold">{{ authStore.user?.name || 'User' }}</p>
-          <p class="text-xs font-normal text-slate-500">{{ authStore.user?.email || '' }}</p>
+          <p class="text-xs font-normal text-muted-foreground">{{ authStore.user?.email || '' }}</p>
         </div>
       </DropdownMenuLabel>
-      <DropdownMenuSeparator class="bg-slate-100" />
+      <DropdownMenuSeparator class="bg-muted" />
       <DropdownMenuItem
         @click="goToProfile"
-        class="cursor-pointer hover:bg-blue-50 rounded-xl mx-1 my-0.5 focus:bg-blue-50"
+        class="cursor-pointer hover:bg-info-soft rounded-xl mx-1 my-0.5 focus:bg-info-soft"
       >
-        <User class="mr-2 h-4 w-4 text-blue-600" />
+        <User class="mr-2 h-4 w-4 text-info" />
         <span class="font-medium">Mon profil</span>
       </DropdownMenuItem>
-      <DropdownMenuSeparator class="bg-slate-100" />
+      <DropdownMenuSeparator class="bg-muted" />
       <DropdownMenuItem
         @click="handleLogout"
-        class="cursor-pointer hover:bg-red-50 rounded-xl mx-1 my-0.5 focus:bg-red-50 text-red-600"
+        class="cursor-pointer hover:bg-destructive/10 rounded-xl mx-1 my-0.5 focus:bg-destructive/10 text-destructive"
       >
         <LogOut class="mr-2 h-4 w-4" />
         <span class="font-medium">Déconnexion</span>
