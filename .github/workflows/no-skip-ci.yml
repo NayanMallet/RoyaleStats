@@ -1,0 +1,62 @@
+name: No skip CI
+
+# Rejects pull requests that try to skip CI with a marker such as [skip ci].
+#
+# GitHub skips `push` and `pull_request` workflows when the head commit carries
+# one of these markers, so this check cannot live in ci.yml: it would be skipped
+# too. `pull_request_target` is not affected by the markers.
+#
+# Safety: `pull_request_target` runs with the base branch's workflow and token.
+# This job never checks out the pull request's code and never interpolates
+# user-controlled text into a shell: it only reads the payload and the API.
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+    branches: [develop, main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  guard:
+    name: No skip CI marker
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            // Same list as scripts/check-commit-msg.cjs and the GitHub docs.
+            const MARKER =
+              /\[\s*(skip\s+ci|ci\s+skip|no\s+ci|skip\s+actions|actions\s+skip)\s*\]|skip-checks\s*:\s*true/i;
+
+            const pr = context.payload.pull_request;
+            const offenders = [];
+
+            if (MARKER.test(pr.title ?? '')) offenders.push('titre de la PR');
+            if (MARKER.test(pr.body ?? '')) offenders.push('description de la PR');
+
+            const commits = await github.paginate(github.rest.pulls.listCommits, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+            for (const c of commits) {
+              if (MARKER.test(c.commit.message)) {
+                offenders.push(`commit ${c.sha.slice(0, 7)}`);
+              }
+            }
+
+            if (offenders.length > 0) {
+              core.setFailed(
+                `Marqueur de saut de CI interdit ([skip ci], [ci skip], [no ci], ` +
+                  `[skip actions], [actions skip], skip-checks: true) trouvé dans : ` +
+                  `${offenders.join(', ')}. Retirez-le (git commit --amend ou ` +
+                  `git rebase) puis poussez à nouveau.`,
+              );
+            } else {
+              core.info('Aucun marqueur de saut de CI.');
+            }

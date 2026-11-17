@@ -152,7 +152,9 @@ Chaque pull request vers `develop` ou `main`, et chaque push sur ces branches, l
 | **Lint, types, unit tests & build** | ESLint (back et front), type-check du front, tests unitaires Vitest, build TypeScript des services et build du front         |
 | **Docker stack & E2E**              | Construction et démarrage de la stack, tests de fumée (`scripts/test-docker.sh`), tests Playwright en bureau et en 800 × 600 |
 
-Les deux jobs doivent être verts pour fusionner : ils sont déclarés comme _status checks_ obligatoires dans le ruleset `protect-main-develop`. En cas d'échec, les logs Docker et le rapport Playwright sont disponibles dans l'onglet _Actions_ de la PR.
+Les deux jobs doivent être verts pour fusionner : ils sont déclarés comme _status checks_ obligatoires dans le ruleset `protect-main-develop`.
+
+Sauter la CI est interdit. Les marqueurs `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]` et `skip-checks: true` sont refusés par le hook `commit-msg` en local, puis par le workflow `.github/workflows/no-skip-ci.yml` (check obligatoire **No skip CI marker**) qui inspecte le titre, la description et tous les commits de la PR. En cas d'échec, les logs Docker et le rapport Playwright sont disponibles dans l'onglet _Actions_ de la PR.
 
 La CI ne dispose pas de clé API Clash Royale (la clé est liée à une IP) : le test qui appelle l'API officielle est ignoré (`SKIP_CLASH_API=1`).
 
