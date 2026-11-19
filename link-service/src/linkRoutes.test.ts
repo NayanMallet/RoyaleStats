@@ -53,7 +53,7 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-  server.close();
+  server?.close();
 });
 
 beforeEach(() => {
