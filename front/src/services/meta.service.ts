@@ -22,17 +22,17 @@ export async function fetchMetaSnapshot(): Promise<MetaSnapshot> {
   return data.snapshot
 }
 
-export async function ingestBattles(battles: any[]) {
+/**
+ * Asks the meta-service to add this player's recent battles to the meta. The server fetches the
+ * battles itself (RST-31): the browser never sends battle data. Best effort, silent on failure.
+ */
+export async function ingestPlayerBattles(tag: string): Promise<void> {
+  const formattedTag = tag.startsWith('#') ? tag : `#${tag}`
   try {
-    await fetch('/api/meta/ingest/battles', {
+    await fetchWithTimeout(`/api/meta/players/${encodeURIComponent(formattedTag)}/ingest`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ battles }),
     })
-  } catch (e) {
-    // silent fail
-    console.error('Failed to ingest battles', e)
+  } catch (error) {
+    console.warn('[Meta] Could not ingest the battle log', error)
   }
 }

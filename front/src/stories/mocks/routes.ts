@@ -55,7 +55,7 @@ interface PlayerRoutesOptions {
 
 /**
  * Everything PlayerStats.vue calls for one player: card definitions, profile, linked account
- * (social links), last battles and their ingestion by the meta-service, then the clan details
+ * (social links), the ingestion of the player's battles by the meta-service, then the clan details
  * opened from the hero banner.
  */
 export function playerRoutes({
@@ -67,15 +67,19 @@ export function playerRoutes({
   const routes: MockRoute[] = [
     { url: '/api/clash/cards', body: demoCardDefinitions },
     { url: `/api/clash/players/${tag}`, body: profile, ...player },
-    { url: `/api/clash/players/${tag}/battles`, body: demoPlayerBattles },
     link
       ? { url: `/api/link/tag/${tag}`, body: link }
       : { url: `/api/link/tag/${tag}`, status: 404, body: { error: 'Not found' } },
     {
       method: 'POST',
-      url: '/api/meta/ingest/battles',
-      status: 200,
-      body: { ingested: demoPlayerBattles.length, duplicates: 0, invalid: 0 },
+      url: `/api/meta/players/${tag}/ingest`,
+      body: {
+        playerTag: profile.tag,
+        ingested: demoPlayerBattles.length,
+        duplicates: 0,
+        invalid: 0,
+        skipped: 0,
+      },
     },
     allianceBadgesRoute,
   ]

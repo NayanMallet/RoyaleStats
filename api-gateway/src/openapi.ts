@@ -377,46 +377,21 @@ const openapiSpec = {
         responses: { '200': { description: 'Recommendations' } },
       },
     },
-    '/api/meta/ingest/battles': {
+    '/api/meta/players/{playerTag}/ingest': {
+      parameters: [
+        {
+          in: 'path',
+          name: 'playerTag',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Player tag, with or without leading # (URL-encoded)',
+        },
+      ],
       post: {
         tags: ['Meta'],
-        summary: 'Ingest battles in the internal format',
+        summary: "Add the player's recent battles to the meta",
         description:
-          'A battle is identified by playerTag + battleTime: sending it again is ignored and counted in `duplicates`. A battle without player, time, known result or deck (1 to 8 card names) is ignored and counted in `invalid`. The batch is stored in one transaction.',
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                required: ['battles'],
-                properties: {
-                  battles: {
-                    type: 'array',
-                    items: {
-                      type: 'object',
-                      required: ['playerTag', 'battleTime', 'deckCards', 'result'],
-                      properties: {
-                        playerTag: { type: 'string', example: '#2PP8VJ9Q' },
-                        battleTime: { type: 'string', example: '20261119T120000.000Z' },
-                        deckCards: {
-                          type: 'array',
-                          minItems: 1,
-                          maxItems: 8,
-                          items: { type: 'string' },
-                          example: ['Hog Rider', 'Musketeer'],
-                        },
-                        opponentDeck: { type: 'array', items: { type: 'string' } },
-                        result: { type: 'string', enum: ['win', 'loss', 'draw'] },
-                        trophies: { type: 'integer', nullable: true },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+          'The meta-service fetches the battle log from clash-data-service itself: no route accepts battles sent by a client. Battles already stored are counted in `duplicates`; battles that cannot be read from the player side in `skipped`. Calling it again is harmless.',
         responses: {
           '200': {
             description: 'Ingestion report',
@@ -425,15 +400,19 @@ const openapiSpec = {
                 schema: {
                   type: 'object',
                   properties: {
+                    playerTag: { type: 'string', example: '#2PP8VJ9Q' },
                     ingested: { type: 'integer' },
                     duplicates: { type: 'integer' },
                     invalid: { type: 'integer' },
+                    skipped: { type: 'integer' },
                   },
                 },
               },
             },
           },
-          '400': { description: '`battles` is not a list' },
+          '400': { description: 'Invalid player tag (InvalidPlayerTag)' },
+          '404': { description: 'Unknown player (PlayerNotFound)' },
+          '503': { description: 'clash-data-service unavailable' },
         },
       },
     },

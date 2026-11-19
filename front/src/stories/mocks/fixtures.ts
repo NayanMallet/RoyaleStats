@@ -315,7 +315,7 @@ export const demoClan: ClanDetails = {
   ].map((member, index) => ({ ...member, clanRank: index + 1, previousClanRank: index + 1 })),
 }
 
-/** Last battles, as returned by GET /api/clash/players/:tag/battles (sent back to the meta-service). */
+/** Last battles of the demo player (their count is the ingestion report of the stories). */
 export const demoPlayerBattles = [
   {
     type: 'pathOfLegend',

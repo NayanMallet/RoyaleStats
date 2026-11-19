@@ -36,6 +36,34 @@ export function initDatabase(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_battles_result ON battles(result);
   `);
 
+  // A battle is identified by its player and time. One-off migration, when the unique index does
+  // not exist yet: remove the duplicates an older database may hold (keeping the first copy),
+  // then let SQLite enforce the uniqueness.
+  const hasUniqueIndex = db
+    .prepare(
+      "SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = 'idx_battles_player_time'",
+    )
+    .get();
+  if (!hasUniqueIndex) {
+    const database = db;
+    database.transaction(() => {
+      const removed = database
+        .prepare(
+          `DELETE FROM battles WHERE id NOT IN (
+             SELECT MIN(id) FROM battles GROUP BY player_tag, battle_time
+           )`,
+        )
+        .run().changes;
+      if (removed > 0) {
+        logger.warn('Duplicate battles removed before adding the unique index', { removed });
+      }
+      database.exec(
+        'CREATE UNIQUE INDEX idx_battles_player_time ON battles(player_tag, battle_time)',
+      );
+    })();
+    logger.info('Unique index on battles (player_tag, battle_time) created');
+  }
+
   logger.info('Meta Tracker Service database initialized successfully');
   return db;
 }

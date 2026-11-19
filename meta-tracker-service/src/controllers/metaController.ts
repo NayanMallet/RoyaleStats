@@ -4,6 +4,8 @@ import { ValidationError, logger } from 'shared';
 
 // Errors are thrown: Express 5 forwards them, sync or async, to the shared error handler.
 import { processBattles } from '../services/ingestionService';
+import { formatPlayerTag, normalizeBattleLog } from '../services/battleNormalizer';
+import { getFromClashDataService, playerPath } from '../services/clashDataClient';
 
 export async function getMetaSnapshot(req: Request, res: Response) {
   const db = getDatabase();
@@ -128,17 +130,27 @@ export async function getRecommendations(req: Request, res: Response) {
   });
 }
 
-export async function ingestBattles(req: Request, res: Response) {
-  const { battles } = req.body ?? {};
+const PLAYER_TAG = /^#[0-9A-Z]{3,15}$/;
 
-  if (!Array.isArray(battles)) {
-    throw new ValidationError('Le champ battles doit être une liste de combats.');
+/**
+ * POST /players/:playerTag/ingest — adds the recent battles of one player to the meta. The
+ * battles are fetched from clash-data-service by the server: a client can ask for a player to be
+ * ingested, never send battles itself. Calling it again is harmless (duplicates are ignored, and
+ * clash-data-service serves the battle log from its cache for 2 minutes).
+ */
+export async function ingestPlayer(req: Request, res: Response) {
+  const playerTag = formatPlayerTag(String(req.params.playerTag ?? ''));
+  if (!PLAYER_TAG.test(playerTag)) {
+    throw new ValidationError('Tag de joueur invalide : lettres et chiffres après le #.', {
+      code: 'InvalidPlayerTag',
+    });
   }
 
-  // Duplicates and invalid battles are reported, not refused: a client re-sending a battle log
-  // it already sent is the normal case.
+  const rawLog = await getFromClashDataService<unknown>(playerPath(playerTag, '/battles'));
+  const { battles, skipped } = normalizeBattleLog(playerTag, rawLog);
   const report = processBattles(battles);
 
-  logger.info('Battles ingested', { ...report });
-  res.json(report);
+  logger.info('Player battles ingested', { playerTag, ...report, skipped });
+  // `skipped`: battles of the log that are not readable from the player's side.
+  res.json({ playerTag, ...report, skipped });
 }

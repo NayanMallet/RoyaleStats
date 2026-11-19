@@ -4,12 +4,11 @@ import {
   fetchPlayer,
   fetchCards,
   fetchClan,
-  fetchPlayerBattles,
   type PlayerProfile,
   type Card as ApiCard,
   type ClanDetails,
 } from '@/services/clash.service'
-import { ingestBattles } from '@/services/meta.service'
+import { ingestPlayerBattles } from '@/services/meta.service'
 import { getClanBadgeUrl, initBadges } from '@/services/badges'
 import { getArenaDetails } from '@/services/arenas'
 import { toast } from 'vue-sonner'
@@ -128,16 +127,8 @@ async function handleSearch(tagInput: string): Promise<PlayerProfile | null> {
     player.value = playerData
     linkedProfile.value = linkData
 
-    // Background: Ingest battles for meta analysis
-    // Background: a failure here must not reach the user (no unhandled rejection toast).
-    fetchPlayerBattles(tag)
-      .then((battles) => {
-        if (battles && battles.length) {
-          console.log(`[Meta] Ingesting ${battles.length} battles for ${tag}`)
-          ingestBattles(battles)
-        }
-      })
-      .catch((error) => console.warn('[Meta] Could not ingest the battle log', error))
+    // Background: the meta-service fetches and ingests this player's battles itself (RST-31).
+    void ingestPlayerBattles(tag)
 
     return player.value
   } catch (err) {

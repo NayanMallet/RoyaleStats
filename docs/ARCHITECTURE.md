@@ -54,7 +54,7 @@ La Gateway retire son préfixe avant de transmettre la requête. La référence 
 | `/api/users`                | user-service `/users`    | `POST /register`, `POST /login`, `GET\|PUT\|DELETE /me`                                                                                                                      |
 | `/api/link`                 | link-service `/link`     | `POST /`, `GET /tag/:tag`, `GET\|PATCH\|DELETE /:userId`                                                                                                                     |
 | `/api/clash`                | clash-data-service `/`   | `GET /players/:tag`, `GET /players/:tag/battles`, `GET /cards`, `GET /clans/:tag`, `GET /leaderboards`, `GET /leaderboard/:id`, `GET /locations/global/pathoflegend/players` |
-| `/api/meta`                 | meta-tracker-service `/` | `GET /snapshot`, `POST /analyze/deck`, `GET /recommend/:playerTag`, `POST /ingest/battles`                                                                                   |
+| `/api/meta`                 | meta-tracker-service `/` | `GET /snapshot`, `POST /analyze/deck`, `GET /recommend/:playerTag`, `POST /players/:tag/ingest`                                                                              |
 | `/api/royaleapi`            | royaleapi.com            | Relais des classements publics                                                                                                                                               |
 | `/api/items`, `/api/public` | item-service, public-api | Héritage du TP                                                                                                                                                               |
 
@@ -108,7 +108,7 @@ Chaque service crée ses tables au démarrage (`CREATE TABLE IF NOT EXISTS`). Le
 
 **Liaison d'un compte** : `LinkPlayerDialog` → Gateway `/api/link` → `link-service`, qui vérifie le JWT (le compte vient du token, jamais d'un `userId` envoyé par le client), vérifie l'existence du joueur auprès de `clash-data-service`, puis enregistre la liaison (un compte et un tag au plus une fois chacun). Un utilisateur ne peut lire, modifier ou supprimer que sa propre liaison (403 sinon) ; `GET /tag/:tag` est public et ne renvoie que le tag, les pseudos Twitter/Twitch et la date.
 
-**Collecte de la méta** : au démarrage puis toutes les heures, le worker du `meta-tracker-service` récupère les 1 000 premiers joueurs du classement Path of Legends, lit leurs derniers combats via `clash-data-service` et met à jour `battles` et `card_stats`.
+**Collecte de la méta** : au démarrage puis toutes les heures, le worker du `meta-tracker-service` récupère les 1 000 premiers joueurs du classement Path of Legends, lit leurs derniers combats via `clash-data-service` et met à jour `battles` et `card_stats`. Quand un joueur est consulté, le front demande aussi `POST /api/meta/players/:tag/ingest` : le service récupère lui-même ses combats, aucune route n'accepte de combats envoyés par un client. Chaque combat est lu du côté du joueur, validé, puis enregistré une seule fois (index unique `player_tag` + `battle_time`, un lot par transaction) ; un passage du worker encore en cours n'est pas doublé par le suivant.
 
 ### Durées du cache (`clash-data-service`)
 
@@ -157,8 +157,6 @@ Les réglages communs sont définis une seule fois dans `docker-compose.yml` (an
 ## Limites connues
 
 Ces points sont suivis dans Jira ; ne les reproduisez pas dans du nouveau code.
-
-- `POST /api/meta/ingest/battles` est accessible publiquement via la Gateway (Story S4.2).
 
 ## Schémas de conception initiaux
 
