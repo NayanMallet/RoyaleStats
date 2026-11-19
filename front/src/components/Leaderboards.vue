@@ -8,7 +8,7 @@ import {
   type LeaderboardPlayer,
 } from '@/services/leaderboards'
 import { getClanBadgeUrl, initBadges } from '@/services/badges'
-import { ChevronLeft, Shield, Loader2 } from 'lucide-vue-next'
+import { ChevronLeft, Shield, Loader2, Medal } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 
 const emit = defineEmits(['select-player', 'select-clan'])
@@ -166,7 +166,7 @@ const getCategoryColor = (cat: Category) => {
     case '2v2':
       return 'from-blue-500 to-indigo-600'
     default:
-      return 'from-slate-500 to-slate-700'
+      return 'from-muted-foreground to-foreground'
   }
 }
 </script>
@@ -174,16 +174,21 @@ const getCategoryColor = (cat: Category) => {
 <template>
   <div class="w-full max-w-7xl mx-auto pb-4 transition-all duration-500">
     <!-- HEADER -->
-    <div class="flex items-center justify-between mb-8 px-4" v-if="activeCategory">
+    <!-- Mobile first: back button above the title, then a centered title between two equal
+         columns from sm up (the right column only balances the back button). -->
+    <div
+      v-if="activeCategory"
+      class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 mb-6 sm:mb-8 px-4"
+    >
       <Button
         variant="ghost"
-        class="gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl"
+        class="justify-self-start gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl"
         @click="activeCategory = null"
       >
         <ChevronLeft class="w-5 h-5" /> Retour
       </Button>
       <h2
-        class="text-2xl font-black text-foreground uppercase tracking-tight flex items-center gap-3"
+        class="min-w-0 text-xl sm:text-2xl font-black text-foreground uppercase tracking-tight flex items-center justify-center gap-3"
       >
         <img
           :src="
@@ -195,11 +200,11 @@ const getCategoryColor = (cat: Category) => {
                   ? 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/trophy-gm-merge-tactics.png'
                   : 'https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/2v2.png'
           "
-          class="w-8 h-8 object-contain"
+          class="w-8 h-8 shrink-0 object-contain"
+          alt=""
         />
         {{ getCategoryTitle }}
       </h2>
-      <div class="w-24"></div>
     </div>
 
     <div
@@ -298,20 +303,26 @@ const getCategoryColor = (cat: Category) => {
     <!-- LEADERBOARD LIST View -->
     <div
       v-else
-      class="bg-card/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-surface-shadow/50 border border-card/50 overflow-hidden mx-4 animate-in zoom-in-95 duration-300"
+      class="bg-card/80 backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl shadow-surface-shadow/50 border border-card/50 overflow-hidden mx-4 animate-in zoom-in-95 duration-300"
     >
       <div v-if="loading" class="flex justify-center py-32">
         <Loader2 class="w-10 h-10 animate-spin text-info" />
       </div>
 
-      <div v-else class="flex flex-col">
+      <!-- One grid for the whole list, each row being a subgrid: the rank and score columns size
+           to their widest content and stay aligned with the header. Mobile first: rank, player,
+           score; the clan column appears from sm up. -->
+      <div
+        v-else
+        class="grid grid-cols-[auto_minmax(0,1fr)_auto] sm:grid-cols-[auto_minmax(0,3fr)_minmax(0,2fr)_auto]"
+      >
         <div
-          class="grid grid-cols-12 gap-4 px-6 sm:px-8 py-4 border-b border-border text-xs font-bold text-muted-foreground uppercase tracking-wider bg-background/50"
+          class="col-span-full grid grid-cols-subgrid gap-x-3 sm:gap-x-4 px-4 sm:px-8 py-4 border-b border-border text-xs font-bold text-muted-foreground uppercase tracking-wider bg-background/50"
         >
-          <div class="col-span-2 sm:col-span-1 text-center">#</div>
-          <div class="col-span-8 sm:col-span-5">Joueur</div>
-          <div class="hidden sm:block col-span-4">Clan</div>
-          <div class="hidden sm:block col-span-2 text-right">
+          <div class="w-7 text-center">#</div>
+          <div>Joueur</div>
+          <div class="hidden sm:block">Clan</div>
+          <div class="text-right">
             {{ activeCategory === 'ranked' ? 'Médailles' : 'Trophées' }}
           </div>
         </div>
@@ -320,24 +331,23 @@ const getCategoryColor = (cat: Category) => {
           v-for="(player, index) in getActiveList"
           :key="player.tag"
           @click="selectPlayer(player.tag)"
-          class="grid grid-cols-12 gap-4 px-6 sm:px-8 py-4 items-center hover:bg-info-soft/50 transition-colors border-b border-border last:border-0 cursor-pointer group"
+          data-testid="leaderboard-row"
+          class="col-span-full grid grid-cols-subgrid gap-x-3 sm:gap-x-4 px-4 sm:px-8 py-4 items-center hover:bg-info-soft/50 transition-colors border-b border-border last:border-0 cursor-pointer group"
         >
           <!-- Rank -->
-          <div class="col-span-2 sm:col-span-1 flex justify-center">
-            <div
-              class="w-7 h-7 flex items-center justify-center rounded-lg font-black text-xs"
-              :class="
-                index < 3
-                  ? 'bg-yellow-400 text-yellow-900 shadow-sm'
-                  : 'text-muted-foreground bg-accent/50'
-              "
-            >
-              {{ index + 1 }}
-            </div>
+          <div
+            class="w-7 h-7 flex items-center justify-center rounded-lg font-black text-xs"
+            :class="
+              index < 3
+                ? 'bg-warning-soft text-warning border border-warning-border shadow-sm'
+                : 'text-muted-foreground bg-accent/50'
+            "
+          >
+            {{ index + 1 }}
           </div>
 
           <!-- Player Info -->
-          <div class="col-span-8 sm:col-span-5 flex items-center gap-3 min-w-0">
+          <div class="flex items-center gap-3 min-w-0">
             <div
               class="font-bold text-foreground text-base group-hover:text-info transition-colors truncate"
             >
@@ -345,45 +355,47 @@ const getCategoryColor = (cat: Category) => {
             </div>
             <span
               v-if="index < 3"
-              class="hidden md:inline-flex px-1.5 py-0.5 rounded-md bg-warning-soft text-warning text-[9px] font-bold uppercase tracking-wide border border-warning-border"
+              class="hidden md:inline-flex shrink-0 px-1.5 py-0.5 rounded-md bg-warning-soft text-warning text-[9px] font-bold uppercase tracking-wide border border-warning-border"
               >Top {{ index + 1 }}</span
             >
           </div>
 
           <!-- Clan Info -->
-          <div
-            class="hidden sm:flex col-span-4 items-center gap-2 text-muted-foreground font-medium text-sm group/clan cursor-pointer hover:bg-accent/60 rounded-lg py-1 px-2 -ml-2 w-fit transition-all duration-200"
-            @click.stop="player.clan ? selectClan(player.clan.tag) : null"
-          >
-            <img
-              v-if="player.clan && (player.clan.badgeUrl || getClanBadgeUrl(player.clan.badgeId))"
-              :src="player.clan.badgeUrl || getClanBadgeUrl(player.clan.badgeId!)"
-              class="w-5 h-5 object-contain"
-              alt="Clan Badge"
-            />
-            <Shield
-              v-else-if="player.clan"
-              class="w-3.5 h-3.5 text-muted-foreground group-hover/clan:text-clan transition-colors"
-            />
-            <span class="truncate group-hover/clan:text-foreground transition-colors">{{
-              player.clan?.name || '-'
-            }}</span>
+          <div class="hidden sm:block min-w-0">
+            <div
+              class="flex max-w-full w-fit items-center gap-2 text-muted-foreground font-medium text-sm group/clan cursor-pointer hover:bg-accent/60 rounded-lg py-1 px-2 -ml-2 transition-all duration-200"
+              @click.stop="player.clan ? selectClan(player.clan.tag) : null"
+            >
+              <img
+                v-if="player.clan && (player.clan.badgeUrl || getClanBadgeUrl(player.clan.badgeId))"
+                :src="player.clan.badgeUrl || getClanBadgeUrl(player.clan.badgeId!)"
+                class="w-5 h-5 shrink-0 object-contain"
+                alt=""
+              />
+              <Shield
+                v-else-if="player.clan"
+                class="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover/clan:text-clan transition-colors"
+              />
+              <span class="truncate group-hover/clan:text-foreground transition-colors">{{
+                player.clan?.name || '-'
+              }}</span>
+            </div>
           </div>
 
           <!-- Score -->
-          <div></div>
           <div
-            class="hidden sm:flex font-black text-lg text-foreground flex-row items-center gap-1"
+            class="flex items-center justify-end gap-1.5 whitespace-nowrap tabular-nums font-black text-base sm:text-lg text-foreground"
           >
-            <img
+            <Medal
               v-if="activeCategory === 'ranked'"
-              src="https://kboosting.com/img/29327/c/champion-medals-500x500.png"
-              class="size-10 object-contain"
+              class="size-5 sm:size-6 shrink-0 text-ranked"
+              aria-hidden="true"
             />
             <img
               v-else
               src="https://cdns3.royaleapi.com/cdn-cgi/image/w=64,h=64,format=auto/static/img/ui/trophy.png"
-              class="size-6 mr-1 object-contain"
+              class="size-5 sm:size-6 shrink-0 object-contain"
+              alt=""
             />
             {{ player.score?.toLocaleString() }}
           </div>

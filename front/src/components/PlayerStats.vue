@@ -1,4 +1,3 @@
-```vue
 <script setup lang="ts">
 import { ref, watchEffect, computed, watch } from 'vue'
 import {
@@ -30,6 +29,7 @@ import {
   Twitch,
 } from 'lucide-vue-next'
 import { linkService, type PlayerLink } from '@/services/link.service'
+import { HttpError } from '@/services/http'
 
 import { Button } from '@/components/ui/button'
 
@@ -136,7 +136,8 @@ async function handleSearch(tagInput: string): Promise<PlayerProfile | null> {
 
     return player.value
   } catch (err) {
-    console.error(err)
+    // An unknown tag is a user input error, not a bug: only unexpected failures are logged.
+    if (!(err instanceof HttpError && err.status === 404)) console.error(err)
     toast.error(err instanceof Error ? err.message : 'Erreur lors de la récupération du joueur')
     return null
   } finally {

@@ -10,15 +10,15 @@ Ce Storybook documente l'interface de RoyaleStats en suivant l'**Atomic Design**
 | ------------- | ------------------------------------------------------------------- | ------------------------------------------------------- |
 | **Atoms**     | Plus petits éléments d'interface, sans logique métier               | Button, Input, Label, Avatar, Separator, Textarea       |
 | **Molecules** | Groupe d'atomes qui remplit une fonction simple                     | FormField, SearchBar, InfoCard, UserMenu, ThemeToggle   |
-| **Organisms** | Bloc autonome de l'interface, souvent branché sur l'API             | Leaderboards, LinkedPlayer, MetaStats, LinkPlayerDialog |
+| **Organisms** | Bloc autonome de l'interface, souvent branché sur l'API             | Leaderboards, PlayerStats, MetaStats, LinkPlayerDialog… |
 | **Templates** | Mise en page qui place les organismes, avec du contenu factice      | AuthTemplate, DashboardTemplate                         |
-| **Pages**     | Templates remplis avec du contenu réel (ici, des réponses simulées) | Login, Register, Profile                                |
+| **Pages**     | Templates remplis avec du contenu réel (ici, des réponses simulées) | HomePage, Login, Register, Profile                      |
 
 ## Où sont les fichiers
 
 - Les composants restent à leur place : `src/components/ui/` (atomes et molécules générés par shadcn-vue), `src/components/` (organismes), `src/views/` (pages).
 - Les stories sont rangées par niveau dans `src/stories/{atoms,molecules,organisms,templates,pages}/`.
-- Les données factices et le mock d'API sont dans `src/stories/mocks/`.
+- Les données factices, le mock d'API et les routes simulées partagées (`routes.ts`) sont dans `src/stories/mocks/`.
 
 ## Simuler l'API
 

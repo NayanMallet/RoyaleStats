@@ -78,15 +78,15 @@ Chaque composant est documenté dans Storybook (`pnpm --filter front storybook`,
 | -------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
 | `Atoms/…`                  | Un composant de base, sans logique métier                          | `components/ui/` : Button, Input, Label, Avatar…                  |
 | `Molecules/…`              | Quelques atomes assemblés pour une fonction simple                 | FormField, SearchBar, InfoCard, `UserMenu.vue`, `ThemeToggle.vue` |
-| `Organisms/…`              | Un bloc autonome de l'interface, souvent branché sur l'API         | `Leaderboards.vue`, `LinkedPlayer.vue`, `MetaStats.vue`…          |
+| `Organisms/…`              | Un bloc autonome de l'interface, souvent branché sur l'API         | `Leaderboards.vue`, `PlayerStats.vue`, `MetaStats.vue`…           |
 | `Templates/…`              | Une mise en page qui place les organismes, avec du contenu factice | AuthTemplate, DashboardTemplate                                   |
-| `Pages/…`                  | Une vue réelle de `views/`, alimentée par des réponses simulées    | `LoginView.vue`, `RegisterView.vue`, `ProfileView.vue`            |
+| `Pages/…`                  | Une vue réelle de `views/`, alimentée par des réponses simulées    | `HomeView.vue`, `LoginView.vue`, `ProfileView.vue`…               |
 
 Règles :
 
-- **Tout nouveau composant arrive avec sa story**, dans le dossier de son niveau (`src/stories/organisms/MonComposant.stories.ts`, titre `Organisms/MonComposant`). Reste à couvrir dans le code existant : `PlayerStats.vue` et `HomeView.vue`.
+- **Tout nouveau composant arrive avec sa story**, dans le dossier de son niveau (`src/stories/organisms/MonComposant.stories.ts`, titre `Organisms/MonComposant`).
 - **Une story par état utile** : nominal, chargement, vide, erreur. Les états d'erreur sont documentés ici avant d'être testés en E2E.
-- **Aucun appel réseau réel** : la story déclare ses réponses dans `parameters.mockApi` et l'état de connexion dans `parameters.auth` (`'guest'`, `'user'` ou `'linked'`). Les appels vers un autre domaine (RoyaleAPI, GitHub…) sont interceptés aussi et se simulent avec une `RegExp` sur l'URL complète. Les données factices sont dans `src/stories/mocks/fixtures.ts`.
+- **Aucun appel réseau réel** : la story déclare ses réponses dans `parameters.mockApi` et l'état de connexion dans `parameters.auth` (`'guest'`, `'user'` ou `'linked'`). Les appels vers un autre domaine (RoyaleAPI, GitHub…) sont interceptés aussi et se simulent avec une `RegExp` sur l'URL complète. Les données factices sont dans `src/stories/mocks/fixtures.ts`, les routes simulées partagées par plusieurs stories (classements, fiche joueur) dans `src/stories/mocks/routes.ts`. Les images issues de l'API (cartes, badges) sont remplacées par des SVG générés localement (`placeholderImage`).
 - **Vérifier les deux thèmes** avec le sélecteur « Thème » de la barre d'outils (clair, sombre).
 - **Vérifier les personas** avec les viewports de la barre d'outils : « Gérard — écran 800×600 », « Gérard — surface utile 780×470 » et « Karim — mobile 393×851 ».
 - **Accessibilité** : l'onglet Accessibility (axe-core) doit être vide pour tout nouveau composant. La dette existante est suivie dans Jira.
