@@ -17,3 +17,4 @@ export { fromSqliteError, isSqliteError } from './src/sqliteErrors';
 export { installProcessHandlers, registerDebugRoutes } from './src/process';
 export { getAuthenticatedUser, getJwtSecret, requireAuth, verifyAccessToken } from './src/auth';
 export type { AuthenticatedUser } from './src/auth';
+export { TIMEOUTS_MS, isTimeoutError, timeoutFromEnv } from './src/timeouts';
