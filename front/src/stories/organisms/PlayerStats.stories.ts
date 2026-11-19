@@ -66,8 +66,8 @@ export const Loading: Story = {
 }
 
 /**
- * Tag inconnu de l'API Clash Royale (404) : la fiche reste vide et un toast affiche le message
- * brut du service, en anglais. À faire évoluer avec RST-33 (Error Management).
+ * Tag inconnu de l'API Clash Royale (404) : la fiche reste vide et un toast invite à vérifier
+ * le tag. Erreur attendue, donc rien dans la console.
  */
 export const PlayerNotFound: Story = {
   parameters: {
@@ -75,19 +75,19 @@ export const PlayerNotFound: Story = {
   },
   play: async ({ args, canvasElement }) => {
     const page = within(canvasElement.ownerDocument.body)
-    await expect(await page.findByText('Player not found')).toBeInTheDocument()
+    await expect(await page.findByText('Joueur introuvable : vérifiez le tag.')).toBeInTheDocument()
     await expect(args.onPlayerLoaded).not.toHaveBeenCalledWith(true)
   },
 }
 
-/** Le clash-data-service ne répond pas (503) : même comportement qu'un joueur introuvable. */
+/** Le clash-data-service ne répond pas (503) : le toast donne le code d'erreur et invite à réessayer. */
 export const ServerError: Story = {
   parameters: {
     mockApi: playerRoutes({ player: { status: 503, body: { error: 'Service Unavailable' } } }),
   },
   play: async ({ canvasElement }) => {
     const page = within(canvasElement.ownerDocument.body)
-    await expect(await page.findByText(/Error fetching player/)).toBeInTheDocument()
+    await expect(await page.findByText(/erreur 503/)).toBeInTheDocument()
   },
 }
 

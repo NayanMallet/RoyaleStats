@@ -1,3 +1,4 @@
+import { HttpError } from './http'
 export interface PlayerProfile {
   tag: string
   name: string
@@ -171,9 +172,13 @@ export async function fetchPlayer(tag: string): Promise<PlayerProfile> {
 
   if (!response.ok) {
     if (response.status === 404) {
-      throw new Error('Player not found')
+      throw new HttpError('Joueur introuvable : vérifiez le tag.', 404)
     }
-    throw new Error(`Error fetching player: ${response.statusText}`)
+    // statusText is empty over HTTP/2: the status code is the reliable information.
+    throw new HttpError(
+      `Impossible de récupérer le joueur (erreur ${response.status}), réessayez plus tard.`,
+      response.status,
+    )
   }
 
   return response.json()
