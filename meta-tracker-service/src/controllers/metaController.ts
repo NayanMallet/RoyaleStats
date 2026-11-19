@@ -135,8 +135,10 @@ export async function ingestBattles(req: Request, res: Response) {
     throw new ValidationError('Le champ battles doit être une liste de combats.');
   }
 
-  const ingested = processBattles(battles);
+  // Duplicates and invalid battles are reported, not refused: a client re-sending a battle log
+  // it already sent is the normal case.
+  const report = processBattles(battles);
 
-  logger.info('Battles ingested', { ingested });
-  res.json({ ingested });
+  logger.info('Battles ingested', { ...report });
+  res.json(report);
 }

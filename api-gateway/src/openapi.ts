@@ -380,21 +380,60 @@ const openapiSpec = {
     '/api/meta/ingest/battles': {
       post: {
         tags: ['Meta'],
-        summary: 'Ingest battle logs (internal)',
+        summary: 'Ingest battles in the internal format',
+        description:
+          'A battle is identified by playerTag + battleTime: sending it again is ignored and counted in `duplicates`. A battle without player, time, known result or deck (1 to 8 card names) is ignored and counted in `invalid`. The batch is stored in one transaction.',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: {
-                type: 'array',
-                items: { type: 'object', additionalProperties: true },
+                type: 'object',
+                required: ['battles'],
+                properties: {
+                  battles: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      required: ['playerTag', 'battleTime', 'deckCards', 'result'],
+                      properties: {
+                        playerTag: { type: 'string', example: '#2PP8VJ9Q' },
+                        battleTime: { type: 'string', example: '20261119T120000.000Z' },
+                        deckCards: {
+                          type: 'array',
+                          minItems: 1,
+                          maxItems: 8,
+                          items: { type: 'string' },
+                          example: ['Hog Rider', 'Musketeer'],
+                        },
+                        opponentDeck: { type: 'array', items: { type: 'string' } },
+                        result: { type: 'string', enum: ['win', 'loss', 'draw'] },
+                        trophies: { type: 'integer', nullable: true },
+                      },
+                    },
+                  },
+                },
               },
             },
           },
         },
         responses: {
-          '202': { description: 'Accepted for processing' },
-          '200': { description: 'OK' },
+          '200': {
+            description: 'Ingestion report',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    ingested: { type: 'integer' },
+                    duplicates: { type: 'integer' },
+                    invalid: { type: 'integer' },
+                  },
+                },
+              },
+            },
+          },
+          '400': { description: '`battles` is not a list' },
         },
       },
     },
