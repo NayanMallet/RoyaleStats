@@ -1,6 +1,6 @@
 # RoyaleStats
 
-[![CI](https://github.com/NayanMallet/RoyaleStats/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/NayanMallet/RoyaleStats/actions/workflows/ci.yml)
+[![CI](https://github.com/NotGrafik/RoyaleStats/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/NotGrafik/RoyaleStats/actions/workflows/ci.yml)
 
 > Plateforme de statistiques Clash Royale : recherche de joueurs et de clans, classements, liaison d'un compte RoyaleStats à son profil de jeu et **Meta Tracker** pour suivre la méta.
 
