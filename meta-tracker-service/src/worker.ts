@@ -1,100 +1,79 @@
-import fetch from 'node-fetch';
-import { TIMEOUTS_MS, logger, timeoutFromEnv } from 'shared';
+import { logger } from 'shared';
+import { normalizeBattleLog } from './services/battleNormalizer';
+import { getFromClashDataService, playerPath } from './services/clashDataClient';
 import { processBattles } from './services/ingestionService';
 
-const DATA_SERVICE_URL = process.env.CLASH_DATA_SERVICE_URL || 'http://clash-data-service:3004';
-// A stuck call would block the whole hourly run: each call gives up after this delay.
-const CALL_TIMEOUT_MS = timeoutFromEnv('SERVICE_CALL_TIMEOUT_MS', TIMEOUTS_MS.serviceCall);
+const RUN_INTERVAL_MS = 60 * 60 * 1000; // every hour
+const POLITE_DELAY_MS = 200; // between two players, to spare the Clash Royale API quota
 
-async function fetchTopPlayers() {
-  try {
-    const res = await fetch(`${DATA_SERVICE_URL}/locations/global/pathoflegend/players`, {
-      signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
-    });
-    if (!res.ok) throw new Error(`Failed to fetch top players: ${res.statusText}`);
-    const data = await res.json();
-    return (data.items || []).slice(0, 1000); // Top 1000
-  } catch (e) {
-    logger.error('Error fetching top players', e);
-    return [];
-  }
+interface RankedPlayer {
+  tag: string;
 }
 
-async function fetchPlayerBattles(tag: string) {
-  try {
-    const encodedTag = encodeURIComponent(tag);
-    const res = await fetch(`${DATA_SERVICE_URL}/players/${encodedTag}/battles`, {
-      signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
-    });
-    if (res.status === 404) return [];
-    if (!res.ok) throw new Error(`Failed to fetch battles: ${res.statusText}`);
-    return await res.json();
-  } catch (e) {
-    // Log but don't crash
-    logger.warn(`Error fetching battles for ${tag}`, e);
-    return [];
+let running = false;
+
+/**
+ * One ingestion run over the Path of Legend ranking. A failing player is logged and skipped, so
+ * one bad battle log never stops the run.
+ */
+export async function runIngestion(): Promise<void> {
+  const started = Date.now();
+  const ranking = await getFromClashDataService<{ items?: RankedPlayer[] }>(
+    '/locations/global/pathoflegend/players',
+  );
+  const players = (ranking.items ?? []).slice(0, 1000);
+  logger.info(`[Worker] Found ${players.length} top players. Processing...`);
+
+  const totals = { ingested: 0, duplicates: 0, invalid: 0, skipped: 0, failedPlayers: 0 };
+
+  for (const player of players) {
+    try {
+      const rawLog = await getFromClashDataService<unknown>(playerPath(player.tag, '/battles'));
+      const { battles, skipped } = normalizeBattleLog(player.tag, rawLog);
+      const report = processBattles(battles);
+      totals.ingested += report.ingested;
+      totals.duplicates += report.duplicates;
+      totals.invalid += report.invalid;
+      totals.skipped += skipped;
+    } catch (error) {
+      totals.failedPlayers++;
+      logger.warn(`[Worker] Battles of ${player.tag} not ingested`, error);
+    }
+    await new Promise((resolve) => setTimeout(resolve, POLITE_DELAY_MS));
   }
+
+  logger.info('[Worker] Job complete', {
+    players: players.length,
+    ...totals,
+    durationMs: Date.now() - started,
+  });
 }
 
+/**
+ * Runs the ingestion now, then every hour. A run still in progress when the next one is due is
+ * not doubled: the next one is skipped (a run over 1000 players can last several minutes, more if
+ * the Clash Royale API is slow).
+ */
 export function startWorker() {
   logger.info('Starting Meta Tracker Background Worker...');
 
-  const runJob = async () => {
-    logger.info('[Worker] Starting scheduled ingestion job...');
-    const players = await fetchTopPlayers();
-    logger.info(`[Worker] Found ${players.length} top players. Processing...`);
-
-    let totalIngested = 0;
-
-    for (const player of players) {
-      const rawBattles = await fetchPlayerBattles(player.tag);
-
-      // Map raw API battles to our internal format
-      const cleanBattles = rawBattles.map((b: any) => {
-        // Determine result relative to the player
-        // The API usually returns team[0] as the player being queried
-        const team = b.team[0];
-        const opponent = b.opponent[0];
-
-        // Extract card names (API returns objects with name, id, etc.)
-        const deckCards = team.cards.map((c: any) => c.name);
-        const opponentDeck = opponent.cards.map((c: any) => c.name);
-
-        let result = 'draw';
-        if (team.crowns > opponent.crowns) result = 'win';
-        else if (team.crowns < opponent.crowns) result = 'loss';
-
-        return {
-          playerTag: player.tag, // Enforce tag from player loop (API doesn't always have it in root)
-          battleTime: b.battleTime,
-          deckCards,
-          opponentDeck,
-          result,
-          trophies: team.startingTrophies || 0,
-        };
-      });
-
-      if (cleanBattles.length > 0) {
-        const { ingested } = processBattles(cleanBattles);
-        totalIngested += ingested;
-      }
-      // Polite delay
-      await new Promise((r) => setTimeout(r, 200));
+  const safeRun = async () => {
+    if (running) {
+      logger.warn('[Worker] Previous run still in progress, this run is skipped');
+      return;
     }
-
-    logger.info(
-      `[Worker] Job complete. Ingested ${totalIngested} new battles from ${players.length} players.`,
-    );
+    running = true;
+    try {
+      await runIngestion();
+    } catch (error) {
+      // Ranking unavailable or database error: logged, the next run retries. Left unhandled, the
+      // rejection would stop the whole service (see installProcessHandlers).
+      logger.error('[Worker] Ingestion job failed', error);
+    } finally {
+      running = false;
+    }
   };
 
-  // A failed run (unexpected battle format, database error) is logged and the next run retries:
-  // left unhandled, the rejection would stop the whole service (see installProcessHandlers).
-  const safeRun = () =>
-    runJob().catch((error) => logger.error('[Worker] Ingestion job failed', error));
-
-  // Run immediately on start
-  safeRun();
-
-  // Run every hour (3600000 ms)
-  setInterval(safeRun, 60 * 60 * 1000);
+  void safeRun();
+  setInterval(() => void safeRun(), RUN_INTERVAL_MS).unref();
 }
