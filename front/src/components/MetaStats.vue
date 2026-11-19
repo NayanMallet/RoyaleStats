@@ -2,9 +2,13 @@
 import { ref, onMounted } from 'vue'
 import { fetchMetaSnapshot, type MetaSnapshot } from '@/services/meta.service'
 import { Loader2, TrendingUp, Hash } from 'lucide-vue-next'
+import ErrorState from '@/components/ErrorState.vue'
+import { describeApiError, type DisplayedError } from '@/composables/useApiError'
 
 const loading = ref(true)
 const snapshot = ref<MetaSnapshot | null>(null)
+// An error is not "no data": the user gets the reason and can retry.
+const loadError = ref<DisplayedError | null>(null)
 
 // Map card names to rough asset URLs (the best effort without full ID mapping)
 // In a real app, we would have a proper ID mapping from clash-data-service
@@ -25,15 +29,20 @@ const handleImageError = (event: Event) => {
   }
 }
 
-onMounted(async () => {
+async function loadSnapshot() {
+  loading.value = true
+  loadError.value = null
   try {
     snapshot.value = await fetchMetaSnapshot()
-  } catch (e) {
-    console.error('Failed to load meta snapshot', e)
+  } catch (error) {
+    console.error('Failed to load meta snapshot', error)
+    loadError.value = describeApiError(error)
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadSnapshot)
 </script>
 
 <template>
@@ -55,6 +64,13 @@ onMounted(async () => {
     <div v-if="loading" class="flex justify-center py-20">
       <Loader2 class="w-12 h-12 animate-spin text-success" />
     </div>
+
+    <ErrorState
+      v-else-if="loadError"
+      v-bind="loadError"
+      title="Impossible de charger la méta"
+      @retry="loadSnapshot"
+    />
 
     <div
       v-else-if="!snapshot || snapshot.topCards.length === 0"

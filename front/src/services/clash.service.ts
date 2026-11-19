@@ -1,4 +1,4 @@
-import { HttpError } from './http'
+import { ApiError, apiErrorFromResponse, fetchWithTimeout } from './http'
 export interface PlayerProfile {
   tag: string
   name: string
@@ -168,16 +168,21 @@ export async function fetchPlayer(tag: string): Promise<PlayerProfile> {
   // URL encode the tag (replace # with %23) to be safe in URL
   const encodedTag = encodeURIComponent(formattedTag)
 
-  const response = await fetch(`/api/clash/players/${encodedTag}`)
+  const response = await fetchWithTimeout(`/api/clash/players/${encodedTag}`)
 
   if (!response.ok) {
+    const error = await apiErrorFromResponse(response)
     if (response.status === 404) {
-      throw new HttpError('Joueur introuvable : vérifiez le tag.', 404)
+      throw new ApiError(404, 'Joueur introuvable : vérifiez le tag.', {
+        code: error.code,
+        requestId: error.requestId,
+      })
     }
     // statusText is empty over HTTP/2: the status code is the reliable information.
-    throw new HttpError(
-      `Impossible de récupérer le joueur (erreur ${response.status}), réessayez plus tard.`,
+    throw new ApiError(
       response.status,
+      `Impossible de récupérer le joueur (erreur ${response.status}), réessayez plus tard.`,
+      { code: error.code, requestId: error.requestId },
     )
   }
 

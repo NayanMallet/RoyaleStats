@@ -20,7 +20,8 @@ import {
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { authService } from '@/services/auth.service'
-import { HttpError } from '@/services/http'
+import { ApiError } from '@/services/http'
+import { useApiError } from '@/composables/useApiError'
 import profilePicture from '@/assets/pp.jpg'
 import LinkPlayerDialog from '@/components/LinkPlayerDialog.vue'
 import LinkedPlayer from '@/components/LinkedPlayer.vue'
@@ -28,6 +29,7 @@ import { linkService, type PlayerLink } from '@/services/link.service'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { notify: notifyApiError } = useApiError()
 
 const isLoading = ref(false)
 const name = ref(authStore.user?.name || '')
@@ -71,20 +73,13 @@ const handleUpdate = async () => {
     authStore.updateUser(updatedUser)
     toast.success('Profil mis à jour avec succès !')
   } catch (error) {
-    if (error instanceof HttpError) {
-      if (error.status === 409) {
-        toast.error('Cet email est déjà utilisé')
-      } else if (error.status === 401) {
-        toast.error('Session expirée, veuillez vous reconnecter')
-        authStore.logout()
-        router.push('/login')
-      } else {
-        toast.error('Erreur lors de la mise à jour du profil')
-      }
+    // 401: the session expiry handler (lib/errorReporting.ts) already logs out and redirects.
+    if (error instanceof ApiError && error.status === 401) return
+    if (error instanceof ApiError && error.status === 409) {
+      toast.error('Cet email est déjà utilisé.')
     } else {
-      toast.error('Erreur lors de la mise à jour du profil')
+      notifyApiError(error)
     }
-    console.error('Update error:', error)
   } finally {
     isLoading.value = false
   }

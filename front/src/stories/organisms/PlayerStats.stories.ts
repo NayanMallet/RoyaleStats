@@ -80,14 +80,16 @@ export const PlayerNotFound: Story = {
   },
 }
 
-/** Le clash-data-service ne répond pas (503) : le toast donne le code d'erreur et invite à réessayer. */
+/** Le clash-data-service ne répond pas (503) : le toast suit la table HTTP → UX de l'Epic RST-32. */
 export const ServerError: Story = {
   parameters: {
     mockApi: playerRoutes({ player: { status: 503, body: { error: 'Service Unavailable' } } }),
   },
   play: async ({ canvasElement }) => {
     const page = within(canvasElement.ownerDocument.body)
-    await expect(await page.findByText(/erreur 503/)).toBeInTheDocument()
+    await expect(
+      await page.findByText('Service momentanément indisponible, réessayez dans un instant.'),
+    ).toBeInTheDocument()
   },
 }
 

@@ -32,14 +32,12 @@ const router = createRouter({
   ],
 })
 
-// Navigation guard pour protéger les routes
-router.beforeEach((to, from, next) => {
+// Navigation guard pour protéger les routes : après connexion, retour sur la page demandée.
+router.beforeEach((to) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'login' })
-  } else {
-    next()
+    return { name: 'login', query: { redirect: to.fullPath } }
   }
 })
 

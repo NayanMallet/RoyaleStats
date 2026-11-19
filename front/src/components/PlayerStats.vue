@@ -29,11 +29,13 @@ import {
   Twitch,
 } from 'lucide-vue-next'
 import { linkService, type PlayerLink } from '@/services/link.service'
-import { HttpError } from '@/services/http'
+import { ApiError } from '@/services/http'
+import { useApiError } from '@/composables/useApiError'
 
 import { Button } from '@/components/ui/button'
 
 const emit = defineEmits(['player-loaded'])
+const { notify: notifyApiError } = useApiError()
 
 // -- Types & Logic --
 const playerTag = ref('')
@@ -127,18 +129,22 @@ async function handleSearch(tagInput: string): Promise<PlayerProfile | null> {
     linkedProfile.value = linkData
 
     // Background: Ingest battles for meta analysis
-    fetchPlayerBattles(tag).then((battles) => {
-      if (battles && battles.length) {
-        console.log(`[Meta] Ingesting ${battles.length} battles for ${tag}`)
-        ingestBattles(battles)
-      }
-    })
+    // Background: a failure here must not reach the user (no unhandled rejection toast).
+    fetchPlayerBattles(tag)
+      .then((battles) => {
+        if (battles && battles.length) {
+          console.log(`[Meta] Ingesting ${battles.length} battles for ${tag}`)
+          ingestBattles(battles)
+        }
+      })
+      .catch((error) => console.warn('[Meta] Could not ingest the battle log', error))
 
     return player.value
   } catch (err) {
     // An unknown tag is a user input error, not a bug: only unexpected failures are logged.
-    if (!(err instanceof HttpError && err.status === 404)) console.error(err)
-    toast.error(err instanceof Error ? err.message : 'Erreur lors de la récupération du joueur')
+    if (!(err instanceof ApiError && err.status === 404)) console.error(err)
+    // Message from the HTTP → UX table: unknown tag, service unavailable, network down…
+    notifyApiError(err)
     return null
   } finally {
     loading.value = false

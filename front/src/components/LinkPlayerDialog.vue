@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { X, Link as LinkIcon, Loader2, AlertCircle } from 'lucide-vue-next'
 import { linkService } from '@/services/link.service'
-import { HttpError } from '@/services/http'
+import { ApiError } from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
 
 defineProps<{
@@ -47,9 +47,9 @@ const handleLink = async () => {
     emit('close')
     playerTag.value = ''
   } catch (err) {
-    if (err instanceof HttpError && err.status === 404) {
+    if (err instanceof ApiError && err.status === 404) {
       error.value = 'Joueur introuvable dans Clash Royale'
-    } else if (err instanceof HttpError && err.status === 409) {
+    } else if (err instanceof ApiError && err.status === 409) {
       error.value = 'Ce tag est déjà lié à un autre compte'
     } else {
       error.value = 'Une erreur est survenue. Veuillez réessayer.'
