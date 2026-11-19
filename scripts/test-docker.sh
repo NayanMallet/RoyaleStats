@@ -78,6 +78,20 @@ check() {
   fi
 }
 
+# check_cache <label> <url> <expected x-cache value>: the clash-data-service tells whether it
+# answered from its cache (HIT) or called the Clash Royale API (MISS).
+check_cache() {
+  local label=$1 url=$2 expected=$3
+  local value
+  value=$(curl -s -o /dev/null -D - "$url" | tr -d '\r' | sed -n 's/^x-cache: //Ip')
+  if [[ "$value" == "$expected" ]]; then
+    green "  ✓ $label (x-cache: $value)"
+  else
+    red "  ✗ $label: expected x-cache $expected, got '${value:-none}'"
+    FAILURES=$((FAILURES + 1))
+  fi
+}
+
 echo "==> Smoke tests through the API Gateway"
 EMAIL="smoke-$(date +%s)@example.com"
 PASSWORD="Smoke-test-123"
@@ -96,9 +110,28 @@ check "me without token" 401 GET "$GATEWAY/api/users/me"
 check "delete smoke account" 204 DELETE "$GATEWAY/api/users/me" "" "$TOKEN"
 
 if [[ "${SKIP_CLASH_API:-0}" == "1" ]]; then
-  echo "  - clash cards skipped (SKIP_CLASH_API=1)"
+  echo "  - Clash Royale checks skipped (SKIP_CLASH_API=1)"
 else
+  # Requires a valid CLASH_ROYALE_API_KEY, bound to the IP address of this machine.
   check "clash cards (requires a valid CLASH_ROYALE_API_KEY)" 200 GET "$GATEWAY/api/clash/cards"
+  check "clash path of legend top 3" 200 GET \
+    "$GATEWAY/api/clash/locations/global/pathoflegend/players?limit=3"
+  PLAYER_TAG=$(sed -n 's/^{"items":\[{"tag":"#\([0-9A-Z]*\)".*/\1/p' "$BODY_FILE")
+  check "clash leaderboards list" 200 GET "$GATEWAY/api/clash/leaderboards"
+  if [[ -n "$PLAYER_TAG" ]]; then
+    check "clash player #$PLAYER_TAG" 200 GET "$GATEWAY/api/clash/players/%23$PLAYER_TAG"
+    CLAN_TAG=$(sed -n 's/.*"clan":{"tag":"#\([0-9A-Z]*\)".*/\1/p' "$BODY_FILE")
+    check "clash player battle log" 200 GET "$GATEWAY/api/clash/players/%23$PLAYER_TAG/battles"
+    [[ -n "$CLAN_TAG" ]] && check "clash clan #$CLAN_TAG" 200 GET "$GATEWAY/api/clash/clans/%23$CLAN_TAG"
+  else
+    red "  ✗ no player tag in the Path of Legend ranking"
+    FAILURES=$((FAILURES + 1))
+  fi
+  check "clash unknown player" 404 GET "$GATEWAY/api/clash/players/%23Q0Q0Q0Q0Q"
+  # Cache: a new key is read from the API (MISS), the same read again from the cache (HIT).
+  CACHE_PROBE="$GATEWAY/api/clash/locations/global/pathoflegend/players?limit=$(((RANDOM % 900) + 50))"
+  check_cache "clash first read" "$CACHE_PROBE" MISS
+  check_cache "clash second read" "$CACHE_PROBE" HIT
 fi
 check "meta snapshot" 200 GET "$GATEWAY/api/meta/snapshot"
 check "swagger spec" 200 GET "$GATEWAY/openapi.json"

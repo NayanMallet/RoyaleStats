@@ -38,9 +38,9 @@ class SimpleCache {
     logger.info('Cache cleared');
   }
 
-  // Cleanup expired entries periodically
+  // Cleanup expired entries periodically. unref(): the timer alone does not keep the process alive.
   startCleanup(interval: number = 60000): void {
-    setInterval(() => {
+    const timer = setInterval(() => {
       const now = Date.now();
       let count = 0;
 
@@ -55,6 +55,7 @@ class SimpleCache {
         logger.debug(`Cache cleanup: removed ${count} expired entries`);
       }
     }, interval);
+    timer.unref();
   }
 }
 
