@@ -7,9 +7,12 @@ import {
   NotFoundError,
   UpstreamError,
   ValidationError,
+  TIMEOUTS_MS,
   getAuthenticatedUser,
+  isTimeoutError,
   logger,
   requestIdHeaders,
+  timeoutFromEnv,
 } from 'shared';
 import type { PlayerLink } from 'shared';
 
@@ -17,6 +20,8 @@ import type { PlayerLink } from 'shared';
 
 const CLASH_DATA_SERVICE_URL =
   process.env.CLASH_DATA_SERVICE_URL || 'http://clash-data-service:3004';
+// Longer than the Clash Royale call inside clash-data-service, shorter than the Gateway's limit.
+const SERVICE_CALL_TIMEOUT_MS = timeoutFromEnv('SERVICE_CALL_TIMEOUT_MS', TIMEOUTS_MS.serviceCall);
 
 const linkNotFound = () =>
   new NotFoundError('Aucun joueur n’est associé à ce compte.', { code: 'LinkNotFound' });
@@ -79,10 +84,11 @@ async function ensurePlayerExists(tag: string): Promise<void> {
   try {
     response = await fetch(`${CLASH_DATA_SERVICE_URL}/players/%23${normalized}`, {
       headers: requestIdHeaders(),
+      signal: AbortSignal.timeout(SERVICE_CALL_TIMEOUT_MS),
     });
   } catch (error) {
-    throw new UpstreamError(503, undefined, {
-      internalDetails: { service: 'clash-data-service' },
+    throw new UpstreamError(isTimeoutError(error) ? 504 : 503, undefined, {
+      internalDetails: { service: 'clash-data-service', timeoutMs: SERVICE_CALL_TIMEOUT_MS },
       cause: error,
     });
   }
@@ -93,7 +99,9 @@ async function ensurePlayerExists(tag: string): Promise<void> {
     });
   }
   if (!response.ok) {
-    throw new UpstreamError(response.status === 503 ? 503 : 502, undefined, {
+    // 503 and 504 keep their meaning (Clash Royale down or too slow); anything else is a 502.
+    const status = response.status === 503 || response.status === 504 ? response.status : 502;
+    throw new UpstreamError(status, undefined, {
       internalDetails: { service: 'clash-data-service', status: response.status },
     });
   }

@@ -1,12 +1,16 @@
 import fetch from 'node-fetch';
-import { logger } from 'shared';
+import { TIMEOUTS_MS, logger, timeoutFromEnv } from 'shared';
 import { processBattles } from './services/ingestionService';
 
 const DATA_SERVICE_URL = process.env.CLASH_DATA_SERVICE_URL || 'http://clash-data-service:3004';
+// A stuck call would block the whole hourly run: each call gives up after this delay.
+const CALL_TIMEOUT_MS = timeoutFromEnv('SERVICE_CALL_TIMEOUT_MS', TIMEOUTS_MS.serviceCall);
 
 async function fetchTopPlayers() {
   try {
-    const res = await fetch(`${DATA_SERVICE_URL}/locations/global/pathoflegend/players`);
+    const res = await fetch(`${DATA_SERVICE_URL}/locations/global/pathoflegend/players`, {
+      signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+    });
     if (!res.ok) throw new Error(`Failed to fetch top players: ${res.statusText}`);
     const data = await res.json();
     return (data.items || []).slice(0, 1000); // Top 1000
@@ -19,7 +23,9 @@ async function fetchTopPlayers() {
 async function fetchPlayerBattles(tag: string) {
   try {
     const encodedTag = encodeURIComponent(tag);
-    const res = await fetch(`${DATA_SERVICE_URL}/players/${encodedTag}/battles`);
+    const res = await fetch(`${DATA_SERVICE_URL}/players/${encodedTag}/battles`, {
+      signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+    });
     if (res.status === 404) return [];
     if (!res.ok) throw new Error(`Failed to fetch battles: ${res.statusText}`);
     return await res.json();

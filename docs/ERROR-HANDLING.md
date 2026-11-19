@@ -92,6 +92,29 @@ app.use(notFoundHandler());
 app.use(createErrorHandler());
 ```
 
+## Appels externes et délais maximaux
+
+Chaque appel sortant a un délai maximal, plus court à chaque étage que l'étage du dessus : l'utilisateur reçoit toujours l'erreur du service qui a réellement attendu, jamais un chargement infini.
+
+| Appel                                                    | Délai | Variable                   |
+| -------------------------------------------------------- | ----- | -------------------------- |
+| Front → Gateway (`services/http.ts`, `fetchWithTimeout`) | 10 s  | —                          |
+| Gateway → services (proxy)                               | 10 s  | `GATEWAY_PROXY_TIMEOUT_MS` |
+| Service → service (link-service, worker du meta-tracker) | 9 s   | `SERVICE_CALL_TIMEOUT_MS`  |
+| clash-data-service → API Clash Royale                    | 8 s   | `CLASH_API_TIMEOUT_MS`     |
+
+Les valeurs par défaut sont dans `shared/src/timeouts.ts`. Côté Clash Royale, les cas sont distingués par le code `error`, avec le même message public :
+
+| Situation                                             | Réponse                                                                                 |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Clé API refusée (clé invalide ou liée à une autre IP) | 503 `ClashApiMisconfigured`, log `error` qui indique de vérifier `CLASH_ROYALE_API_KEY` |
+| API injoignable ou en erreur                          | 503 / 502 `ClashApiUnavailable`                                                         |
+| API trop lente                                        | 504 `ClashApiTimeout`                                                                   |
+| Quota dépassé                                         | 429 `RateLimited`                                                                       |
+| Joueur ou clan inconnu                                | 404 `PlayerNotFound`, `ClanNotFound`                                                    |
+
+Pour un appel `fetch` vers un autre service : `signal: AbortSignal.timeout(timeoutFromEnv('SERVICE_CALL_TIMEOUT_MS', TIMEOUTS_MS.serviceCall))`, puis `isTimeoutError(error)` pour répondre 504 plutôt que 503.
+
 ## Côté front : afficher une erreur
 
 `services/http.ts` transforme chaque échec en erreur typée : `ApiError` (`status`, `code`, `message`, `requestId`, `details`) quand l'API a répondu, `NetworkError` quand elle n'a pas répondu (réseau coupé, Gateway arrêtée, délai de 10 s dépassé).
