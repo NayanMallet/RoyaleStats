@@ -1,7 +1,14 @@
 import { Request, Response } from 'express';
 import { getDatabase } from '../database';
 import { hashPassword, verifyPassword, generateToken } from '../services/authService';
-import { ConflictError, NotFoundError, UnauthorizedError, ValidationError, logger } from 'shared';
+import {
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+  getAuthenticatedUser,
+  logger,
+} from 'shared';
 import type { User } from 'shared';
 
 // Errors are thrown: Express 5 forwards them, sync or async, to the shared error handler.
@@ -66,12 +73,8 @@ export async function login(req: Request, res: Response) {
 }
 
 export async function getMe(req: Request, res: Response) {
-  // User ID is attached by the auth middleware
-  const userId = (req as any).userId;
-
-  if (!userId) {
-    throw new UnauthorizedError();
-  }
+  // The user comes from the token verified by requireAuth()
+  const { userId } = getAuthenticatedUser(res);
 
   const db = getDatabase();
   const user = db
@@ -86,7 +89,7 @@ export async function getMe(req: Request, res: Response) {
 }
 
 export async function updateMe(req: Request, res: Response) {
-  const userId = (req as any).userId;
+  const { userId } = getAuthenticatedUser(res);
   const { name, email } = req.body ?? {};
 
   if (!name && !email) {
@@ -124,7 +127,7 @@ export async function updateMe(req: Request, res: Response) {
 }
 
 export async function deleteMe(req: Request, res: Response) {
-  const userId = (req as any).userId;
+  const { userId } = getAuthenticatedUser(res);
 
   const db = getDatabase();
   db.prepare('DELETE FROM users WHERE id = ?').run(userId);
