@@ -9,6 +9,7 @@ export { createErrorHandler, notFoundHandler, toAppError, toApiError } from './s
 export {
   REQUEST_ID_HEADER,
   getRequestId,
+  requestIdHeaders,
   requestIdMiddleware,
   requestLoggerMiddleware,
 } from './src/requestId';

@@ -186,13 +186,15 @@ describe('createErrorHandler', () => {
 });
 
 describe('notFoundHandler', () => {
-  it('forwards a 404 NotFoundError naming the route', () => {
+  it('forwards a 404 RouteNotFound, with the route in the development details only', () => {
     const forward = vi.fn();
 
     notFoundHandler()({ method: 'GET', originalUrl: '/nope' } as Request, mockResponse(), forward);
 
     const error = forward.mock.calls[0]?.[0];
     expect(error).toBeInstanceOf(NotFoundError);
-    expect(error.message).toContain('GET /nope');
+    expect(error.code).toBe('RouteNotFound');
+    expect(error.message).not.toContain('/nope');
+    expect(error.internalDetails).toEqual({ method: 'GET', path: '/nope' });
   });
 });

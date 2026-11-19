@@ -11,6 +11,15 @@ export const REQUEST_ID_HEADER = 'x-request-id';
 // Accept a client-provided id only if it is short and harmless (no log or header injection).
 const VALID_REQUEST_ID = /^[\w-]{8,128}$/;
 
+/**
+ * Headers to add to a call to another service, so that its logs carry the same requestId:
+ *   fetch(url, { headers: requestIdHeaders() })
+ */
+export function requestIdHeaders(): Record<string, string> {
+  const requestId = requestContext.getStore()?.requestId;
+  return requestId ? { [REQUEST_ID_HEADER]: requestId } : {};
+}
+
 /** The requestId of the current request, set by requestIdMiddleware. */
 export function getRequestId(res: Response): string {
   return (res.locals.requestId as string | undefined) ?? 'unknown';

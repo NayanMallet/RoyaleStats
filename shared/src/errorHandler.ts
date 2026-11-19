@@ -106,6 +106,12 @@ export function createErrorHandler(): ErrorRequestHandler {
 /** Unknown route: answer the error contract instead of Express's HTML page. */
 export function notFoundHandler(): RequestHandler {
   return (req: Request, _res: Response, next: NextFunction) => {
-    next(new NotFoundError(`Route introuvable : ${req.method} ${req.originalUrl}`));
+    // The path stays out of the message: behind the Gateway it is the internal, rewritten path.
+    next(
+      new NotFoundError('Route introuvable.', {
+        code: 'RouteNotFound',
+        internalDetails: { method: req.method, path: req.originalUrl },
+      }),
+    );
   };
 }
