@@ -1,4 +1,4 @@
-import { apiErrorFromResponse, NetworkError } from './http'
+import { apiErrorFromResponse, fetchWithTimeout } from './http'
 
 export interface CardStat {
   card_name: string
@@ -14,12 +14,7 @@ export interface MetaSnapshot {
 }
 
 export async function fetchMetaSnapshot(): Promise<MetaSnapshot> {
-  let response: Response
-  try {
-    response = await fetch('/api/meta/snapshot')
-  } catch (error) {
-    throw new NetworkError(false, { cause: error })
-  }
+  const response = await fetchWithTimeout('/api/meta/snapshot')
   if (!response.ok) {
     throw await apiErrorFromResponse(response)
   }

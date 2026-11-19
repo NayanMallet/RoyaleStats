@@ -1,4 +1,4 @@
-import { ApiError, NetworkError, apiErrorFromResponse } from './http'
+import { ApiError, apiErrorFromResponse, fetchWithTimeout } from './http'
 export interface PlayerProfile {
   tag: string
   name: string
@@ -168,12 +168,7 @@ export async function fetchPlayer(tag: string): Promise<PlayerProfile> {
   // URL encode the tag (replace # with %23) to be safe in URL
   const encodedTag = encodeURIComponent(formattedTag)
 
-  let response: Response
-  try {
-    response = await fetch(`/api/clash/players/${encodedTag}`)
-  } catch (error) {
-    throw new NetworkError(false, { cause: error })
-  }
+  const response = await fetchWithTimeout(`/api/clash/players/${encodedTag}`)
 
   if (!response.ok) {
     const error = await apiErrorFromResponse(response)

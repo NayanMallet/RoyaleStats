@@ -100,8 +100,14 @@ function getAuthToken(): string | null {
   return localStorage.getItem('auth_token')
 }
 
-async function request<T>(input: RequestInfo, init: RequestInit = {}): Promise<T> {
-  const token = getAuthToken()
+/**
+ * fetch with the 10 s limit: no answer in time, or no network → NetworkError. Used by the client
+ * below and by the services that still call fetch directly, so that nothing waits forever.
+ */
+export async function fetchWithTimeout(
+  input: RequestInfo,
+  init: RequestInit = {},
+): Promise<Response> {
   const controller = new AbortController()
   let timedOut = false
   const timer = setTimeout(() => {
@@ -111,23 +117,27 @@ async function request<T>(input: RequestInfo, init: RequestInit = {}): Promise<T
   // A signal from the caller (component unmounted…) still cancels the request.
   init.signal?.addEventListener('abort', () => controller.abort(), { once: true })
 
-  let res: Response
   try {
-    res = await fetch(input, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(init.headers || {}),
-      },
-      signal: controller.signal,
-    })
+    return await fetch(input, { ...init, signal: controller.signal })
   } catch (error) {
     if (init.signal?.aborted) throw error
     throw new NetworkError(timedOut, { cause: error })
   } finally {
     clearTimeout(timer)
   }
+}
+
+async function request<T>(input: RequestInfo, init: RequestInit = {}): Promise<T> {
+  const token = getAuthToken()
+
+  const res = await fetchWithTimeout(input, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init.headers || {}),
+    },
+  })
 
   if (!res.ok) {
     const error = await apiErrorFromResponse(res)
