@@ -68,18 +68,27 @@ function socialHandle(value: unknown, network: string): string | null | undefine
   });
 }
 
-// Helper to normalize player tags
-function normalizeTag(tag: string): string {
-  const normalized = tag.startsWith('#') ? tag.slice(1) : tag;
-  return normalized.toUpperCase();
+// Player tags: letters and digits only once the leading # is removed. The exact Clash Royale
+// alphabet is checked by the Clash Data Service; here we only refuse what can never be a tag.
+const TAG_FORMAT = /^[0-9A-Z]{3,15}$/;
+
+/** " #2pp8vj9q " → "2PP8VJ9Q": trimmed, without leading #, upper-cased. 400 if it is not a tag. */
+export function normalizeTag(tag: unknown): string {
+  const normalized = typeof tag === 'string' ? tag.trim().replace(/^#+/, '').toUpperCase() : '';
+  if (!TAG_FORMAT.test(normalized)) {
+    throw new ValidationError('Tag de joueur invalide : lettres et chiffres après le #.', {
+      code: 'InvalidPlayerTag',
+      details: { playerTag: 'Format invalide' },
+    });
+  }
+  return normalized;
 }
 
 /**
  * Checks that the player exists through the Clash Data Service.
  * Unknown player → 404; Clash Data Service down or failing → 503/502, not "player not found".
  */
-async function ensurePlayerExists(tag: string): Promise<void> {
-  const normalized = normalizeTag(tag);
+async function ensurePlayerExists(normalized: string): Promise<void> {
   let response;
   try {
     response = await fetch(`${CLASH_DATA_SERVICE_URL}/players/%23${normalized}`, {
@@ -112,8 +121,10 @@ export async function createLink(req: Request, res: Response) {
   // The account comes from the token; a userId in the body is only checked against it.
   const userId = ownUserId(res, requestedUserId);
 
-  if (!playerTag || typeof playerTag !== 'string') {
-    throw new ValidationError('Le tag du joueur est obligatoire.');
+  if (playerTag === undefined || playerTag === null || playerTag === '') {
+    throw new ValidationError('Le tag du joueur est obligatoire.', {
+      details: { playerTag: 'Champ obligatoire' },
+    });
   }
 
   const normalized = normalizeTag(playerTag);
@@ -136,8 +147,9 @@ export async function createLink(req: Request, res: Response) {
     throw new ConflictError('Ce tag est déjà associé à un autre compte.');
   }
 
-  // Create link. A concurrent request linking the same tag fails the UNIQUE constraint, which
-  // the shared error handler also answers with a 409.
+  // Create link. The checks above and this insert run synchronously (better-sqlite3), with no
+  // await in between: two concurrent requests cannot both pass them. The UNIQUE constraints of
+  // player_links remain the last guard, answered 409 by the shared error handler.
   const result = db
     .prepare('INSERT INTO player_links (user_id, player_tag) VALUES (?, ?)')
     .run(userId, `#${normalized}`);
@@ -211,11 +223,7 @@ export async function deleteLink(req: Request, res: Response) {
 }
 
 export async function getLinkByTag(req: Request, res: Response) {
-  const { tag } = req.params;
-  if (typeof tag !== 'string') {
-    throw new ValidationError('Tag de joueur invalide.', { code: 'InvalidPlayerTag' });
-  }
-  const normalized = normalizeTag(tag); // Removes # and uppercases
+  const normalized = normalizeTag(req.params.tag); // Removes # and uppercases, 400 if invalid
 
   const db = getDatabase();
   // We store tags with # in database
