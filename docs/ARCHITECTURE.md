@@ -106,7 +106,7 @@ Chaque service crée ses tables au démarrage (`CREATE TABLE IF NOT EXISTS`). Le
 
 **Recherche d'un joueur** : `HomeView` → `clash.service.ts` → nginx → Gateway `/api/clash/players/:tag` → `clash-data-service` → cache (5 min) ou API Clash Royale.
 
-**Liaison d'un compte** : `LinkPlayerDialog` → Gateway `/api/link` → `link-service`, qui vérifie l'existence du joueur auprès de `clash-data-service`, puis enregistre la liaison (un compte et un tag au plus une fois chacun).
+**Liaison d'un compte** : `LinkPlayerDialog` → Gateway `/api/link` → `link-service`, qui vérifie le JWT (le compte vient du token, jamais d'un `userId` envoyé par le client), vérifie l'existence du joueur auprès de `clash-data-service`, puis enregistre la liaison (un compte et un tag au plus une fois chacun). Un utilisateur ne peut lire, modifier ou supprimer que sa propre liaison (403 sinon) ; `GET /tag/:tag` est public et ne renvoie que le tag, les pseudos Twitter/Twitch et la date.
 
 **Collecte de la méta** : au démarrage puis toutes les heures, le worker du `meta-tracker-service` récupère les 1 000 premiers joueurs du classement Path of Legends, lit leurs derniers combats via `clash-data-service` et met à jour `battles` et `card_stats`.
 
@@ -158,10 +158,8 @@ Les réglages communs sont définis une seule fois dans `docker-compose.yml` (an
 
 Ces points sont suivis dans Jira ; ne les reproduisez pas dans du nouveau code.
 
-- Les routes privées du `link-service` ne vérifient pas le JWT (Story S3.2).
 - `POST /api/meta/ingest/battles` est accessible publiquement via la Gateway (Story S4.2).
 - `GET /api/users` liste les utilisateurs sans authentification (Story S1.2).
-- Chaque service a son propre format d'erreur ; un contrat commun est prévu (Epic E5, Error Management).
 
 ## Schémas de conception initiaux
 
