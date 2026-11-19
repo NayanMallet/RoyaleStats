@@ -51,7 +51,7 @@ La Gateway retire son préfixe avant de transmettre la requête. La référence 
 
 | Préfixe Gateway             | Service cible            | Routes principales                                                                                                                                                           |
 | --------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api/users`                | user-service `/users`    | `POST /register`, `POST /login`, `GET\|PUT\|DELETE /me`, `GET /`                                                                                                             |
+| `/api/users`                | user-service `/users`    | `POST /register`, `POST /login`, `GET\|PUT\|DELETE /me`                                                                                                                      |
 | `/api/link`                 | link-service `/link`     | `POST /`, `GET /tag/:tag`, `GET\|PATCH\|DELETE /:userId`                                                                                                                     |
 | `/api/clash`                | clash-data-service `/`   | `GET /players/:tag`, `GET /players/:tag/battles`, `GET /cards`, `GET /clans/:tag`, `GET /leaderboards`, `GET /leaderboard/:id`, `GET /locations/global/pathoflegend/players` |
 | `/api/meta`                 | meta-tracker-service `/` | `GET /snapshot`, `POST /analyze/deck`, `GET /recommend/:playerTag`, `POST /ingest/battles`                                                                                   |
@@ -159,7 +159,6 @@ Les réglages communs sont définis une seule fois dans `docker-compose.yml` (an
 Ces points sont suivis dans Jira ; ne les reproduisez pas dans du nouveau code.
 
 - `POST /api/meta/ingest/battles` est accessible publiquement via la Gateway (Story S4.2).
-- `GET /api/users` liste les utilisateurs sans authentification (Story S1.2).
 
 ## Schémas de conception initiaux
 
