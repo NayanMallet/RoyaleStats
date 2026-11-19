@@ -54,7 +54,7 @@ La Gateway retire son préfixe avant de transmettre la requête. La référence 
 | `/api/users`                | user-service `/users`    | `POST /register`, `POST /login`, `GET\|PUT\|DELETE /me`                                                                                                                      |
 | `/api/link`                 | link-service `/link`     | `POST /`, `GET /tag/:tag`, `GET\|PATCH\|DELETE /:userId`                                                                                                                     |
 | `/api/clash`                | clash-data-service `/`   | `GET /players/:tag`, `GET /players/:tag/battles`, `GET /cards`, `GET /clans/:tag`, `GET /leaderboards`, `GET /leaderboard/:id`, `GET /locations/global/pathoflegend/players` |
-| `/api/meta`                 | meta-tracker-service `/` | `GET /snapshot`, `POST /analyze/deck`, `GET /recommend/:playerTag`, `POST /players/:tag/ingest`                                                                              |
+| `/api/meta`                 | meta-tracker-service `/` | `GET /snapshot`, `POST /analyze/deck`, `GET /players/:tag/analysis`, `POST /players/:tag/ingest`                                                                             |
 | `/api/royaleapi`            | royaleapi.com            | Relais des classements publics                                                                                                                                               |
 | `/api/items`, `/api/public` | item-service, public-api | Héritage du TP                                                                                                                                                               |
 
@@ -110,6 +110,8 @@ Chaque service crée ses tables au démarrage (`CREATE TABLE IF NOT EXISTS`). Le
 
 **Collecte de la méta** : au démarrage puis toutes les heures, le worker du `meta-tracker-service` récupère les 1 000 premiers joueurs du classement Path of Legends, lit leurs derniers combats via `clash-data-service` et met à jour `battles` et `card_stats`. Quand un joueur est consulté, le front demande aussi `POST /api/meta/players/:tag/ingest` : le service récupère lui-même ses combats, aucune route n'accepte de combats envoyés par un client. Chaque combat est lu du côté du joueur, validé, puis enregistré une seule fois (index unique `player_tag` + `battle_time`, un lot par transaction) ; un passage du worker encore en cours n'est pas doublé par le suivant.
 
+**Analyse du deck** : `GET /api/meta/players/:tag/analysis` récupère le deck actuel du joueur via `clash-data-service` et le compare à l'échantillon. Une carte n'est notée qu'avec au moins 50 utilisations ; le taux du deck est pondéré par l'usage et comparé à celui de toute la méta. L'échantillon vient surtout des joueurs du top 1000, d'où une moyenne au-dessus de 50 % : c'est cette moyenne qui sert de référence. Une carte 2 points sous la méta reçoit jusqu'à 3 alternatives au même coût en élixir, avec au moins 2 points de mieux. Les règles sont dans `meta-tracker-service/src/services/deckAnalysis.ts`.
+
 ### Durées du cache (`clash-data-service`)
 
 | Donnée              | Durée  |
@@ -147,12 +149,12 @@ Les réglages communs sont définis une seule fois dans `docker-compose.yml` (an
 
 ## Implémenté et prévu
 
-| Sujet               | État actuel                                              | Prévu                                                                          |
-| ------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Accès aux données   | SQL brut avec better-sqlite3                             | Un essai Prisma (décembre 2025) est archivé dans le tag `archive/prisma-setup` |
-| Cache               | En mémoire, perdu au redémarrage                         | Redis si plusieurs instances                                                   |
-| Meta Tracker        | Top cartes et taux de victoire de l'échantillon collecté | Analyse du deck actuel du joueur et suggestions (Story S4.2)                   |
-| Archétypes de decks | —                                                        | Détection des decks populaires                                                 |
+| Sujet               | État actuel                                                                                                                                                                    | Prévu                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Accès aux données   | SQL brut avec better-sqlite3                                                                                                                                                   | Un essai Prisma (décembre 2025) est archivé dans le tag `archive/prisma-setup` |
+| Cache               | En mémoire, perdu au redémarrage                                                                                                                                               | Redis si plusieurs instances                                                   |
+| Meta Tracker        | Top cartes et taux de victoire de l'échantillon collecté ; analyse du deck actuel d'un joueur (`GET /api/meta/players/:tag/analysis`) avec alternatives au même coût en élixir | Affichage de l'analyse dans le profil (RST-30)                                 |
+| Archétypes de decks | —                                                                                                                                                                              | Détection des decks populaires                                                 |
 
 ## Limites connues
 
