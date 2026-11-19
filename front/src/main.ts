@@ -11,6 +11,7 @@ app.use(createPinia())
 useThemeStore()
 app.use(router)
 
+import 'vue-sonner/style.css'
 import './style.css'
 
 app.mount('#app')

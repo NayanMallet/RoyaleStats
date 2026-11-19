@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { installFetchMock, type MockRoute } from '@/stories/mocks/api'
 import { applyAuthState, type AuthState } from '@/stories/mocks/auth'
 import { applyTheme, type Theme } from '@/stories/mocks/theme'
+import 'vue-sonner/style.css'
 import '@/style.css'
 
 // Same plugins as src/main.ts. The router uses an in-memory history so that stories
