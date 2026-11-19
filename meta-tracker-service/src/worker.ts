@@ -75,8 +75,8 @@ export function startWorker() {
       });
 
       if (cleanBattles.length > 0) {
-        const count = processBattles(cleanBattles);
-        totalIngested += count;
+        const { ingested } = processBattles(cleanBattles);
+        totalIngested += ingested;
       }
       // Polite delay
       await new Promise((r) => setTimeout(r, 200));
