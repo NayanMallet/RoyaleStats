@@ -4,11 +4,14 @@ import type { Server } from 'node:http';
 import jwt from 'jsonwebtoken';
 
 // The Clash Data Service is mocked: every tag exists, except #UNKNOWN.
+// The Clash Data Service is mocked: every tag exists, except #UNKNOWN; #SLOW never answers in time.
 vi.mock('node-fetch', () => ({
-  default: vi.fn(async (url: string) => ({
-    ok: !url.includes('UNKNOWN'),
-    status: url.includes('UNKNOWN') ? 404 : 200,
-  })),
+  default: vi.fn(async (url: string) => {
+    if (url.includes('SLOW')) {
+      throw Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' });
+    }
+    return { ok: !url.includes('UNKNOWN'), status: url.includes('UNKNOWN') ? 404 : 200 };
+  }),
 }));
 
 process.env.LINK_DB_FILE = ':memory:';
@@ -109,6 +112,16 @@ describe('create a link', () => {
 
     expect(status).toBe(404);
     expect(body.error).toBe('PlayerNotFound');
+  });
+
+  it('answers 504 when the Clash Data Service does not answer in time', async () => {
+    const { status, body } = await call('POST', '/link', {
+      userId: 1,
+      body: { playerTag: '#SLOW' },
+    });
+
+    expect(status).toBe(504);
+    expect(body.error).toBe('GatewayTimeout');
   });
 
   it('answers 409 when the tag is already linked to another account', async () => {

@@ -1,6 +1,17 @@
 import type { Request, Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { REQUEST_ID_HEADER, UpstreamError, getRequestId, logger, toApiError } from 'shared';
+import {
+  REQUEST_ID_HEADER,
+  TIMEOUTS_MS,
+  UpstreamError,
+  getRequestId,
+  logger,
+  timeoutFromEnv,
+  toApiError,
+} from 'shared';
+
+// The front gives up after 10 s: holding a request longer would only waste the service's work.
+const PROXY_TIMEOUT_MS = timeoutFromEnv('GATEWAY_PROXY_TIMEOUT_MS', TIMEOUTS_MS.gatewayProxy);
 
 // Service URLs (use env vars for local dev or defaults for Docker)
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://user-service:3002';
@@ -43,8 +54,8 @@ function createServiceProxy(
     changeOrigin: true,
     pathRewrite,
     logger,
-    timeout: 30000,
-    proxyTimeout: 30000,
+    timeout: PROXY_TIMEOUT_MS,
+    proxyTimeout: PROXY_TIMEOUT_MS,
     ...extraOptions,
     on: {
       // http-proxy-middleware logs each proxied call itself, through the shared logger.

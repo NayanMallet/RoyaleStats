@@ -3,13 +3,23 @@ import {
   AppError,
   NotFoundError,
   RateLimitedError,
+  TIMEOUTS_MS,
   UpstreamError,
   ValidationError,
+  isTimeoutError,
   logger,
+  timeoutFromEnv,
 } from 'shared';
 
 const API_KEY = process.env.CLASH_ROYALE_API_KEY;
 const BASE_URL = process.env.CLASH_ROYALE_BASE_URL || 'https://api.clashroyale.com/v1';
+// Shorter than the Gateway's limit, so that a slow Clash Royale API answers 504 from here.
+const TIMEOUT_MS = timeoutFromEnv('CLASH_API_TIMEOUT_MS', TIMEOUTS_MS.externalApi);
+
+// Public message of every "Clash Royale cannot answer" case. The `error` code tells them apart:
+// ClashApiMisconfigured (our key, to fix on the server), ClashApiUnavailable (their side or the
+// network), ClashApiTimeout (too slow) and RateLimited (quota).
+const UNAVAILABLE_MESSAGE = 'Les données Clash Royale sont momentanément indisponibles.';
 
 if (!API_KEY) {
   logger.warn('CLASH_ROYALE_API_KEY not set - Clash Data Service will not work properly');
@@ -39,10 +49,11 @@ export function errorForClashStatus(
         options.notFound?.() ?? new NotFoundError('Ressource Clash Royale introuvable.', details)
       );
     case 403:
-      // Invalid API key, or key bound to another IP address (it changes with the network).
-      return new UpstreamError(503, 'Les données Clash Royale sont momentanément indisponibles.', {
+      // Invalid API key, or key bound to another IP address (it changes with the network): a
+      // server configuration problem, not an outage. Same message, distinct code and log.
+      return new UpstreamError(503, UNAVAILABLE_MESSAGE, {
         ...details,
-        code: 'ClashApiUnavailable',
+        code: 'ClashApiMisconfigured',
       });
     case 429:
       return new RateLimitedError(undefined, details);
@@ -53,8 +64,31 @@ export function errorForClashStatus(
         details,
       );
     default:
-      return new UpstreamError(502, undefined, details);
+      return new UpstreamError(502, UNAVAILABLE_MESSAGE, {
+        ...details,
+        code: 'ClashApiUnavailable',
+      });
   }
+}
+
+/** No answer from the Clash Royale API: too slow (504) or unreachable (503). */
+export function errorForClashFailure(error: unknown, endpoint: string): UpstreamError {
+  if (isTimeoutError(error)) {
+    return new UpstreamError(
+      504,
+      'Clash Royale met trop de temps à répondre, réessayez plus tard.',
+      {
+        code: 'ClashApiTimeout',
+        internalDetails: { endpoint, timeoutMs: TIMEOUT_MS },
+        cause: error,
+      },
+    );
+  }
+  return new UpstreamError(503, UNAVAILABLE_MESSAGE, {
+    code: 'ClashApiUnavailable',
+    internalDetails: { endpoint },
+    cause: error,
+  });
 }
 
 export async function fetchFromClashAPI<T>(
@@ -72,12 +106,15 @@ export async function fetchFromClashAPI<T>(
         Authorization: `Bearer ${API_KEY}`,
         Accept: 'application/json',
       },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (error) {
-    throw new UpstreamError(503, 'Les données Clash Royale sont momentanément indisponibles.', {
-      code: 'ClashApiUnavailable',
-      cause: error,
+    const failure = errorForClashFailure(error, endpoint);
+    logger.warn(`Clash Royale API did not answer on ${endpoint}`, {
+      error: failure.code,
+      timeoutMs: TIMEOUT_MS,
     });
+    throw failure;
   }
 
   if (!response.ok) {
