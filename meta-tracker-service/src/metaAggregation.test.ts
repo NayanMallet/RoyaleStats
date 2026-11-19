@@ -1,6 +1,10 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
+
+// clash-data-service is mocked: each test sets the battle log it answers.
+const clashDataService = vi.fn();
+vi.mock('node-fetch', () => ({ default: (url: string) => clashDataService(url) }));
 
 process.env.META_DB_FILE = ':memory:';
 process.env.LOG_LEVEL = 'fatal';
@@ -167,27 +171,105 @@ describe('invalid battles (found while verifying RST-26)', () => {
   });
 });
 
-describe('POST /ingest/battles', () => {
-  it('reports ingested, duplicate and invalid battles', async () => {
-    const send = () =>
-      fetch(`${baseUrl}/ingest/battles`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ battles: [...CONTROLLED, { result: 'win' }] }),
-      }).then((response) => response.json());
+describe('POST /players/:playerTag/ingest', () => {
+  const TAG = '#2PP8VJ9Q';
+  const participant = (tag: string, deck: string[], crowns: number) => ({
+    tag,
+    crowns,
+    startingTrophies: 6000,
+    cards: deck.map((name) => ({ name })),
+  });
+  // Two battles of the player: won in `team`, lost when the API lists the player in `opponent`.
+  const LOG = [
+    {
+      battleTime: '20261119T120000.000Z',
+      team: [participant(TAG, HOG_CYCLE, 3)],
+      opponent: [participant('#OTHER1', LOG_BAIT, 1)],
+    },
+    {
+      battleTime: '20261119T121000.000Z',
+      team: [participant('#OTHER2', LOG_BAIT, 2)],
+      opponent: [participant(TAG, HOG_CYCLE, 0)],
+    },
+  ];
 
-    expect(await send()).toEqual({ ingested: 3, duplicates: 0, invalid: 1 });
-    expect(await send()).toEqual({ ingested: 0, duplicates: 3, invalid: 1 });
+  const ingest = (tag: string) =>
+    fetch(`${baseUrl}/players/${encodeURIComponent(tag)}/ingest`, { method: 'POST' }).then(
+      async (response) => ({ status: response.status, body: await response.json() }),
+    );
+
+  beforeEach(() => {
+    clashDataService.mockReset();
+    clashDataService.mockResolvedValue({ ok: true, status: 200, json: async () => LOG });
   });
 
-  it('answers 400 when battles is not a list', async () => {
+  it('fetches the battle log on the server and ingests it from the player side', async () => {
+    const { status, body } = await ingest(TAG);
+
+    expect(status).toBe(200);
+    expect(body).toEqual({ playerTag: TAG, ingested: 2, duplicates: 0, invalid: 0, skipped: 0 });
+    expect(clashDataService).toHaveBeenCalledWith(
+      expect.stringMatching(/\/players\/%232PP8VJ9Q\/battles$/),
+    );
+    // The player's deck, whichever side the API listed them on: one win, one loss.
+    expect(stats('Hog Rider')).toEqual({ usage_count: 2, win_count: 1 });
+    expect(stats('Goblin Barrel')).toBeUndefined();
+  });
+
+  it('is harmless to call again: the same battles are duplicates', async () => {
+    await ingest(TAG);
+
+    const { body } = await ingest('2pp8vj9q');
+
+    expect(body).toMatchObject({ ingested: 0, duplicates: 2 });
+  });
+
+  it('answers 400 for an invalid tag without calling clash-data-service', async () => {
+    const { status, body } = await ingest('#a b');
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('InvalidPlayerTag');
+    expect(clashDataService).not.toHaveBeenCalled();
+  });
+
+  it('answers 404 PlayerNotFound for an unknown player', async () => {
+    clashDataService.mockResolvedValue({ ok: false, status: 404, json: async () => ({}) });
+
+    const { status, body } = await ingest('#UNKNOWN');
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('PlayerNotFound');
+  });
+
+  it('answers 503 when clash-data-service is down', async () => {
+    clashDataService.mockRejectedValue(
+      Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }),
+    );
+
+    expect((await ingest(TAG)).status).toBe(503);
+  });
+
+  it('no longer accepts battles sent by a client', async () => {
     const response = await fetch(`${baseUrl}/ingest/battles`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ battles: 'nope' }),
+      body: JSON.stringify({ battles: CONTROLLED }),
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
+    expect(getDatabase().prepare('SELECT COUNT(*) AS n FROM battles').get()).toEqual({ n: 0 });
+  });
+});
+
+describe('battles table', () => {
+  it('enforces one row per player and battle time', () => {
+    processBattles([battle()]);
+
+    expect(() =>
+      getDatabase()
+        .prepare('INSERT INTO battles (player_tag, battle_time, result) VALUES (?, ?, ?)')
+        .run('#2PP8VJ9Q', '20261119T120000.000Z', 'win'),
+    ).toThrow(/UNIQUE/);
   });
 });
 
