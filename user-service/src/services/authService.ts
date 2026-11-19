@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { logger } from 'shared';
+import { UnauthorizedError } from 'shared';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_change_in_production';
 const SALT_ROUNDS = 10;
@@ -21,7 +21,7 @@ export function verifyToken(token: string): { userId: number; email: string } {
   try {
     return jwt.verify(token, JWT_SECRET) as { userId: number; email: string };
   } catch (error) {
-    logger.error('Invalid token:', error);
-    throw new Error('Invalid or expired token');
+    // An expired or forged token is a client error: 401, logged as a warning by the error handler.
+    throw new UnauthorizedError('Votre session a expiré, reconnectez-vous.', { cause: error });
   }
 }

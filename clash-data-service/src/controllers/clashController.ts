@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { fetchFromClashAPI } from '../clashRoyaleClient';
 import { cache } from '../cache';
-import { logger } from 'shared';
+import { NotFoundError, ValidationError } from 'shared';
+
+// Errors are thrown: Express 5 forwards them, sync or async, to the shared error handler.
+// fetchFromClashAPI turns the Clash Royale API statuses into errors (404, 429, 503…).
 
 // Helper to normalize player tags
 function normalizeTag(tag: string): string {
@@ -11,195 +14,87 @@ function normalizeTag(tag: string): string {
   return normalized.toUpperCase();
 }
 
+const playerNotFound = () =>
+  new NotFoundError('Aucun joueur ne correspond à ce tag.', { code: 'PlayerNotFound' });
+
+const clanNotFound = () =>
+  new NotFoundError('Aucun clan ne correspond à ce tag.', { code: 'ClanNotFound' });
+
+/** Answers from the cache, or fetches from the Clash Royale API and caches the result. */
+async function cached<T>(key: string, ttlMs: number, load: () => Promise<T>): Promise<T> {
+  const hit = cache.get(key) as T | undefined;
+  if (hit) return hit;
+
+  const data = await load();
+  cache.set(key, data, ttlMs);
+  return data;
+}
+
 export async function getPlayer(req: Request, res: Response) {
-  try {
-    const { playerTag } = req.params;
-    const normalized = normalizeTag(decodeURIComponent(playerTag as string));
-    const cacheKey = `player:${normalized}`;
+  const normalized = normalizeTag(decodeURIComponent(req.params.playerTag as string));
 
-    // Check cache
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return res.json(cached);
-    }
-
-    // Fetch from API (API expects %23 before the tag)
-    const data = await fetchFromClashAPI(`/players/%23${normalized}`);
-
-    // Cache for 5 minutes
-    cache.set(cacheKey, data, 5 * 60 * 1000);
-
-    res.json(data);
-  } catch (error) {
-    logger.error('Error fetching player:', error);
-    const statusCode = (error as any).message?.includes('not found') ? 404 : 500;
-    res.status(statusCode).json({
-      error: 'ClashAPIError',
-      message: (error as Error).message || 'Failed to fetch player data',
-    });
-  }
+  // API expects %23 before the tag. Cache for 5 minutes.
+  const data = await cached(`player:${normalized}`, 5 * 60 * 1000, () =>
+    fetchFromClashAPI(`/players/%23${normalized}`, { notFound: playerNotFound }),
+  );
+  res.json(data);
 }
 
 export async function getPlayerBattles(req: Request, res: Response) {
-  try {
-    const { playerTag } = req.params;
-    const normalized = normalizeTag(decodeURIComponent(playerTag as string));
-    const cacheKey = `battles:${normalized}`;
+  const normalized = normalizeTag(decodeURIComponent(req.params.playerTag as string));
 
-    // Check cache
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return res.json(cached);
-    }
-
-    // Fetch from API
-    const data = await fetchFromClashAPI(`/players/%23${normalized}/battlelog`);
-
-    // Cache for 2 minutes (battles change frequently)
-    cache.set(cacheKey, data, 2 * 60 * 1000);
-
-    res.json(data);
-  } catch (error) {
-    logger.error('Error fetching player battles:', error);
-    const statusCode = (error as any).message?.includes('not found') ? 404 : 500;
-    res.status(statusCode).json({
-      error: 'ClashAPIError',
-      message: (error as Error).message || 'Failed to fetch battle log',
-    });
-  }
+  // Cache for 2 minutes (battles change frequently)
+  const data = await cached(`battles:${normalized}`, 2 * 60 * 1000, () =>
+    fetchFromClashAPI(`/players/%23${normalized}/battlelog`, { notFound: playerNotFound }),
+  );
+  res.json(data);
 }
 
 export async function getCards(req: Request, res: Response) {
-  try {
-    const cacheKey = 'cards:all';
-
-    // Check cache
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return res.json(cached);
-    }
-
-    // Fetch from API
-    const data = await fetchFromClashAPI('/cards');
-
-    // Cache for 24 hours (cards rarely change)
-    cache.set(cacheKey, data, 24 * 60 * 60 * 1000);
-
-    res.json(data);
-  } catch (error) {
-    logger.error('Error fetching cards:', error);
-    res.status(500).json({
-      error: 'ClashAPIError',
-      message: (error as Error).message || 'Failed to fetch cards',
-    });
-  }
+  // Cache for 24 hours (cards rarely change)
+  const data = await cached('cards:all', 24 * 60 * 60 * 1000, () => fetchFromClashAPI('/cards'));
+  res.json(data);
 }
 
 export async function getClan(req: Request, res: Response) {
-  try {
-    const { clanTag } = req.params;
-    const normalized = normalizeTag(decodeURIComponent(clanTag as string));
-    const cacheKey = `clan:${normalized}`;
+  const normalized = normalizeTag(decodeURIComponent(req.params.clanTag as string));
 
-    // Check cache
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return res.json(cached);
-    }
-
-    // Fetch from API
-    const data = await fetchFromClashAPI(`/clans/%23${normalized}`);
-
-    // Cache for 10 minutes
-    cache.set(cacheKey, data, 10 * 60 * 1000);
-
-    res.json(data);
-  } catch (error) {
-    logger.error('Error fetching clan:', error);
-    const statusCode = (error as any).message?.includes('not found') ? 404 : 500;
-    res.status(statusCode).json({
-      error: 'ClashAPIError',
-      message: (error as Error).message || 'Failed to fetch clan data',
-    });
-  }
+  // Cache for 10 minutes
+  const data = await cached(`clan:${normalized}`, 10 * 60 * 1000, () =>
+    fetchFromClashAPI(`/clans/%23${normalized}`, { notFound: clanNotFound }),
+  );
+  res.json(data);
 }
 
 export async function getLeaderboards(req: Request, res: Response) {
-  try {
-    const cacheKey = 'leaderboards:list';
-
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return res.json(cached);
-    }
-
-    // List of season leaderboards (id + name)
-    const data = await fetchFromClashAPI('/leaderboards');
-    cache.set(cacheKey, data, 60 * 60 * 1000); // 1 hour
-
-    res.json(data);
-  } catch (error) {
-    logger.error('Error fetching leaderboards list:', error);
-    res.status(500).json({
-      error: 'ClashAPIError',
-      message: (error as Error).message || 'Failed to fetch leaderboards',
-    });
-  }
+  // List of season leaderboards (id + name), cached for 1 hour
+  const data = await cached('leaderboards:list', 60 * 60 * 1000, () =>
+    fetchFromClashAPI('/leaderboards'),
+  );
+  res.json(data);
 }
 
 export async function getLeaderboardRankings(req: Request, res: Response) {
-  try {
-    const { leaderboardId } = req.params;
-    if (typeof leaderboardId !== 'string' || !/^\d+$/.test(leaderboardId)) {
-      return res.status(400).json({
-        error: 'ValidationError',
-        message: 'leaderboardId must be a numeric id',
-      });
-    }
-
-    const requestedLimit = Number(req.query.limit ?? 20);
-    const limit = Number.isInteger(requestedLimit)
-      ? Math.min(Math.max(requestedLimit, 1), 200)
-      : 20;
-    const cacheKey = `leaderboard:${leaderboardId}:${limit}`;
-
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return res.json(cached);
-    }
-
-    const data = await fetchFromClashAPI(`/leaderboard/${leaderboardId}?limit=${limit}`);
-    cache.set(cacheKey, data, 10 * 60 * 1000); // 10 minutes
-
-    res.json(data);
-  } catch (error) {
-    logger.error('Error fetching leaderboard rankings:', error);
-    const statusCode = (error as any).message?.includes('not found') ? 404 : 500;
-    res.status(statusCode).json({
-      error: 'ClashAPIError',
-      message: (error as Error).message || 'Failed to fetch leaderboard rankings',
-    });
+  const { leaderboardId } = req.params;
+  if (typeof leaderboardId !== 'string' || !/^\d+$/.test(leaderboardId)) {
+    throw new ValidationError('L’identifiant du classement doit être un nombre.');
   }
+
+  const requestedLimit = Number(req.query.limit ?? 20);
+  const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 200) : 20;
+
+  // Cache for 10 minutes
+  const data = await cached(`leaderboard:${leaderboardId}:${limit}`, 10 * 60 * 1000, () =>
+    fetchFromClashAPI(`/leaderboard/${leaderboardId}?limit=${limit}`, {
+      notFound: () => new NotFoundError('Classement introuvable.', { code: 'LeaderboardNotFound' }),
+    }),
+  );
+  res.json(data);
 }
 
 export async function getPathOfLegend(req: Request, res: Response) {
-  try {
-    const cacheKey = 'leaderboard:pathoflegend';
-
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return res.json(cached);
-    }
-
-    const data = await fetchFromClashAPI('/locations/global/pathoflegend/players');
-    cache.set(cacheKey, data, 10 * 60 * 1000);
-
-    res.json(data);
-  } catch (error) {
-    logger.error('Error fetching path of legend:', error);
-    res.status(500).json({
-      error: 'ClashAPIError',
-      message: (error as Error).message || 'Failed to fetch path of legend',
-    });
-  }
+  const data = await cached('leaderboard:pathoflegend', 10 * 60 * 1000, () =>
+    fetchFromClashAPI('/locations/global/pathoflegend/players'),
+  );
+  res.json(data);
 }

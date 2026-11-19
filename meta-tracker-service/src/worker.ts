@@ -81,9 +81,14 @@ export function startWorker() {
     );
   };
 
+  // A failed run (unexpected battle format, database error) is logged and the next run retries:
+  // left unhandled, the rejection would stop the whole service (see installProcessHandlers).
+  const safeRun = () =>
+    runJob().catch((error) => logger.error('[Worker] Ingestion job failed', error));
+
   // Run immediately on start
-  runJob();
+  safeRun();
 
   // Run every hour (3600000 ms)
-  setInterval(runJob, 60 * 60 * 1000);
+  setInterval(safeRun, 60 * 60 * 1000);
 }
