@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import { getDatabase } from '../database';
 import { hashPassword, verifyPassword, generateToken } from '../services/authService';
+import { parseLogin, parseProfileUpdate, parseRegistration } from '../validation';
 import {
   ConflictError,
   NotFoundError,
   UnauthorizedError,
-  ValidationError,
   getAuthenticatedUser,
   logger,
 } from 'shared';
@@ -13,22 +13,27 @@ import type { User } from 'shared';
 
 // Errors are thrown: Express 5 forwards them, sync or async, to the shared error handler.
 
+const PUBLIC_COLUMNS = 'id, name, email, created_at, updated_at';
+const EMAIL_TAKEN = 'Un compte existe déjà avec cet email.';
+
+// Emails are stored lower-cased since RST-29; lower() also finds accounts created before.
+function findIdByEmail(email: string): { id: number } | undefined {
+  return getDatabase().prepare('SELECT id FROM users WHERE lower(email) = ?').get(email) as
+    | { id: number }
+    | undefined;
+}
+
 export async function register(req: Request, res: Response) {
-  const { name, email, password } = req.body ?? {};
+  const { name, email, password } = parseRegistration(req.body);
 
-  if (!name || !email || !password) {
-    throw new ValidationError('Le nom, l’email et le mot de passe sont obligatoires.');
-  }
-
-  const db = getDatabase();
-
-  const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (existingUser) {
-    throw new ConflictError('Un compte existe déjà avec cet email.');
+  if (findIdByEmail(email)) {
+    throw new ConflictError(EMAIL_TAKEN);
   }
 
   const hashedPassword = await hashPassword(password);
 
+  // A concurrent registration with the same email fails the UNIQUE constraint → 409 as well.
+  const db = getDatabase();
   const result = db
     .prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)')
     .run(name, email, hashedPassword);
@@ -42,14 +47,9 @@ export async function register(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
-  const { email, password } = req.body ?? {};
+  const { email, password } = parseLogin(req.body);
 
-  if (!email || !password) {
-    throw new ValidationError('L’email et le mot de passe sont obligatoires.');
-  }
-
-  const db = getDatabase();
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as
+  const user = getDatabase().prepare('SELECT * FROM users WHERE lower(email) = ?').get(email) as
     | (User & { password: string })
     | undefined;
 
@@ -76,9 +76,8 @@ export async function getMe(req: Request, res: Response) {
   // The user comes from the token verified by requireAuth()
   const { userId } = getAuthenticatedUser(res);
 
-  const db = getDatabase();
-  const user = db
-    .prepare('SELECT id, name, email, created_at, updated_at FROM users WHERE id = ?')
+  const user = getDatabase()
+    .prepare(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE id = ?`)
     .get(userId) as User | undefined;
 
   if (!user) {
@@ -90,23 +89,23 @@ export async function getMe(req: Request, res: Response) {
 
 export async function updateMe(req: Request, res: Response) {
   const { userId } = getAuthenticatedUser(res);
-  const { name, email } = req.body ?? {};
+  const { name, email } = parseProfileUpdate(req.body);
 
-  if (!name && !email) {
-    throw new ValidationError('Indiquez au moins un champ à modifier : nom ou email.');
+  if (email) {
+    const owner = findIdByEmail(email);
+    if (owner && owner.id !== userId) {
+      throw new ConflictError(EMAIL_TAKEN, { details: { email: EMAIL_TAKEN } });
+    }
   }
 
-  const db = getDatabase();
-
-  // Build update query dynamically
   const updates: string[] = [];
-  const params: any[] = [];
+  const params: unknown[] = [];
 
-  if (name) {
+  if (name !== undefined) {
     updates.push('name = ?');
     params.push(name);
   }
-  if (email) {
+  if (email !== undefined) {
     updates.push('email = ?');
     params.push(email);
   }
@@ -114,13 +113,15 @@ export async function updateMe(req: Request, res: Response) {
   updates.push('updated_at = CURRENT_TIMESTAMP');
   params.push(userId);
 
-  // An email already used by another account fails the UNIQUE constraint: the shared error
-  // handler turns it into a 409 ConflictError.
+  const db = getDatabase();
   db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
 
-  const user = db
-    .prepare('SELECT id, name, email, created_at, updated_at FROM users WHERE id = ?')
-    .get(userId) as User;
+  const user = db.prepare(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE id = ?`).get(userId) as
+    | User
+    | undefined;
+  if (!user) {
+    throw new NotFoundError('Utilisateur introuvable.', { code: 'UserNotFound' });
+  }
 
   logger.info('User updated', { userId });
   res.json(user);
@@ -129,18 +130,8 @@ export async function updateMe(req: Request, res: Response) {
 export async function deleteMe(req: Request, res: Response) {
   const { userId } = getAuthenticatedUser(res);
 
-  const db = getDatabase();
-  db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  getDatabase().prepare('DELETE FROM users WHERE id = ?').run(userId);
 
   logger.info('User deleted', { userId });
   res.status(204).send();
-}
-
-export async function listUsers(req: Request, res: Response) {
-  const db = getDatabase();
-  const users = db
-    .prepare('SELECT id, name, email, created_at, updated_at FROM users')
-    .all() as User[];
-
-  res.json(users);
 }
