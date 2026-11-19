@@ -74,8 +74,8 @@ export function playerRoutes({
     {
       method: 'POST',
       url: '/api/meta/ingest/battles',
-      status: 202,
-      body: { ingested: demoPlayerBattles.length },
+      status: 200,
+      body: { ingested: demoPlayerBattles.length, duplicates: 0, invalid: 0 },
     },
     allianceBadgesRoute,
   ]
