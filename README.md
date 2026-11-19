@@ -31,6 +31,7 @@ docker compose up --build
 | Installer, lancer et dépanner le projet           | [docs/INSTALL.md](docs/INSTALL.md)                                                                  |
 | Comprendre l'architecture et les données          | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                                                        |
 | Connaître les conventions de code                 | [docs/GUIDELINES.md](docs/GUIDELINES.md)                                                            |
+| Lever, afficher et retrouver une erreur           | [docs/ERROR-HANDLING.md](docs/ERROR-HANDLING.md)                                                    |
 | Contribuer (branches, commits, pull requests)     | [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)                                                  |
 | Savoir pour qui on développe                      | [docs/PERSONAS.md](docs/PERSONAS.md)                                                                |
 | Voir le découpage du backlog en releases          | [docs/STORYMAP.md](docs/STORYMAP.md)                                                                |

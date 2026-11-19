@@ -74,13 +74,13 @@ Le design system repose sur **shadcn-vue** (style `new-york`, couleur de base `n
 
 Chaque composant est documenté dans Storybook (`pnpm --filter front storybook`, <http://localhost:6006>). Les stories suivent l'**Atomic Design** et sont rangées par niveau dans `src/stories/` :
 
-| Niveau (titre de la story) | Ce qu'on y met                                                     | Composants concernés                                              |
-| -------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| `Atoms/…`                  | Un composant de base, sans logique métier                          | `components/ui/` : Button, Input, Label, Avatar…                  |
-| `Molecules/…`              | Quelques atomes assemblés pour une fonction simple                 | FormField, SearchBar, InfoCard, `UserMenu.vue`, `ThemeToggle.vue` |
-| `Organisms/…`              | Un bloc autonome de l'interface, souvent branché sur l'API         | `Leaderboards.vue`, `PlayerStats.vue`, `MetaStats.vue`…           |
-| `Templates/…`              | Une mise en page qui place les organismes, avec du contenu factice | AuthTemplate, DashboardTemplate                                   |
-| `Pages/…`                  | Une vue réelle de `views/`, alimentée par des réponses simulées    | `HomeView.vue`, `LoginView.vue`, `ProfileView.vue`…               |
+| Niveau (titre de la story) | Ce qu'on y met                                                     | Composants concernés                                                                |
+| -------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `Atoms/…`                  | Un composant de base, sans logique métier                          | `components/ui/` : Button, Input, Label, Avatar…                                    |
+| `Molecules/…`              | Quelques atomes assemblés pour une fonction simple                 | FormField, SearchBar, InfoCard, `UserMenu.vue`, `ThemeToggle.vue`, `ErrorState.vue` |
+| `Organisms/…`              | Un bloc autonome de l'interface, souvent branché sur l'API         | `Leaderboards.vue`, `PlayerStats.vue`, `MetaStats.vue`, `ErrorBoundary.vue`…        |
+| `Templates/…`              | Une mise en page qui place les organismes, avec du contenu factice | AuthTemplate, DashboardTemplate                                                     |
+| `Pages/…`                  | Une vue réelle de `views/`, alimentée par des réponses simulées    | `HomeView.vue`, `LoginView.vue`, `ProfileView.vue`…                                 |
 
 Règles :
 
@@ -96,6 +96,7 @@ Règles :
 
 - Un composant n'appelle jamais `fetch` directement : il passe par un `services/*.service.ts`, qui utilise `services/http.ts` et les URLs de `config/api.ts`. Une partie du code existant ne respecte pas encore cette règle (migration suivie dans la Story S2.2).
 - L'état partagé (session, utilisateur, tag lié) vit dans un store Pinia. Le `localStorage` n'est lu et écrit que par les stores.
+- **Erreurs** : `services/http.ts` lève une `ApiError` ou une `NetworkError` ; `useApiError()` les traduit en message (toast avec `notify`, ou `ErrorState` en ligne avec `describe`). Un état d'erreur propose Réessayer et ne se confond pas avec un état vide. Voir [ERROR-HANDLING.md](ERROR-HANDLING.md).
 
 ### Responsive et accessibilité
 
@@ -108,7 +109,7 @@ Règles :
 
 ```
 <service>/src/
-├── server.ts        # création de l'app Express, middlewares, routes, gestion d'erreurs, démarrage
+├── server.ts        # création de l'app Express, middlewares partagés (requestId, logs, erreurs), routes, démarrage
 ├── routes/          # déclaration des routes → controllers
 ├── controllers/     # lecture de la requête, validation, réponse HTTP
 ├── services/        # logique métier, appels aux autres services
@@ -122,8 +123,8 @@ Pour le nouveau code, gardez le SQL dans `database.ts` ou `services/`, pas dans 
 
 - **SQL** : toujours des requêtes préparées avec paramètres (`db.prepare('… WHERE id = ?').get(id)`), jamais de concaténation de chaînes.
 - **Validation** : vérifiez `req.body` et `req.params` à l'entrée du controller ; une entrée invalide renvoie **400**.
-- **Erreurs** : réponse JSON au format `{ error, message, statusCode }` (type `ApiError` de `shared`), avec le bon code HTTP : 400, 401, 403, 404, 409, 500, 502. Ne renvoyez jamais de stack, de requête SQL ou d'URL interne au client. Ce contrat va évoluer avec l'Epic E5 (Error Management).
-- **Logs** : uniquement `logger` de `shared`, jamais `console.log`. Ne journalisez jamais de mot de passe, de token ou de clé API.
+- **Erreurs** : levez une erreur de `shared` (`ValidationError`, `NotFoundError`, `ConflictError`…) au lieu d'écrire la réponse ; le handler partagé produit le contrat `{ error, message, statusCode, requestId }` et applique les règles développement/production. Pas de `try/catch` qui renvoie une 500. Détails et exemples : [ERROR-HANDLING.md](ERROR-HANDLING.md).
+- **Logs** : uniquement `logger` de `shared`, jamais `console.log`, avec les données en second argument (`logger.info('User registered', { userId })`) : elles deviennent des champs du log JSON. Le `requestId` est ajouté automatiquement. Ne journalisez jamais de mot de passe, de token, de clé API ni d'email.
 - **Configuration** : lisez `process.env` ; une valeur par défaut est acceptable pour un port ou une URL, jamais pour un secret. Toute nouvelle variable va dans `.env.example`.
 
 ### Ajouter une route : checklist
