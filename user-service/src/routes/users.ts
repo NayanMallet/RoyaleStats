@@ -13,7 +13,6 @@ router.get('/me', requireAuth(), userController.getMe);
 router.put('/me', requireAuth(), userController.updateMe);
 router.delete('/me', requireAuth(), userController.deleteMe);
 
-// List all users (could be made admin-only in the future)
-router.get('/', userController.listUsers);
+// No public list of accounts: it exposed every name and email (RST-29).
 
 export default router;

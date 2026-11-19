@@ -37,17 +37,12 @@ const openapiSpec = {
     },
 
     // Users (proxied to user-service under /users)
-    '/api/users': {
-      get: {
-        tags: ['Users'],
-        summary: 'List users',
-        responses: { '200': { description: 'List of users' } },
-      },
-    },
     '/api/users/register': {
       post: {
         tags: ['Users'],
         summary: 'Register',
+        description:
+          'The email is stored trimmed and lower-cased. Invalid fields are listed in `details`, keyed by field.',
         requestBody: {
           required: true,
           content: {
@@ -55,10 +50,16 @@ const openapiSpec = {
               schema: {
                 type: 'object',
                 properties: {
-                  email: { type: 'string', format: 'email' },
-                  password: { type: 'string', format: 'password' },
+                  name: { type: 'string', minLength: 1, maxLength: 50 },
+                  email: { type: 'string', format: 'email', maxLength: 254 },
+                  password: {
+                    type: 'string',
+                    format: 'password',
+                    minLength: 8,
+                    description: '8 characters minimum, 72 bytes maximum (bcrypt limit)',
+                  },
                 },
-                required: ['email', 'password'],
+                required: ['name', 'email', 'password'],
               },
             },
           },

@@ -203,3 +203,112 @@ describe('PUT /users/me', () => {
     expect((await call('PUT', '/me', { body: { name: 'x' } })).status).toBe(401);
   });
 });
+
+describe('input rules (RST-29)', () => {
+  it.each([
+    ['an email without @', { email: 'karim' }, 'email', 'L’email n’est pas valide.'],
+    ['an email with spaces', { email: 'karim @example.com' }, 'email', 'L’email n’est pas valide.'],
+    [
+      'a password shorter than 8 characters',
+      { password: '1234567' },
+      'password',
+      'Le mot de passe doit contenir au moins 8 caractères.',
+    ],
+    [
+      'a password longer than bcrypt can hash',
+      { password: 'é'.repeat(40) },
+      'password',
+      'Le mot de passe est trop long.',
+    ],
+    [
+      'a name longer than 50 characters',
+      { name: 'x'.repeat(51) },
+      'name',
+      'Le nom ne doit pas dépasser 50 caractères.',
+    ],
+    ['a blank name', { name: '   ' }, 'name', 'Le nom est obligatoire.'],
+  ])('refuses %s with the field in details', async (_label, override, field, message) => {
+    const { status, body } = await call('POST', '/register', { body: { ...karim, ...override } });
+
+    expect(status).toBe(400);
+    expect(body.details).toEqual({ [field]: message });
+    expect(body.message).toBe(message);
+  });
+
+  it('reports every invalid field at once', async () => {
+    const { body } = await call('POST', '/register', {
+      body: { name: '', email: 'nope', password: '1' },
+    });
+
+    expect(Object.keys(body.details).sort()).toEqual(['email', 'name', 'password']);
+    expect(body.message).toBe('Certains champs sont invalides.');
+  });
+
+  it('stores the email trimmed and lower-cased, and logs in whatever the case', async () => {
+    const { body } = await call('POST', '/register', {
+      body: { ...karim, email: '  Karim@Example.COM ' },
+    });
+    expect(body.email).toBe('karim@example.com');
+
+    const login = await call('POST', '/login', {
+      body: { email: 'KARIM@example.com', password: karim.password },
+    });
+    expect(login.status).toBe(200);
+  });
+
+  it('treats an email differing only by case as already used', async () => {
+    await call('POST', '/register', { body: karim });
+
+    const { status } = await call('POST', '/register', {
+      body: { ...karim, email: 'KARIM@EXAMPLE.COM' },
+    });
+
+    expect(status).toBe(409);
+  });
+
+  it('still logs in an account created with a mixed-case email before these rules', async () => {
+    await call('POST', '/register', { body: karim });
+    getDatabase()
+      .prepare('UPDATE users SET email = ? WHERE email = ?')
+      .run('Karim@Example.com', karim.email);
+
+    const { status } = await call('POST', '/login', {
+      body: { email: 'karim@example.com', password: karim.password },
+    });
+
+    expect(status).toBe(200);
+  });
+
+  it('answers 409 with a business message when the new email is taken', async () => {
+    await registerAndLogin({ name: 'Sacha', email: 'sacha@example.com', password: 'secret123' });
+    const { token } = await registerAndLogin();
+
+    const { status, body } = await call('PUT', '/me', {
+      token,
+      body: { email: 'Sacha@Example.com' },
+    });
+
+    expect(status).toBe(409);
+    expect(body.message).toBe('Un compte existe déjà avec cet email.');
+  });
+
+  it('lets a user save their profile with their own email unchanged', async () => {
+    const { token } = await registerAndLogin();
+
+    const { status } = await call('PUT', '/me', {
+      token,
+      body: { name: 'Karim B.', email: 'KARIM@example.com' },
+    });
+
+    expect(status).toBe(200);
+  });
+
+  it('no longer lists the accounts', async () => {
+    await call('POST', '/register', { body: karim });
+
+    const { status, body } = await call('GET', '');
+
+    expect(status).toBe(404);
+    expect(JSON.stringify(body)).not.toContain('karim@example.com');
+  });
+});
