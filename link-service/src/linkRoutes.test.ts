@@ -189,3 +189,102 @@ describe('public search by tag', () => {
     expect(Object.keys(body).sort()).toEqual(['linked_at', 'player_tag', 'twitch', 'twitter']);
   });
 });
+
+describe('tag normalisation and player_links constraints (RST-17)', () => {
+  const storedTags = () =>
+    (
+      getDatabase().prepare('SELECT player_tag FROM player_links').all() as { player_tag: string }[]
+    ).map((row) => row.player_tag);
+
+  it.each([' #2pp8vj9q ', '2pp8vj9q', '##2PP8VJ9Q', '#2Pp8Vj9q'])(
+    'stores %j as #2PP8VJ9Q',
+    async (playerTag) => {
+      const { status, body } = await call('POST', '/link', { userId: 1, body: { playerTag } });
+
+      expect(status).toBe(201);
+      expect(body.player_tag).toBe('#2PP8VJ9Q');
+      expect(storedTags()).toEqual(['#2PP8VJ9Q']);
+    },
+  );
+
+  it.each([['#'], ['  '], ['ab'], ['#2PP 8VJ'], ['#2PP-8VJ'], ['#' + 'A'.repeat(16)], [42]])(
+    'refuses the tag %j with 400 InvalidPlayerTag and stores nothing',
+    async (playerTag) => {
+      const { status, body } = await call('POST', '/link', { userId: 1, body: { playerTag } });
+
+      expect(status).toBe(400);
+      expect(body.error).toBe('InvalidPlayerTag');
+      expect(storedTags()).toEqual([]);
+    },
+  );
+
+  it('answers 400 without tag', async () => {
+    const { status, body } = await call('POST', '/link', { userId: 1, body: {} });
+
+    expect(status).toBe(400);
+    expect(body.details).toEqual({ playerTag: 'Champ obligatoire' });
+  });
+
+  it('allows one link per account (user_id UNIQUE)', async () => {
+    await call('POST', '/link', { userId: 1, body: { playerTag: '#2PP8VJ9Q' } });
+
+    const { status, body } = await call('POST', '/link', {
+      userId: 1,
+      body: { playerTag: '#8YLQ2C' },
+    });
+
+    expect(status).toBe(409);
+    expect(body.message).toBe('Ce compte est déjà associé à un joueur.');
+  });
+
+  it('allows one account per tag (player_tag UNIQUE), whatever its case or #', async () => {
+    await call('POST', '/link', { userId: 1, body: { playerTag: '#2PP8VJ9Q' } });
+
+    const { status, body } = await call('POST', '/link', {
+      userId: 2,
+      body: { playerTag: ' 2pp8vj9q' },
+    });
+
+    expect(status).toBe(409);
+    expect(body.message).toBe('Ce tag est déjà associé à un autre compte.');
+  });
+
+  it('keeps one link when two accounts link the same tag at the same time', async () => {
+    const answers = await Promise.all([
+      call('POST', '/link', { userId: 1, body: { playerTag: '#2PP8VJ9Q' } }),
+      call('POST', '/link', { userId: 2, body: { playerTag: '#2PP8VJ9Q' } }),
+    ]);
+
+    expect(answers.map((answer) => answer.status).sort()).toEqual([201, 409]);
+    expect(storedTags()).toEqual(['#2PP8VJ9Q']);
+  });
+
+  it('frees the tag once its link is deleted', async () => {
+    await call('POST', '/link', { userId: 1, body: { playerTag: '#2PP8VJ9Q' } });
+    expect((await call('DELETE', '/link/1', { userId: 1 })).status).toBe(204);
+
+    expect((await call('DELETE', '/link/1', { userId: 1 })).status).toBe(404);
+    expect((await call('GET', '/link/1', { userId: 1 })).status).toBe(404);
+    expect((await call('GET', '/link/tag/2PP8VJ9Q')).status).toBe(404);
+
+    const relinked = await call('POST', '/link', { userId: 2, body: { playerTag: '#2PP8VJ9Q' } });
+    expect(relinked.status).toBe(201);
+  });
+
+  it('finds a link by tag with or without # and whatever the case', async () => {
+    await call('POST', '/link', { userId: 1, body: { playerTag: '#2PP8VJ9Q' } });
+
+    for (const tag of ['%232PP8VJ9Q', '2pp8vj9q', '%23%232pp8vj9q']) {
+      const { status, body } = await call('GET', `/link/tag/${tag}`);
+      expect(status).toBe(200);
+      expect(body.player_tag).toBe('#2PP8VJ9Q');
+    }
+  });
+
+  it('answers 400 when searching an invalid tag', async () => {
+    const { status, body } = await call('GET', '/link/tag/a%20b');
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('InvalidPlayerTag');
+  });
+});
