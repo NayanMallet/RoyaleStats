@@ -1,31 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import Leaderboards from '@/components/Leaderboards.vue'
-import type { MockRoute } from '../mocks/api'
-import {
-  demoPathOfLegendRankings,
-  demoSeasonLeaderboards,
-  demoTrophyRankings,
-  longPathOfLegendRankings,
-} from '../mocks/fixtures'
-
-const rankingsApi = (
-  extra: Partial<MockRoute> = {},
-  pathOfLegend: unknown = demoPathOfLegendRankings,
-): MockRoute[] => [
-  {
-    url: '/api/clash/locations/global/pathoflegend/players',
-    body: pathOfLegend,
-    ...extra,
-  },
-  { url: '/api/royaleapi/players/level/16', body: demoTrophyRankings, ...extra },
-  { url: '/api/clash/leaderboards', body: demoSeasonLeaderboards, ...extra },
-  // Season rankings left empty: the component then derives Merge and 2v2 from Path of Legend.
-  { url: /^\/api\/clash\/leaderboard\/\d+/, body: { items: [] }, ...extra },
-  // Clan badge names, loaded once from GitHub by services/badges.ts and cached for the session:
-  // never delayed nor failed, otherwise every later story would wait for it.
-  { url: /alliance_badges\.json$/, body: [] },
-]
+import { longPathOfLegendRankings } from '../mocks/fixtures'
+import { leaderboardsRoutes } from '../mocks/routes'
 
 /**
  * Classements de l'accueil : quatre catégories, puis la liste des meilleurs joueurs.
@@ -34,7 +11,7 @@ const rankingsApi = (
 const meta = {
   title: 'Organisms/Leaderboards',
   component: Leaderboards,
-  parameters: { layout: 'fullscreen', mockApi: rankingsApi() },
+  parameters: { layout: 'fullscreen', mockApi: leaderboardsRoutes() },
 } satisfies Meta<typeof Leaderboards>
 
 export default meta
@@ -91,7 +68,7 @@ export const PathOfLegendKarim: Story = {
 
 /** Noms et clans longs, scores à six chiffres : les textes sont tronqués, le score reste entier. */
 export const PathOfLegendLongNames: Story = {
-  parameters: { mockApi: rankingsApi({}, longPathOfLegendRankings) },
+  parameters: { mockApi: leaderboardsRoutes({}, longPathOfLegendRankings) },
   play: async ({ canvasElement }) => {
     await openPathOfLegend(canvasElement, 'Mohamed Light le Magnifique')
     await expectNoHorizontalOverflow(canvasElement)
@@ -99,7 +76,7 @@ export const PathOfLegendLongNames: Story = {
 }
 
 export const Loading: Story = {
-  parameters: { mockApi: rankingsApi({ delay: Infinity }) },
+  parameters: { mockApi: leaderboardsRoutes({ delay: Infinity }) },
 }
 
 /**
@@ -107,7 +84,9 @@ export const Loading: Story = {
  * sans message d'erreur. À faire évoluer avec RST-33 (Error Management).
  */
 export const ServerError: Story = {
-  parameters: { mockApi: rankingsApi({ status: 500, body: { error: 'Internal Server Error' } }) },
+  parameters: {
+    mockApi: leaderboardsRoutes({ status: 500, body: { error: 'Internal Server Error' } }),
+  },
 }
 
 export const Gerard800x600: Story = {
