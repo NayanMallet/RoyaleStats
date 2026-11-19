@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Loader2, ArrowLeft, UserPlus } from 'lucide-vue-next'
 import AppLogo from '@/statics/Logo.png'
 import { authService } from '@/services/auth.service'
-import { HttpError } from '@/services/http'
+import { ApiError } from '@/services/http'
 
 const router = useRouter()
 const isLoading = ref(false)
@@ -64,7 +64,7 @@ const handleRegister = async () => {
 
     router.push('/login')
   } catch (error) {
-    if (error instanceof HttpError) {
+    if (error instanceof ApiError) {
       if (error.status === 409) {
         emailError.value = 'Un compte existe déjà avec cet email'
       } else {

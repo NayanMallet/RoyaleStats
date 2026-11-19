@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, ArrowLeft, LogIn } from 'lucide-vue-next'
 import AppLogo from '@/statics/Logo.png'
 import { authService } from '@/services/auth.service'
-import { HttpError } from '@/services/http'
+import { ApiError } from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
 import { linkService } from '@/services/link.service'
+import { safeRedirect } from '@/lib/redirect'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const isLoading = ref(false)
 const email = ref('')
@@ -52,9 +54,9 @@ const handleLogin = async () => {
       // Ignore error - user might not have a linked player
     }
 
-    router.push('/')
+    router.push(safeRedirect(route.query.redirect))
   } catch (error) {
-    if (error instanceof HttpError) {
+    if (error instanceof ApiError) {
       if (error.status === 401) {
         emailError.value = 'Email ou mot de passe incorrect'
         passwordError.value = 'Email ou mot de passe incorrect'

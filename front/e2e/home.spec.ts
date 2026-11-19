@@ -22,6 +22,6 @@ test.describe('Authentification', () => {
   }) => {
     await page.goto('/profile')
 
-    await expect(page).toHaveURL(/\/login$/)
+    await expect(page).toHaveURL(/\/login\?redirect=(\/|%2F)profile$/)
   })
 })

@@ -1,3 +1,5 @@
+import { apiErrorFromResponse, NetworkError } from './http'
+
 export interface CardStat {
   card_name: string
   usage_count: number
@@ -12,9 +14,14 @@ export interface MetaSnapshot {
 }
 
 export async function fetchMetaSnapshot(): Promise<MetaSnapshot> {
-  const response = await fetch('/api/meta/snapshot')
+  let response: Response
+  try {
+    response = await fetch('/api/meta/snapshot')
+  } catch (error) {
+    throw new NetworkError(false, { cause: error })
+  }
   if (!response.ok) {
-    throw new Error('Failed to fetch meta snapshot')
+    throw await apiErrorFromResponse(response)
   }
   const data = await response.json()
   return data.snapshot
