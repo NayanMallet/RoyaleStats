@@ -167,9 +167,7 @@ const openapiSpec = {
       },
     },
     '/api/link/{userId}': {
-      parameters: [
-        { in: 'path', name: 'userId', required: true, schema: { type: 'integer' } },
-      ],
+      parameters: [{ in: 'path', name: 'userId', required: true, schema: { type: 'integer' } }],
       get: {
         tags: ['Links'],
         summary: 'Get linked player by user id',
@@ -233,7 +231,13 @@ const openapiSpec = {
     // Clash Data (proxied without rewrite under /api/clash)
     '/api/clash/players/{playerTag}': {
       parameters: [
-        { in: 'path', name: 'playerTag', required: true, schema: { type: 'string' }, description: 'Player tag with or without leading #' },
+        {
+          in: 'path',
+          name: 'playerTag',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Player tag with or without leading #',
+        },
       ],
       get: {
         tags: ['Clash'],
@@ -242,9 +246,7 @@ const openapiSpec = {
       },
     },
     '/api/clash/players/{playerTag}/battles': {
-      parameters: [
-        { in: 'path', name: 'playerTag', required: true, schema: { type: 'string' } },
-      ],
+      parameters: [{ in: 'path', name: 'playerTag', required: true, schema: { type: 'string' } }],
       get: {
         tags: ['Clash'],
         summary: 'Get recent battles for a player',
@@ -259,9 +261,7 @@ const openapiSpec = {
       },
     },
     '/api/clash/clans/{clanTag}': {
-      parameters: [
-        { in: 'path', name: 'clanTag', required: true, schema: { type: 'string' } },
-      ],
+      parameters: [{ in: 'path', name: 'clanTag', required: true, schema: { type: 'string' } }],
       get: {
         tags: ['Clash'],
         summary: 'Get clan info',
@@ -339,9 +339,7 @@ const openapiSpec = {
       },
     },
     '/api/meta/recommend/{playerTag}': {
-      parameters: [
-        { in: 'path', name: 'playerTag', required: true, schema: { type: 'string' } },
-      ],
+      parameters: [{ in: 'path', name: 'playerTag', required: true, schema: { type: 'string' } }],
       get: {
         tags: ['Meta'],
         summary: 'Get recommendations for a player',
@@ -363,7 +361,10 @@ const openapiSpec = {
             },
           },
         },
-        responses: { '202': { description: 'Accepted for processing' }, '200': { description: 'OK' } },
+        responses: {
+          '202': { description: 'Accepted for processing' },
+          '200': { description: 'OK' },
+        },
       },
     },
 
@@ -393,7 +394,13 @@ const openapiSpec = {
     // RoyaleAPI passthrough (documented as generic path)
     '/api/royaleapi/{path}': {
       parameters: [
-        { in: 'path', name: 'path', required: true, schema: { type: 'string' }, description: 'Arbitrary RoyaleAPI path, forwarded as-is' },
+        {
+          in: 'path',
+          name: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Arbitrary RoyaleAPI path, forwarded as-is',
+        },
       ],
       get: {
         tags: ['RoyaleAPI'],
@@ -410,7 +417,61 @@ const openapiSpec = {
         bearerFormat: 'JWT',
       },
     },
+    headers: {
+      RequestId: {
+        description:
+          'Request identifier, also present in the body of an error and in the logs of every service.',
+        schema: { type: 'string', example: '6f1c9e2a-3b7d-4c1e-9a2f-1d2e3f4a5b6c' },
+      },
+    },
+    schemas: {
+      ApiError: {
+        type: 'object',
+        description:
+          'Error contract shared by every service (docs/ERROR-HANDLING.md). In production a 5xx only carries a generic message and the requestId.',
+        required: ['error', 'message', 'statusCode', 'requestId'],
+        properties: {
+          error: {
+            type: 'string',
+            description: 'Stable machine-readable code, in PascalCase.',
+            example: 'PlayerNotFound',
+          },
+          message: {
+            type: 'string',
+            description: 'Message the user can read.',
+            example: 'Aucun joueur ne correspond à ce tag.',
+          },
+          statusCode: { type: 'integer', example: 404 },
+          requestId: {
+            type: 'string',
+            description: 'Same value as the x-request-id header.',
+            example: '6f1c9e2a-3b7d-4c1e-9a2f-1d2e3f4a5b6c',
+          },
+          details: {
+            description: 'Development only, or the invalid fields of a 400.',
+          },
+          stack: { type: 'string', description: 'Development only.' },
+        },
+      },
+    },
+    responses: {
+      Error: {
+        description:
+          'Error: 400 ValidationError, 401 AuthenticationError, 403 Forbidden, 404 NotFound, 409 ConflictError, 429 RateLimited, 500 InternalServerError, 502/503/504 BadGateway, ServiceUnavailable, GatewayTimeout.',
+        headers: { 'x-request-id': { $ref: '#/components/headers/RequestId' } },
+        content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } },
+      },
+    },
   },
 };
+
+// Every operation can fail with the error contract: document it once for all of them.
+for (const pathItem of Object.values(openapiSpec.paths) as Record<string, any>[]) {
+  for (const operation of Object.values(pathItem)) {
+    if (operation && typeof operation === 'object' && 'responses' in operation) {
+      operation.responses.default ??= { $ref: '#/components/responses/Error' };
+    }
+  }
+}
 
 export default openapiSpec;

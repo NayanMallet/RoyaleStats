@@ -23,7 +23,7 @@ export async function fetchJson<T>(url: string, options?: RequestInit): Promise<
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       try {
-        const errorData = await response.json();
+        const errorData = (await response.json()) as { message?: string; error?: string };
         errorMessage = errorData.message || errorData.error || errorMessage;
       } catch {
         // If error response is not JSON, use status text
@@ -36,7 +36,7 @@ export async function fetchJson<T>(url: string, options?: RequestInit): Promise<
       return undefined as T;
     }
 
-    return await response.json();
+    return (await response.json()) as T;
   } catch (error) {
     if (error instanceof HttpError) {
       throw error;

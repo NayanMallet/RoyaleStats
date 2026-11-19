@@ -1,9 +1,16 @@
 import express from 'express';
-import morgan from 'morgan';
 import dotenv from 'dotenv';
-import { createCorsMiddleware, logger } from 'shared';
+import {
+  configureLogger,
+  createCorsMiddleware,
+  createErrorHandler,
+  installProcessHandlers,
+  logger,
+  registerDebugRoutes,
+  requestIdMiddleware,
+  requestLoggerMiddleware,
+} from 'shared';
 import { proxies } from './proxy';
-import { errorHandler } from './middleware/errorHandler';
 
 import path from 'path';
 import openapiSpec from './openapi';
@@ -14,11 +21,15 @@ const swaggerUi = require('swagger-ui-express');
 // Load .env from workspace root
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+configureLogger({ service: 'api-gateway' });
+installProcessHandlers();
+
 const app = express();
 const PORT = process.env.API_GATEWAY_PORT || 3000;
 
-// Middleware
-app.use(morgan('dev'));
+// Middleware: the request id comes first so that every log line and error carries it.
+app.use(requestIdMiddleware());
+app.use(requestLoggerMiddleware());
 app.use(createCorsMiddleware());
 // Don't use express.json() here - let the proxy forward raw body to services
 
@@ -39,6 +50,8 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+registerDebugRoutes(app);
 
 // Swagger UI and spec
 app.get('/openapi.json', (req, res) => {
@@ -71,8 +84,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// Error handling middleware (must be last)
-app.use(errorHandler);
+// Error handling middleware (must be last). The 404 for unknown routes is RST-42.
+app.use(createErrorHandler());
 
 app.listen(PORT, () => {
   logger.info(`🚀 API Gateway listening on port ${PORT}`);

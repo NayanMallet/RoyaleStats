@@ -1,16 +1,29 @@
 import express from 'express';
-import morgan from 'morgan';
 import dotenv from 'dotenv';
-import { createCorsMiddleware, logger } from 'shared';
+import {
+  configureLogger,
+  createCorsMiddleware,
+  createErrorHandler,
+  installProcessHandlers,
+  logger,
+  notFoundHandler,
+  registerDebugRoutes,
+  requestIdMiddleware,
+  requestLoggerMiddleware,
+} from 'shared';
 import clashRoutes from './routes/clash';
 
 dotenv.config();
 
+configureLogger({ service: 'clash-data-service' });
+installProcessHandlers();
+
 const app = express();
 const PORT = process.env.CLASH_DATA_SERVICE_PORT || 3004;
 
-// Middleware
-app.use(morgan('dev'));
+// Middleware: the request id comes first so that every log line and error carries it.
+app.use(requestIdMiddleware());
+app.use(requestLoggerMiddleware());
 app.use(createCorsMiddleware());
 app.use(express.json());
 
@@ -27,14 +40,11 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/', clashRoutes);
 
-// Error handling
-app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  logger.error('Unhandled error:', err);
-  res.status(500).json({
-    error: 'InternalServerError',
-    message: err.message || 'An unexpected error occurred',
-  });
-});
+registerDebugRoutes(app);
+
+// Error handling (must be last): unknown routes, then the shared error contract.
+app.use(notFoundHandler());
+app.use(createErrorHandler());
 
 app.listen(PORT, () => {
   logger.info(`🚀 Clash Data Service listening on port ${PORT}`);

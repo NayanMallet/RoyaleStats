@@ -1,5 +1,9 @@
 import cors from 'cors';
 
+// The front reads x-request-id to show the incident code of an error (docs/ERROR-HANDLING.md).
+const allowedHeaders = ['Content-Type', 'Authorization', 'X-Request-Id'];
+const exposedHeaders = ['X-Request-Id'];
+
 export function createCorsMiddleware() {
   const isDev = process.env.NODE_ENV !== 'production';
 
@@ -10,7 +14,8 @@ export function createCorsMiddleware() {
       credentials: true,
       optionsSuccessStatus: 204,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
+      allowedHeaders,
+      exposedHeaders,
     });
   }
 
@@ -25,6 +30,7 @@ export function createCorsMiddleware() {
     credentials: true,
     optionsSuccessStatus: 204,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders,
+    exposedHeaders,
   });
 }
