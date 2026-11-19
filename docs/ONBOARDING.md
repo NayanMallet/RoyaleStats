@@ -6,7 +6,7 @@ Ce parcours mène un nouvel arrivant de `git clone` à sa première pull request
 
 ### Accès
 
-- [ ] Accès en écriture au dépôt GitHub `NayanMallet/RoyaleStats`.
+- [ ] Accès en écriture au dépôt GitHub `NotGrafik/RoyaleStats`.
 - [ ] Accès au projet Jira `RST` (consulter, créer et modifier des tickets).
 - [ ] Accès au canal de discussion de l'équipe.
 

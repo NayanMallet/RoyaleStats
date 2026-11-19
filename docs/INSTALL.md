@@ -23,7 +23,7 @@ Si votre IP change (autre réseau Wi-Fi, box redémarrée, réseau de l'école),
 ## 2. Installer
 
 ```bash
-git clone https://github.com/NayanMallet/RoyaleStats.git
+git clone https://github.com/NotGrafik/RoyaleStats.git
 cd RoyaleStats
 nvm use
 corepack enable
