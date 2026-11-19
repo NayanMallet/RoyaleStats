@@ -1,4 +1,3 @@
-```vue
 <script setup lang="ts">
 import { ref, watchEffect, computed, watch } from 'vue'
 import {
