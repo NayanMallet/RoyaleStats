@@ -8,3 +8,9 @@ packages:
   - link-service
   - meta-tracker-service
   - front
+
+# pnpm 10 only runs the install scripts of the packages listed here. better-sqlite3 compiles its
+# native binding (needed by the services and their tests); esbuild installs its binary (Vite).
+onlyBuiltDependencies:
+  - better-sqlite3
+  - esbuild
