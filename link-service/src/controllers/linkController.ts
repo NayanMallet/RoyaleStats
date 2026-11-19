@@ -3,9 +3,11 @@ import fetch from 'node-fetch';
 import { getDatabase } from '../database';
 import {
   ConflictError,
+  ForbiddenError,
   NotFoundError,
   UpstreamError,
   ValidationError,
+  getAuthenticatedUser,
   logger,
   requestIdHeaders,
 } from 'shared';
@@ -18,6 +20,48 @@ const CLASH_DATA_SERVICE_URL =
 
 const linkNotFound = () =>
   new NotFoundError('Aucun joueur n’est associé à ce compte.', { code: 'LinkNotFound' });
+
+/**
+ * The account a private route acts on: always the one of the verified token. A userId in the URL
+ * or the body must match it, so that user A can neither read nor change the link of user B.
+ */
+function ownUserId(res: Response, requestedUserId?: unknown): number {
+  const { userId } = getAuthenticatedUser(res);
+  if (requestedUserId === undefined) return userId;
+
+  const requested = Number(requestedUserId);
+  if (!Number.isInteger(requested) || requested <= 0) {
+    throw new ValidationError('Identifiant d’utilisateur invalide.');
+  }
+  if (requested !== userId) {
+    throw new ForbiddenError('Vous ne pouvez agir que sur votre propre compte.');
+  }
+  return userId;
+}
+
+/** Fields of a link anyone can see on a player's profile: no account id. */
+function toPublicLink(link: PlayerLink) {
+  return {
+    player_tag: link.player_tag,
+    twitter: link.twitter ?? null,
+    twitch: link.twitch ?? null,
+    linked_at: link.linked_at,
+  };
+}
+
+const SOCIAL_HANDLE = /^[A-Za-z0-9_]{1,50}$/;
+
+/** A social handle is optional: undefined keeps it, '' or null clears it, otherwise 1-50 chars. */
+function socialHandle(value: unknown, network: string): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value === 'string' && SOCIAL_HANDLE.test(value.replace(/^@/, ''))) {
+    return value.replace(/^@/, '');
+  }
+  throw new ValidationError(`Pseudo ${network} invalide : lettres, chiffres et _ uniquement.`, {
+    details: { [network.toLowerCase()]: 'Format invalide' },
+  });
+}
 
 // Helper to normalize player tags
 function normalizeTag(tag: string): string {
@@ -56,10 +100,12 @@ async function ensurePlayerExists(tag: string): Promise<void> {
 }
 
 export async function createLink(req: Request, res: Response) {
-  const { userId, playerTag } = req.body ?? {};
+  const { userId: requestedUserId, playerTag } = req.body ?? {};
+  // The account comes from the token; a userId in the body is only checked against it.
+  const userId = ownUserId(res, requestedUserId);
 
-  if (!userId || !playerTag) {
-    throw new ValidationError('L’utilisateur et le tag du joueur sont obligatoires.');
+  if (!playerTag || typeof playerTag !== 'string') {
+    throw new ValidationError('Le tag du joueur est obligatoire.');
   }
 
   const normalized = normalizeTag(playerTag);
@@ -97,8 +143,9 @@ export async function createLink(req: Request, res: Response) {
 }
 
 export async function updateLink(req: Request, res: Response) {
-  const { userId } = req.params;
-  const { twitter, twitch } = req.body ?? {};
+  const userId = ownUserId(res, req.params.userId);
+  const twitter = socialHandle(req.body?.twitter, 'Twitter');
+  const twitch = socialHandle(req.body?.twitch, 'Twitch');
 
   const db = getDatabase();
 
@@ -131,7 +178,7 @@ export async function updateLink(req: Request, res: Response) {
 }
 
 export async function getLink(req: Request, res: Response) {
-  const { userId } = req.params;
+  const userId = ownUserId(res, req.params.userId);
 
   const db = getDatabase();
   const link = db.prepare('SELECT * FROM player_links WHERE user_id = ?').get(userId) as
@@ -144,7 +191,7 @@ export async function getLink(req: Request, res: Response) {
 }
 
 export async function deleteLink(req: Request, res: Response) {
-  const { userId } = req.params;
+  const userId = ownUserId(res, req.params.userId);
 
   const db = getDatabase();
   const result = db.prepare('DELETE FROM player_links WHERE user_id = ?').run(userId);
@@ -172,5 +219,5 @@ export async function getLinkByTag(req: Request, res: Response) {
     throw new NotFoundError('Aucun compte n’est associé à ce tag.', { code: 'LinkNotFound' });
   }
 
-  res.json(link);
+  res.json(toPublicLink(link));
 }
