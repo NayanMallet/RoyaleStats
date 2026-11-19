@@ -142,7 +142,10 @@ const openapiSpec = {
     '/api/link': {
       post: {
         tags: ['Links'],
-        summary: 'Create user to Clash Royale player link',
+        summary: 'Link the Clash Royale player to the account of the token',
+        description:
+          'The account comes from the JWT. `userId` is optional and must match it, otherwise 403.',
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -150,10 +153,13 @@ const openapiSpec = {
               schema: {
                 type: 'object',
                 properties: {
-                  userId: { type: 'integer' },
+                  userId: {
+                    type: 'integer',
+                    description: 'Optional, must be the user of the token',
+                  },
                   playerTag: { type: 'string', example: '#ABC123' },
                 },
-                required: ['userId', 'playerTag'],
+                required: ['playerTag'],
               },
             },
           },
@@ -161,8 +167,11 @@ const openapiSpec = {
         responses: {
           '201': { description: 'Link created' },
           '400': { description: 'Validation error' },
+          '401': { description: 'Missing or invalid token' },
+          '403': { description: 'userId of another account' },
           '404': { description: 'Player not found' },
           '409': { description: 'Conflict (already linked)' },
+          '503': { description: 'Clash Data Service unavailable' },
         },
       },
     },
@@ -170,15 +179,19 @@ const openapiSpec = {
       parameters: [{ in: 'path', name: 'userId', required: true, schema: { type: 'integer' } }],
       get: {
         tags: ['Links'],
-        summary: 'Get linked player by user id',
+        summary: 'Get the link of the authenticated user',
+        security: [{ bearerAuth: [] }],
         responses: {
           '200': { description: 'Link info' },
+          '401': { description: 'Missing or invalid token' },
+          '403': { description: 'Link of another account' },
           '404': { description: 'Not found' },
         },
       },
       patch: {
         tags: ['Links'],
-        summary: 'Update social links (Twitter, Twitch) of a linked player',
+        summary: 'Update the social links (Twitter, Twitch) of the authenticated user',
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -186,8 +199,18 @@ const openapiSpec = {
               schema: {
                 type: 'object',
                 properties: {
-                  twitter: { type: 'string', example: 'https://twitter.com/player' },
-                  twitch: { type: 'string', example: 'https://twitch.tv/player' },
+                  twitter: {
+                    type: 'string',
+                    nullable: true,
+                    example: 'karim_cr',
+                    description: 'Handle: letters, digits and _, 50 max. Empty or null clears it.',
+                  },
+                  twitch: {
+                    type: 'string',
+                    nullable: true,
+                    example: 'karimcr',
+                    description: 'Handle: letters, digits and _, 50 max. Empty or null clears it.',
+                  },
                 },
               },
             },
@@ -195,14 +218,20 @@ const openapiSpec = {
         },
         responses: {
           '200': { description: 'Link updated' },
+          '400': { description: 'Invalid handle' },
+          '401': { description: 'Missing or invalid token' },
+          '403': { description: 'Link of another account' },
           '404': { description: 'Not found' },
         },
       },
       delete: {
         tags: ['Links'],
-        summary: 'Delete link by user id',
+        summary: 'Delete the link of the authenticated user',
+        security: [{ bearerAuth: [] }],
         responses: {
           '204': { description: 'Deleted' },
+          '401': { description: 'Missing or invalid token' },
+          '403': { description: 'Link of another account' },
           '404': { description: 'Not found' },
         },
       },
@@ -219,9 +248,10 @@ const openapiSpec = {
       ],
       get: {
         tags: ['Links'],
-        summary: 'Get the RoyaleStats link of a Clash Royale player tag',
+        summary: 'Public social links of a Clash Royale player tag',
+        description: 'Public route: player_tag, twitter, twitch and linked_at only, no account id.',
         responses: {
-          '200': { description: 'Link info' },
+          '200': { description: 'Public link info' },
           '400': { description: 'Invalid tag' },
           '404': { description: 'No link for this tag' },
         },
