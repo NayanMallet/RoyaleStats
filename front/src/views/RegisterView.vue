@@ -40,8 +40,9 @@ const handleRegister = async () => {
   if (!password.value) {
     passwordError.value = 'Le mot de passe est requis'
     hasError = true
-  } else if (password.value.length < 6) {
-    passwordError.value = 'Le mot de passe doit contenir au moins 6 caractères'
+  } else if (password.value.length < 8) {
+    // Same rule as the user-service (RST-29)
+    passwordError.value = 'Le mot de passe doit contenir au moins 8 caractères'
     hasError = true
   }
   if (!confirmPassword.value) {
@@ -64,12 +65,17 @@ const handleRegister = async () => {
 
     router.push('/login')
   } catch (error) {
-    if (error instanceof ApiError) {
-      if (error.status === 409) {
-        emailError.value = 'Un compte existe déjà avec cet email'
-      } else {
-        emailError.value = "Erreur lors de l'inscription au serveur"
-      }
+    const fieldErrors =
+      error instanceof ApiError && error.status === 400
+        ? ((error.details ?? {}) as Partial<Record<'name' | 'email' | 'password', string>>)
+        : {}
+    if (error instanceof ApiError && error.status === 409) {
+      emailError.value = 'Un compte existe déjà avec cet email'
+    } else if (fieldErrors.name || fieldErrors.email || fieldErrors.password) {
+      // The user-service names each invalid field (RST-29): show it under the right input.
+      usernameError.value = fieldErrors.name ?? ''
+      emailError.value = fieldErrors.email ?? ''
+      passwordError.value = fieldErrors.password ?? ''
     } else {
       emailError.value = "Erreur lors de l'inscription au serveur"
     }
