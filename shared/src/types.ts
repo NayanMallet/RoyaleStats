@@ -55,10 +55,19 @@ export interface PlayerLinkCreatePayload {
   playerTag: string;
 }
 
+/** Error contract returned by every service (docs/ERROR-HANDLING.md). */
 export interface ApiError {
+  /** Stable machine-readable code, in PascalCase: ValidationError, PlayerNotFound… */
   error: string;
+  /** Message the user can read. Generic for a 5xx in production. */
   message: string;
   statusCode: number;
+  /** Same value as the x-request-id header and the server logs. */
+  requestId: string;
+  /** Development, or the invalid fields of a 400. */
+  details?: unknown;
+  /** Development only. */
+  stack?: string;
 }
 
 export interface HealthCheckResponse {
