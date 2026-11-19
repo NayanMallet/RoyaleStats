@@ -71,3 +71,27 @@ export const demoSeasonLeaderboards = {
     { id: 170000006, name: '2v2 League' },
   ],
 }
+
+/**
+ * Path of Legend rankings with long names, long clan names and large scores:
+ * stress test for the leaderboard columns (no horizontal scroll at any width).
+ */
+export const longPathOfLegendRankings = {
+  items: [
+    {
+      tag: '#9LYC2R0C',
+      name: 'Mohamed Light le Magnifique',
+      rank: 1,
+      eloRating: 123_456,
+      clan: { tag: '#QCQ0PL', name: 'Les Chevaliers de la Tour Royale', badgeId: 16_000_000 },
+    },
+    {
+      tag: '#2PP8VJ9Q',
+      name: 'KarimBenaliDuQuartierNord',
+      rank: 2,
+      eloRating: 98_765,
+      clan: { tag: '#8YLQ2C', name: 'Clan des Gobelins Électriques', badgeId: 16_000_001 },
+    },
+    { tag: '#80RGVCJ2', name: 'Sacha', rank: 3, eloRating: 3351 },
+  ],
+}

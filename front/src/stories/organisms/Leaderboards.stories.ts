@@ -6,12 +6,16 @@ import {
   demoPathOfLegendRankings,
   demoSeasonLeaderboards,
   demoTrophyRankings,
+  longPathOfLegendRankings,
 } from '../mocks/fixtures'
 
-const rankingsApi = (extra: Partial<MockRoute> = {}): MockRoute[] => [
+const rankingsApi = (
+  extra: Partial<MockRoute> = {},
+  pathOfLegend: unknown = demoPathOfLegendRankings,
+): MockRoute[] => [
   {
     url: '/api/clash/locations/global/pathoflegend/players',
-    body: demoPathOfLegendRankings,
+    body: pathOfLegend,
     ...extra,
   },
   { url: '/api/royaleapi/players/level/16', body: demoTrophyRankings, ...extra },
@@ -38,15 +42,59 @@ type Story = StoryObj<typeof meta>
 
 export const Categories: Story = {}
 
+/** Opens the « Ranked » category and waits for the list. */
+async function openPathOfLegend(canvasElement: HTMLElement, firstPlayer: string) {
+  const canvas = within(canvasElement)
+  await userEvent.click(await canvas.findByText('Ranked'))
+  await expect(
+    await canvas.findByRole('heading', { name: /Voie des Légendes/ }),
+  ).toBeInTheDocument()
+  await expect(await canvas.findByText(firstPlayer)).toBeInTheDocument()
+}
+
+/**
+ * No horizontal scroll (Gérard persona, docs/GUIDELINES.md) and every cell of the list stays
+ * inside its row: the score column used to overflow its grid track and be cut off by the card.
+ */
+async function expectNoHorizontalOverflow(canvasElement: HTMLElement) {
+  const root = canvasElement.ownerDocument.documentElement
+  await expect(root.scrollWidth).toBeLessThanOrEqual(root.clientWidth)
+  const rows = within(canvasElement).getAllByTestId('leaderboard-row')
+  for (const row of rows) {
+    const rowBox = row.getBoundingClientRect()
+    for (const cell of Array.from(row.children)) {
+      await expect(cell.scrollWidth).toBeLessThanOrEqual(cell.clientWidth)
+      await expect(cell.getBoundingClientRect().right).toBeLessThanOrEqual(rowBox.right)
+    }
+  }
+}
+
 /** Ouvre la catégorie « Ranked » et vérifie le titre de la liste et le premier joueur. */
 export const PathOfLegend: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByText('Ranked'))
-    await expect(
-      await canvas.findByRole('heading', { name: /Voie des Légendes/ }),
-    ).toBeInTheDocument()
-    await expect(await canvas.findByText('Mohamed Light')).toBeInTheDocument()
+    await openPathOfLegend(canvasElement, 'Mohamed Light')
+    await expectNoHorizontalOverflow(canvasElement)
+  },
+}
+
+/** Liste « Voie des Légendes » sur la surface utile de Gérard : aucun défilement horizontal. */
+export const PathOfLegendGerard: Story = {
+  ...PathOfLegend,
+  globals: { viewport: { value: 'gerardUsable', isRotated: false } },
+}
+
+/** Liste « Voie des Légendes » sur le mobile de Karim : rang, joueur et médailles, sans le clan. */
+export const PathOfLegendKarim: Story = {
+  ...PathOfLegend,
+  globals: { viewport: { value: 'karimMobile', isRotated: false } },
+}
+
+/** Noms et clans longs, scores à six chiffres : les textes sont tronqués, le score reste entier. */
+export const PathOfLegendLongNames: Story = {
+  parameters: { mockApi: rankingsApi({}, longPathOfLegendRankings) },
+  play: async ({ canvasElement }) => {
+    await openPathOfLegend(canvasElement, 'Mohamed Light le Magnifique')
+    await expectNoHorizontalOverflow(canvasElement)
   },
 }
 
