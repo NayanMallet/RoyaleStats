@@ -5,6 +5,7 @@ const router = Router();
 
 router.get('/players/:playerTag', clashController.getPlayer);
 router.get('/players/:playerTag/battles', clashController.getPlayerBattles);
+router.get('/players/:playerTag/summary', clashController.getPlayerSummary);
 router.get('/cards', clashController.getCards);
 router.get('/clans/:clanTag', clashController.getClan);
 router.get('/leaderboards', clashController.getLeaderboards);
