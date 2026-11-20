@@ -47,6 +47,23 @@ describe('http client', () => {
     await expect(http.delete('/api/users/me')).resolves.toBeUndefined()
   })
 
+  it('never sends the session token with public data, nor expires the session on a 401', async () => {
+    localStorage.setItem('auth_token', 'secret-token')
+    const onUnauthorized = vi.fn()
+    setUnauthorizedHandler(onUnauthorized)
+    const fetchMock = mockFetch(401, {
+      error: 'AuthenticationError',
+      message: 'x',
+      statusCode: 401,
+    })
+
+    await failure(http.getPublic('/api/royaleapi/players/level/16'))
+
+    const headers = fetchMock.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(headers.Authorization).toBeUndefined()
+    expect(onUnauthorized).not.toHaveBeenCalled()
+  })
+
   it('sends the bearer token when the user is logged in', async () => {
     localStorage.setItem('auth_token', 'abc123')
     const fetchMock = mockFetch(200, {})

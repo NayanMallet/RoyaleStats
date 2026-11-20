@@ -127,8 +127,17 @@ export async function fetchWithTimeout(
   }
 }
 
-async function request<T>(input: RequestInfo, init: RequestInit = {}): Promise<T> {
-  const token = getAuthToken()
+interface RequestOptions {
+  /** Sends the session token. Off for public data, which may be relayed to a third party. */
+  auth?: boolean
+}
+
+async function request<T>(
+  input: RequestInfo,
+  init: RequestInit = {},
+  { auth = true }: RequestOptions = {},
+): Promise<T> {
+  const token = auth ? getAuthToken() : null
 
   const res = await fetchWithTimeout(input, {
     ...init,
@@ -146,7 +155,7 @@ async function request<T>(input: RequestInfo, init: RequestInit = {}): Promise<T
     throw error
   }
 
-  // si pas de body (204, etc.)
+  // No body (204 No Content).
   if (res.status === 204) {
     return undefined as unknown as T
   }
@@ -156,6 +165,9 @@ async function request<T>(input: RequestInfo, init: RequestInit = {}): Promise<T
 
 export const http = {
   get: <T>(url: string, init?: RequestInit) => request<T>(url, { method: 'GET', ...init }),
+  /** GET of public data (Clash Royale, RoyaleAPI, meta): no session token, no session expiry. */
+  getPublic: <T>(url: string, init?: RequestInit) =>
+    request<T>(url, { method: 'GET', ...init }, { auth: false }),
   post: <T>(url: string, body: unknown, init?: RequestInit) =>
     request<T>(url, { method: 'POST', body: JSON.stringify(body), ...init }),
   put: <T>(url: string, body: unknown, init?: RequestInit) =>

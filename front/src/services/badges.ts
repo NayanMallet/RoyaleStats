@@ -1,4 +1,6 @@
 import { reactive } from 'vue'
+import { apiEndpoints } from '@/config/api'
+import { fetchWithTimeout, http } from './http'
 
 const BADGES_JSON_URL = 'https://royaleapi.github.io/cr-api-data/json/alliance_badges.json'
 const BADGES_ASSETS_URL = 'https://royaleapi.github.io/cr-api-assets/badges'
@@ -13,10 +15,11 @@ export async function initBadges() {
   if (isLoaded) return
   if (loadPromise) return loadPromise
 
-  loadPromise = fetch(BADGES_JSON_URL)
-    .then((res) => res.json())
+  // Badge names are decoration: on failure the components show a shield icon instead.
+  loadPromise = fetchWithTimeout(BADGES_JSON_URL)
+    .then((res) => res.json() as Promise<{ id: number; name: string }[]>)
     .then((data) => {
-      data.forEach((item: any) => {
+      data.forEach((item) => {
         badgeMap[item.id] = item.name
       })
       isLoaded = true
@@ -30,12 +33,8 @@ export async function initBadges() {
 }
 
 export async function getBadgeId(clanTag: string): Promise<number> {
-  const formattedTag = clanTag.startsWith('#') ? clanTag : `#${clanTag}`
-  const encodedTag = encodeURIComponent(formattedTag)
-  const res = await fetch(`/api/clash/clans/${encodedTag}`)
-  if (!res.ok) throw new Error('Failed to fetch clan data')
-  const data = await res.json()
-  return data.badgeId
+  const clan = await http.getPublic<{ badgeId: number }>(apiEndpoints.clash.clan(clanTag))
+  return clan.badgeId
 }
 
 export function getClanBadgeUrl(badgeId: number | undefined): string | undefined {

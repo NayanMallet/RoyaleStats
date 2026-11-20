@@ -1,4 +1,6 @@
-import { ApiError, apiErrorFromResponse, fetchWithTimeout } from './http'
+import { apiEndpoints } from '@/config/api'
+import { ApiError, http } from './http'
+
 export interface PlayerProfile {
   tag: string
   name: string
@@ -134,15 +136,11 @@ export interface ClanDetails {
 }
 
 export async function fetchClan(tag: string): Promise<ClanDetails> {
-  // tag needs to be URL encoded (hashes become %23) but usually the proxy handles it or we strip #
-  // The previous fetchPlayer logic adds # if missing.
-  // Let's assume input tag has # or not, API usually expects %23 if passed in path.
-  const cleanTag = tag.startsWith('#') ? '%23' + tag.slice(1) : '%23' + tag
-
-  // Using the same proxy path convention
-  const response = await fetch(`/api/clash/clans/${cleanTag}`)
-  if (!response.ok) throw new Error('Failed to fetch clan details')
-  return await response.json()
+  try {
+    return await http.getPublic<ClanDetails>(apiEndpoints.clash.clan(tag))
+  } catch (error) {
+    throw withMessage(error, 404, 'Clan introuvable : vérifiez le tag.')
+  }
 }
 
 export function getClanBadgeUrl(badgeId: number): string {
@@ -156,35 +154,20 @@ export function getClanBadgeUrl(badgeId: number): string {
 }
 
 export async function fetchCards(): Promise<Card[]> {
-  const response = await fetch('/api/clash/cards')
-  if (!response.ok) throw new Error('Failed to fetch cards')
-  const data = await response.json()
-  return data.items || []
+  const data = await http.getPublic<{ items?: Card[] }>(apiEndpoints.clash.cards)
+  return data.items ?? []
 }
 
 export async function fetchPlayer(tag: string): Promise<PlayerProfile> {
-  // Ensure the tag starts with '#'
-  const formattedTag = tag.startsWith('#') ? tag : `#${tag}`
-  // URL encode the tag (replace # with %23) to be safe in URL
-  const encodedTag = encodeURIComponent(formattedTag)
-
-  const response = await fetchWithTimeout(`/api/clash/players/${encodedTag}`)
-
-  if (!response.ok) {
-    const error = await apiErrorFromResponse(response)
-    if (response.status === 404) {
-      throw new ApiError(404, 'Joueur introuvable : vérifiez le tag.', {
-        code: error.code,
-        requestId: error.requestId,
-      })
-    }
-    // statusText is empty over HTTP/2: the status code is the reliable information.
-    throw new ApiError(
-      response.status,
-      `Impossible de récupérer le joueur (erreur ${response.status}), réessayez plus tard.`,
-      { code: error.code, requestId: error.requestId },
-    )
+  try {
+    return await http.getPublic<PlayerProfile>(apiEndpoints.clash.player(tag))
+  } catch (error) {
+    throw withMessage(error, 404, 'Joueur introuvable : vérifiez le tag.')
   }
+}
 
-  return response.json()
+/** Replaces the message of an ApiError of the given status, keeping its code and requestId. */
+function withMessage(error: unknown, status: number, message: string): unknown {
+  if (!(error instanceof ApiError) || error.status !== status) return error
+  return new ApiError(status, message, { code: error.code, requestId: error.requestId })
 }
