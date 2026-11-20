@@ -126,6 +126,7 @@ Pour le nouveau code, gardez le SQL dans `database.ts` ou `services/`, pas dans 
 - **Erreurs** : levez une erreur de `shared` (`ValidationError`, `NotFoundError`, `ConflictError`…) au lieu d'écrire la réponse ; le handler partagé produit le contrat `{ error, message, statusCode, requestId }` et applique les règles développement/production. Pas de `try/catch` qui renvoie une 500. Détails et exemples : [ERROR-HANDLING.md](ERROR-HANDLING.md).
 - **Logs** : uniquement `logger` de `shared`, jamais `console.log`, avec les données en second argument (`logger.info('User registered', { userId })`) : elles deviennent des champs du log JSON. Le `requestId` est ajouté automatiquement. Ne journalisez jamais de mot de passe, de token, de clé API ni d'email.
 - **Configuration** : lisez `process.env` ; une valeur par défaut est acceptable pour un port ou une URL, jamais pour un secret. Toute nouvelle variable va dans `.env.example`.
+- **Dépendances** : ajoutez-les au `package.json` du service qui les utilise, pas à la racine, et committez `pnpm-lock.yaml` : les images Docker l'installent avec `--frozen-lockfile` et échouent s'il n'est pas à jour. Une dépendance qui compile un module natif (comme `better-sqlite3`) doit être listée dans `onlyBuiltDependencies` de `pnpm-workspace.yaml`, sinon pnpm ignore son installation.
 
 ### Ajouter une route : checklist
 
