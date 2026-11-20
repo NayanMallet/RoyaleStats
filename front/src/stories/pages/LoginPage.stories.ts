@@ -57,12 +57,42 @@ export const InvalidCredentials: Story = {
 }
 
 export const ServerError: Story = {
-  parameters: { mockApi: [login(500, { error: 'Internal Server Error' })] },
+  parameters: {
+    mockApi: [
+      login(503, {
+        error: 'ServiceUnavailable',
+        message: 'Service indisponible',
+        statusCode: 503,
+        requestId: 'f2c1a9e0-login',
+      }),
+    ],
+  },
   play: async ({ canvasElement }) => {
     await fillAndSubmit(canvasElement)
     await expect(
-      await within(canvasElement).findByText('Erreur lors de la connexion au serveur'),
-    ).toBeVisible()
+      await within(canvasElement).findByText(
+        'Service momentanément indisponible, réessayez dans un instant.',
+      ),
+    ).toBeInTheDocument()
+  },
+}
+
+/** Trop de tentatives : le message de l'API (limitation de débit) est affiché tel quel. */
+export const TooManyAttempts: Story = {
+  parameters: {
+    mockApi: [
+      login(429, {
+        error: 'RateLimited',
+        message: 'Trop de requêtes, réessayez dans quelques secondes.',
+        statusCode: 429,
+      }),
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    await fillAndSubmit(canvasElement)
+    await expect(
+      await within(canvasElement).findByText('Trop de requêtes, réessayez dans quelques secondes.'),
+    ).toBeInTheDocument()
   },
 }
 
