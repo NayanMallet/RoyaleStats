@@ -1,11 +1,17 @@
 import { Request, Response } from 'express';
 import { getDatabase } from '../database';
-import { ValidationError, logger } from 'shared';
+import { NotFoundError, ValidationError, logger } from 'shared';
 
 // Errors are thrown: Express 5 forwards them, sync or async, to the shared error handler.
 import { processBattles } from '../services/ingestionService';
 import { formatPlayerTag, normalizeBattleLog } from '../services/battleNormalizer';
 import { getFromClashDataService, playerPath } from '../services/clashDataClient';
+import {
+  analyseDeck,
+  type CardDefinition,
+  type CardStat,
+  type DeckAnalysis,
+} from '../services/deckAnalysis';
 
 export async function getMetaSnapshot(req: Request, res: Response) {
   const db = getDatabase();
@@ -41,95 +47,6 @@ export async function getMetaSnapshot(req: Request, res: Response) {
   });
 }
 
-export async function analyzeDeck(req: Request, res: Response) {
-  const { cards } = req.body ?? {};
-
-  if (!Array.isArray(cards) || cards.length !== 8) {
-    throw new ValidationError('Un deck doit contenir exactement 8 cartes.');
-  }
-
-  const db = getDatabase();
-
-  // Get stats for each card in the deck
-  const cardStats = [];
-  let totalUsage = 0;
-  let totalWinRate = 0;
-
-  const stmt = db.prepare(`
-      SELECT 
-        card_name,
-        usage_count,
-        win_count,
-        ROUND(CAST(win_count AS FLOAT) / NULLIF(usage_count, 0) * 100, 2) as win_rate
-      FROM card_stats
-      WHERE card_name = ?
-    `);
-
-  for (const cardName of cards) {
-    const stats = stmt.get(cardName) as any;
-
-    if (stats) {
-      cardStats.push(stats);
-      totalUsage += stats.usage_count;
-      totalWinRate += stats.win_rate || 0;
-    }
-  }
-
-  const avgWinRate = cardStats.length > 0 ? totalWinRate / cardStats.length : 50;
-  const score = Math.min(100, Math.max(0, avgWinRate));
-
-  res.json({
-    deck: cards,
-    score: Math.round(score),
-    analysis: {
-      avgWinRate: avgWinRate.toFixed(2),
-      totalUsage: totalUsage,
-      cardStats: cardStats,
-    },
-    recommendations:
-      score < 60
-        ? [
-            'Consider replacing low win-rate cards',
-            'Check the meta snapshot for popular alternatives',
-          ]
-        : ['Your deck looks solid!', 'Consider minor optimizations based on card levels'],
-  });
-}
-
-export async function getRecommendations(req: Request, res: Response) {
-  const { playerTag } = req.params;
-
-  const db = getDatabase();
-  const topCards = db
-    .prepare(
-      `
-    SELECT card_name, win_rate
-    FROM (
-      SELECT 
-        card_name,
-        ROUND(CAST(win_count AS FLOAT) / NULLIF(usage_count, 0) * 100, 2) as win_rate
-      FROM card_stats
-      WHERE usage_count > 10
-    )
-    ORDER BY win_rate DESC
-    LIMIT 5
-  `,
-    )
-    .all();
-
-  res.json({
-    playerTag: playerTag,
-    recommendations: {
-      topMetaCards: topCards || [],
-      suggestions: [
-        'Try incorporating high win-rate cards from the current meta',
-        'Balance your elixir cost across your deck',
-        'Ensure you have both offensive and defensive options',
-      ],
-    },
-  });
-}
-
 const PLAYER_TAG = /^#[0-9A-Z]{3,15}$/;
 
 /**
@@ -153,4 +70,61 @@ export async function ingestPlayer(req: Request, res: Response) {
   logger.info('Player battles ingested', { playerTag, ...report, skipped });
   // `skipped`: battles of the log that are not readable from the player's side.
   res.json({ playerTag, ...report, skipped });
+}
+
+/** The whole sample: card statistics and number of battles. */
+function sample(): { stats: CardStat[]; totalBattles: number } {
+  const db = getDatabase();
+  const stats = db
+    .prepare('SELECT card_name, usage_count, win_count FROM card_stats WHERE usage_count > 0')
+    .all() as CardStat[];
+  const { count } = db.prepare('SELECT COUNT(*) AS count FROM battles').get() as { count: number };
+  return { stats, totalBattles: count };
+}
+
+async function cardDefinitions(): Promise<CardDefinition[]> {
+  const cards = await getFromClashDataService<{ items?: CardDefinition[] }>('/cards');
+  return cards.items ?? [];
+}
+
+function analyse(deckCards: string[], definitions: CardDefinition[]): DeckAnalysis {
+  const { stats, totalBattles } = sample();
+  return analyseDeck(deckCards, stats, definitions, totalBattles);
+}
+
+/**
+ * GET /players/:playerTag/analysis — analyses the deck the player currently uses, fetched from
+ * clash-data-service, against the collected meta, with simple alternatives for weak cards.
+ */
+export async function analysePlayerDeck(req: Request, res: Response) {
+  const playerTag = formatPlayerTag(String(req.params.playerTag ?? ''));
+  if (!PLAYER_TAG.test(playerTag)) {
+    throw new ValidationError('Tag de joueur invalide : lettres et chiffres après le #.', {
+      code: 'InvalidPlayerTag',
+    });
+  }
+
+  const [profile, definitions] = await Promise.all([
+    getFromClashDataService<{ currentDeck?: CardDefinition[] }>(playerPath(playerTag)),
+    cardDefinitions(),
+  ]);
+  const deckCards = (profile.currentDeck ?? [])
+    .map((card) => card.name)
+    .filter((name): name is string => typeof name === 'string' && name.length > 0);
+  if (deckCards.length === 0) {
+    throw new NotFoundError('Ce joueur n’a pas encore de deck actuel.', { code: 'DeckNotFound' });
+  }
+
+  res.json({ playerTag, ...analyse(deckCards, definitions) });
+}
+
+/** POST /analyze/deck — the same analysis for any list of 8 card names. */
+export async function analyzeDeck(req: Request, res: Response) {
+  const { cards } = req.body ?? {};
+  const names = Array.isArray(cards) ? cards.filter((card) => typeof card === 'string') : [];
+  if (!Array.isArray(cards) || names.length !== 8 || new Set(names).size !== 8) {
+    throw new ValidationError('Un deck doit contenir exactement 8 cartes différentes.');
+  }
+
+  res.json(analyse(names, await cardDefinitions()));
 }

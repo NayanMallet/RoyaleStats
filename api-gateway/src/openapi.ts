@@ -345,7 +345,7 @@ const openapiSpec = {
     '/api/meta/analyze/deck': {
       post: {
         tags: ['Meta'],
-        summary: 'Analyze a deck of cards',
+        summary: 'Analyse any deck against the collected meta',
         requestBody: {
           required: true,
           content: {
@@ -358,7 +358,8 @@ const openapiSpec = {
                     items: { type: 'string' },
                     minItems: 8,
                     maxItems: 8,
-                    description: 'Array of 8 card identifiers',
+                    uniqueItems: true,
+                    description: '8 different card names',
                   },
                 },
                 required: ['cards'],
@@ -366,15 +367,45 @@ const openapiSpec = {
             },
           },
         },
-        responses: { '200': { description: 'Deck analysis' } },
+        responses: {
+          '200': {
+            description: 'Deck analysis',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/DeckAnalysis' } },
+            },
+          },
+          '400': { description: 'Not 8 different card names' },
+        },
       },
     },
-    '/api/meta/recommend/{playerTag}': {
-      parameters: [{ in: 'path', name: 'playerTag', required: true, schema: { type: 'string' } }],
+    '/api/meta/players/{playerTag}/analysis': {
+      parameters: [
+        {
+          in: 'path',
+          name: 'playerTag',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Player tag, with or without leading # (URL-encoded)',
+        },
+      ],
       get: {
         tags: ['Meta'],
-        summary: 'Get recommendations for a player',
-        responses: { '200': { description: 'Recommendations' } },
+        summary: 'Analyse the current deck of a player',
+        description:
+          'The current deck comes from clash-data-service. A card is only rated with at least `minSample` usages in the sample; the deck win rate is weighted by usage and compared with the meta win rate of the same sample (top players, hence above 50 %). A card at least 2 points below the meta gets up to 3 alternatives with the same elixir cost and a win rate at least 2 points higher.',
+        responses: {
+          '200': {
+            description: 'Deck analysis',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/DeckAnalysis' } },
+            },
+          },
+          '400': { description: 'Invalid player tag (InvalidPlayerTag)' },
+          '404': {
+            description: 'Unknown player (PlayerNotFound) or no current deck (DeckNotFound)',
+          },
+          '503': { description: 'clash-data-service unavailable' },
+        },
       },
     },
     '/api/meta/players/{playerTag}/ingest': {
@@ -474,6 +505,65 @@ const openapiSpec = {
       },
     },
     schemas: {
+      DeckAnalysis: {
+        type: 'object',
+        properties: {
+          playerTag: { type: 'string', description: 'GET /players/{playerTag}/analysis only' },
+          deck: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                elixirCost: { type: 'integer', nullable: true },
+                usage: { type: 'integer' },
+                wins: { type: 'integer' },
+                winRate: {
+                  type: 'number',
+                  nullable: true,
+                  description: 'null without enough data',
+                },
+                enoughData: { type: 'boolean' },
+              },
+            },
+          },
+          summary: {
+            type: 'object',
+            properties: {
+              deckWinRate: { type: 'number', nullable: true },
+              metaWinRate: { type: 'number', nullable: true },
+              averageElixir: { type: 'number', nullable: true },
+              cardsWithEnoughData: { type: 'integer' },
+              confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+              totalBattles: { type: 'integer' },
+              minSample: { type: 'integer', example: 50 },
+            },
+          },
+          suggestions: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                replace: { type: 'string' },
+                winRate: { type: 'number' },
+                reason: { type: 'string' },
+                alternatives: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string' },
+                      elixirCost: { type: 'integer' },
+                      winRate: { type: 'number' },
+                      usage: { type: 'integer' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       ApiError: {
         type: 'object',
         description:

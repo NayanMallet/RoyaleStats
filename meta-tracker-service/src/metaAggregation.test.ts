@@ -261,6 +261,75 @@ describe('POST /players/:playerTag/ingest', () => {
   });
 });
 
+describe('deck analysis routes', () => {
+  const TAG = '#2PP8VJ9Q';
+  const DEFINITIONS = [...HOG_CYCLE, ...LOG_BAIT].map((name) => ({ name, elixirCost: 3 }));
+
+  // clash-data-service answers the player profile (with the current deck) and the card list.
+  function answer(currentDeck: { name: string }[]) {
+    clashDataService.mockImplementation(async (url: string) => ({
+      ok: true,
+      status: 200,
+      json: async () =>
+        url.endsWith('/cards') ? { items: DEFINITIONS } : { tag: TAG, currentDeck },
+    }));
+  }
+
+  beforeEach(() => {
+    clashDataService.mockReset();
+    processBattles(CONTROLLED);
+  });
+
+  it('analyses the current deck of the player', async () => {
+    answer(HOG_CYCLE.map((name) => ({ name })));
+
+    const response = await fetch(`${baseUrl}/players/${encodeURIComponent(TAG)}/analysis`);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.playerTag).toBe(TAG);
+    expect(body.deck.map((card: { name: string }) => card.name)).toEqual(HOG_CYCLE);
+    // Three battles only: far below the minimum sample, so nothing is rated.
+    expect(body.summary).toMatchObject({
+      totalBattles: 3,
+      cardsWithEnoughData: 0,
+      confidence: 'low',
+    });
+  });
+
+  it('answers 404 DeckNotFound when the player has no current deck', async () => {
+    answer([]);
+
+    const response = await fetch(`${baseUrl}/players/${encodeURIComponent(TAG)}/analysis`);
+
+    expect(response.status).toBe(404);
+    expect((await response.json()).error).toBe('DeckNotFound');
+  });
+
+  it('analyses any deck of 8 different cards', async () => {
+    answer([]);
+
+    const response = await fetch(`${baseUrl}/analyze/deck`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cards: LOG_BAIT }),
+    });
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).deck).toHaveLength(8);
+  });
+
+  it('refuses a deck with a duplicated card', async () => {
+    const response = await fetch(`${baseUrl}/analyze/deck`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cards: [...HOG_CYCLE.slice(0, 7), 'Hog Rider'] }),
+    });
+
+    expect(response.status).toBe(400);
+  });
+});
+
 describe('battles table', () => {
   it('enforces one row per player and battle time', () => {
     processBattles([battle()]);
