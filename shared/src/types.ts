@@ -42,12 +42,16 @@ export interface PlayerLink {
   player_tag: string;
   twitter?: string;
   twitch?: string;
+  /** Trophy goal set by the player, null when none (RST-53). */
+  trophy_goal?: number | null;
   linked_at: string;
 }
 
 export interface PlayerLinkUpdatePayload {
   twitter?: string;
   twitch?: string;
+  /** Integer between 1 and 20000; null clears it. */
+  trophyGoal?: number | null;
 }
 
 export interface PlayerLinkCreatePayload {
