@@ -13,6 +13,7 @@ import {
   demoPlayerBattles,
   demoPlayerProfile,
   demoSeasonLeaderboards,
+  demoSeasonRankings,
   demoTrophyRankings,
 } from './fixtures'
 
@@ -23,13 +24,26 @@ import {
  */
 export const allianceBadgesRoute: MockRoute = { url: /alliance_badges\.json$/, body: [] }
 
+interface LeaderboardsRoutesOptions {
+  /** Replaces the Path of Legend (« Ranked ») list. */
+  pathOfLegend?: unknown
+  /** Overrides the RoyaleAPI trophy ranking route only: `status`, `delay`… */
+  trophies?: Partial<MockRoute>
+  /** Season leaderboards (id and name) offered by the API. */
+  seasons?: unknown
+}
+
 /**
  * Leaderboards.vue: Path of Legend, trophies (RoyaleAPI) and season rankings.
- * `extra` applies to every API route (latency, error); `pathOfLegend` replaces the Ranked list.
+ * `extra` applies to every API route (latency, error); `options` changes one source at a time.
  */
 export function leaderboardsRoutes(
   extra: Partial<MockRoute> = {},
-  pathOfLegend: unknown = demoPathOfLegendRankings,
+  {
+    pathOfLegend = demoPathOfLegendRankings,
+    trophies = {},
+    seasons = demoSeasonLeaderboards,
+  }: LeaderboardsRoutesOptions = {},
 ): MockRoute[] {
   return [
     {
@@ -37,10 +51,9 @@ export function leaderboardsRoutes(
       body: pathOfLegend,
       ...extra,
     },
-    { url: '/api/royaleapi/players/level/16', body: demoTrophyRankings, ...extra },
-    { url: '/api/clash/leaderboards', body: demoSeasonLeaderboards, ...extra },
-    // Season rankings left empty: the component then derives Merge and 2v2 from Path of Legend.
-    { url: /^\/api\/clash\/leaderboard\/\d+/, body: { items: [] }, ...extra },
+    { url: '/api/royaleapi/players/level/16', body: demoTrophyRankings, ...extra, ...trophies },
+    { url: '/api/clash/leaderboards', body: seasons, ...extra },
+    { url: /^\/api\/clash\/leaderboard\/\d+/, body: demoSeasonRankings, ...extra },
     allianceBadgesRoute,
   ]
 }

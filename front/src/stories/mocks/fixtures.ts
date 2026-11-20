@@ -65,6 +65,15 @@ export const demoTrophyRankings = {
   ],
 }
 
+/** A season ranking (Merge Tactics, 2v2), as returned by GET /api/clash/leaderboard/:id. */
+export const demoSeasonRankings = {
+  items: [
+    { tag: '#QVJ2L8YP', name: 'Ronaldo CR', rank: 1, score: 4210 },
+    { tag: '#8GL0RP2C', name: 'Duo Bretons', rank: 2, score: 4105 },
+    { tag: '#2YQ9CJ0L', name: 'Lina', rank: 3, score: 3998 },
+  ],
+}
+
 /** Season leaderboards, as returned by GET /api/clash/leaderboards. */
 export const demoSeasonLeaderboards = {
   items: [

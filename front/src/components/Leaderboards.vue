@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import {
   fetchGlobalRankings,
   fetchPathOfLegendRankings,
-  fetchLocations,
-  fetchLocationRankings,
+  fetchSeasonRankings,
   type LeaderboardPlayer,
 } from '@/services/leaderboards'
 import { getClanBadgeUrl, initBadges } from '@/services/badges'
+import { describeApiError, type DisplayedError } from '@/composables/useApiError'
+import ErrorState from '@/components/ErrorState.vue'
 import { ChevronLeft, Shield, Loader2, Medal } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 
@@ -19,126 +20,82 @@ function selectClan(tag: string) {
 }
 
 type Category = 'ranked' | 'trophy' | 'merge' | '2v2'
+const CATEGORIES: Category[] = ['ranked', 'trophy', 'merge', '2v2']
+/** Refresh of the rankings while the page stays open. */
+const REFRESH_MS = 5 * 60 * 1000
 
 const activeCategory = ref<Category | null>(null)
-const loading = ref(false)
 
 function selectPlayer(tag: string) {
   emit('select-player', tag)
 }
 
-const players_ranked = ref<LeaderboardPlayer[]>([])
-const players_trophy = ref<LeaderboardPlayer[]>([])
-const players_merge = ref<LeaderboardPlayer[]>([])
-const players_2v2 = ref<LeaderboardPlayer[]>([])
-
-function shuffleArray<T>(array: T[]) {
-  return array
-    .map((value) => ({ value, sort: Math.random() }))
-    .sort((a, b) => a.sort - b.sort)
-    .map(({ value }) => value)
+/**
+ * One state per ranking: loading, error (with its message and a retry) or loaded, a loaded list
+ * being possibly empty. A failing source never shows up as an empty ranking.
+ */
+interface Board {
+  status: 'loading' | 'error' | 'ready'
+  players: LeaderboardPlayer[]
+  error: DisplayedError | null
 }
 
-let pollingInterval: ReturnType<typeof setInterval> | undefined
+const loaders: Record<Category, () => Promise<LeaderboardPlayer[]>> = {
+  ranked: () => fetchPathOfLegendRankings(20),
+  trophy: () => fetchGlobalRankings(),
+  merge: () => fetchSeasonRankings('Merge Tactics', 20),
+  '2v2': () => fetchSeasonRankings('2v2 League', 20),
+}
 
-onMounted(async () => {
-  // Initial fetch
-  await fetchAllLeaderboards()
+const emptyBoard = (): Board => ({ status: 'loading', players: [], error: null })
+const boards = reactive<Record<Category, Board>>({
+  ranked: emptyBoard(),
+  trophy: emptyBoard(),
+  merge: emptyBoard(),
+  '2v2': emptyBoard(),
+})
 
-  // Poll every 5 minutes (300,000 ms)
-  pollingInterval = setInterval(() => {
-    console.log('Polling Leaderboards...')
-    fetchAllLeaderboards()
-  }, 300000)
+/**
+ * Loads one ranking. A background refresh keeps the list already shown when it fails: the
+ * error is only displayed when there is nothing else to show.
+ */
+async function loadBoard(category: Category, { background = false } = {}) {
+  const board = boards[category]
+  if (!background) {
+    board.status = 'loading'
+    board.error = null
+  }
+  try {
+    board.players = await loaders[category]()
+    board.status = 'ready'
+    board.error = null
+  } catch (error) {
+    if (background && board.status === 'ready') {
+      console.warn(`[Leaderboards] Refresh of ${category} failed, keeping the current list`, error)
+      return
+    }
+    board.status = 'error'
+    board.error = describeApiError(error)
+  }
+}
+
+function loadAll(options?: { background?: boolean }) {
+  return Promise.all(CATEGORIES.map((category) => loadBoard(category, options)))
+}
+
+let refreshTimer: ReturnType<typeof setInterval> | undefined
+
+onMounted(() => {
+  void initBadges()
+  void loadAll()
+  refreshTimer = setInterval(() => loadAll({ background: true }), REFRESH_MS)
 })
 
 onUnmounted(() => {
-  if (pollingInterval) clearInterval(pollingInterval)
+  if (refreshTimer) clearInterval(refreshTimer)
 })
 
-async function fetchAllLeaderboards() {
-  loading.value = true
-  try {
-    const [ranked, trophies, locations, _] = await Promise.all([
-      fetchPathOfLegendRankings(20),
-      fetchGlobalRankings(), // Scraper (returns top 100)
-      fetchLocations().catch(() => []),
-      initBadges(),
-    ])
-
-    // Ranked Data (Real)
-    players_ranked.value = ranked || []
-
-    // Trophy Data (Real from Scraper)
-    if (trophies && trophies.length > 0) {
-      players_trophy.value = trophies
-    } else {
-      console.warn('Global Trophies API returned empty list.')
-      players_trophy.value = []
-    }
-
-    // --- Fetch Real Data for Merge & 2v2 ---
-
-    // Helper to find max ID for a given name
-    const findMaxId = (name: string) => {
-      const matches = locations.filter((location) => location.name === name)
-      if (!matches.length) return null
-      return Math.max(...matches.map((location) => location.id))
-    }
-
-    const mergeId = findMaxId('Merge Tactics')
-    const duoId = findMaxId('2v2 League')
-
-    // Fetch them if IDs found
-    const [mergeData, duoData] = await Promise.all([
-      mergeId ? fetchLocationRankings(mergeId, 20) : Promise.resolve([]),
-      duoId ? fetchLocationRankings(duoId, 20) : Promise.resolve([]),
-    ])
-
-    // Assign Merge Data (or mock fallback)
-    if (mergeData && mergeData.length > 0) {
-      players_merge.value = mergeData
-    } else if (ranked && ranked.length > 0) {
-      const shuffledForMerge = shuffleArray([...ranked])
-      players_merge.value = shuffledForMerge.map((p, i) => ({
-        ...p,
-        score: 4000 - i * 100 + Math.floor(Math.random() * 80),
-        rank: i + 1,
-      }))
-    }
-
-    // Assign 2v2 Data (or mock fallback)
-    if (duoData && duoData.length > 0) {
-      players_2v2.value = duoData
-    } else if (ranked && ranked.length > 0) {
-      const shuffledFor2v2 = shuffleArray([...ranked])
-      players_2v2.value = shuffledFor2v2.map((p, i) => ({
-        ...p,
-        score: 3000 - i * 80 + Math.floor(Math.random() * 50),
-        rank: i + 1,
-      }))
-    }
-  } catch (e) {
-    console.error('Leaderboard Fetch Error:', e)
-  } finally {
-    loading.value = false
-  }
-}
-
-const getActiveList = computed(() => {
-  switch (activeCategory.value) {
-    case 'ranked':
-      return players_ranked.value
-    case 'trophy':
-      return players_trophy.value
-    case 'merge':
-      return players_merge.value
-    case '2v2':
-      return players_2v2.value
-    default:
-      return []
-  }
-})
+const activeBoard = computed(() => (activeCategory.value ? boards[activeCategory.value] : null))
 
 const getCategoryTitle = computed(() => {
   switch (activeCategory.value) {
@@ -305,9 +262,29 @@ const getCategoryColor = (cat: Category) => {
       v-else
       class="bg-card/80 backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl shadow-surface-shadow/50 border border-card/50 overflow-hidden mx-4 animate-in zoom-in-95 duration-300"
     >
-      <div v-if="loading" class="flex justify-center py-32">
-        <Loader2 class="w-10 h-10 animate-spin text-info" />
+      <div
+        v-if="activeBoard?.status === 'loading'"
+        class="flex justify-center py-32"
+        role="status"
+        aria-label="Chargement du classement"
+      >
+        <Loader2 class="w-10 h-10 animate-spin text-info" aria-hidden="true" />
       </div>
+
+      <div v-else-if="activeBoard?.status === 'error' && activeBoard.error" class="p-4 sm:p-8">
+        <ErrorState
+          v-bind="activeBoard.error"
+          title="Classement indisponible"
+          @retry="loadBoard(activeCategory!)"
+        />
+      </div>
+
+      <p
+        v-else-if="activeBoard?.players.length === 0"
+        class="py-24 px-6 text-center text-muted-foreground font-medium"
+      >
+        Aucun joueur classé pour le moment dans ce classement.
+      </p>
 
       <!-- One grid for the whole list, each row being a subgrid: the rank and score columns size
            to their widest content and stay aligned with the header. Mobile first: rank, player,
@@ -328,7 +305,7 @@ const getCategoryColor = (cat: Category) => {
         </div>
 
         <div
-          v-for="(player, index) in getActiveList"
+          v-for="(player, index) in activeBoard?.players ?? []"
           :key="player.tag"
           @click="selectPlayer(player.tag)"
           data-testid="leaderboard-row"
