@@ -74,7 +74,8 @@
   --muted-foreground: var(--color-slate-600);
   --accent: var(--color-slate-100);
   --accent-foreground: var(--foreground);
-  --destructive: oklch(0.577 0.245 27.325);
+  /* red-700 rather than shadcn's red-600: 4.5:1 also on bg-destructive/10 (WCAG AA). */
+  --destructive: oklch(0.505 0.213 27.518);
   --border: var(--color-slate-200);
   --input: var(--border);
   --ring: var(--color-blue-500);

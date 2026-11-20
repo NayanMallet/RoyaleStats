@@ -49,4 +49,6 @@ La barre d'outils propose les viewports issus de `docs/PERSONAS.md` :
 
 ## Accessibilité
 
-L'onglet **Accessibility** (addon a11y) analyse chaque story avec axe-core. Les violations sont signalées sans bloquer (`test: 'todo'`) tant que la dette existante n'est pas résorbée.
+L'onglet **Accessibility** (addon a11y) analyse chaque story avec axe-core. Une violation est une erreur (`test: 'error'`) : la CI lance la même analyse sur toutes les stories, en thème clair et sombre (`pnpm --filter front test:a11y`, après `build-storybook`). La règle `region` (contenu dans des landmarks) est désactivée, comme dans l'addon : une story n'est qu'un fragment de page.
+
+Une story peut abaisser le niveau avec `parameters: { a11y: { test: 'todo' } }` (signalée sans bloquer) ou `'off'`, uniquement pour une raison documentée dans la story.

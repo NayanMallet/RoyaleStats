@@ -22,6 +22,10 @@ const props = defineProps<ToasterProps>()
       '--normal-text': 'var(--popover-foreground)',
       '--normal-border': 'var(--border)',
       '--border-radius': 'var(--radius)',
+      // Error toasts (rich-colors) in the theme colors: vue-sonner's red text is under 4.5:1.
+      '--error-bg': 'color-mix(in oklab, var(--destructive) 10%, var(--popover))',
+      '--error-border': 'color-mix(in oklab, var(--destructive) 25%, var(--popover))',
+      '--error-text': 'var(--destructive)',
     }"
     v-bind="props"
   >

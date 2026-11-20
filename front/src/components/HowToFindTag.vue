@@ -13,6 +13,7 @@ const steps = computed(() => {
         title: 'Ouvrez votre profil',
         description: 'Tapez sur votre pseudo dans le menu principal du jeu.',
         image: new URL('@/assets/tuto_name_Id_1.jpeg', import.meta.url).href,
+        alt: 'Capture du menu principal de Clash Royale : le pseudo du joueur, à toucher pour ouvrir le profil',
         bg: 'bg-info-soft',
         border: 'border-info-border',
         imageClass: 'w-full h-full object-cover object-left',
@@ -22,6 +23,7 @@ const steps = computed(() => {
         title: 'Repérez le Tag',
         description: 'Le code commençant par # sous votre pseudo est votre identifiant unique.',
         image: new URL('@/assets/tuto_name_Id_2.jpeg', import.meta.url).href,
+        alt: 'Capture du profil du joueur : le tag commençant par # sous le pseudo',
         bg: 'bg-ranked-soft',
         border: 'border-ranked-border',
         imageClass: 'w-full h-full object-cover',
@@ -31,6 +33,7 @@ const steps = computed(() => {
         title: 'Copiez-le',
         description: 'Appuyez sur le Tag pour le copier, puis collez-le ici.',
         image: new URL('@/assets/tuto_name_Id_3.jpeg', import.meta.url).href,
+        alt: 'Capture du profil du joueur : le tag copié après l’avoir touché',
         bg: 'bg-success-soft',
         border: 'border-success-border',
         imageClass: 'w-full h-full object-cover object-right',
@@ -43,6 +46,7 @@ const steps = computed(() => {
         title: 'Info du Clan',
         description: 'Ouvrez la page de votre clan via le chat ou votre profil.',
         image: new URL('@/assets/tuto_clan_Id_1.jpeg', import.meta.url).href,
+        alt: 'Capture de Clash Royale : accès à la page du clan',
         bg: 'bg-clan-soft',
         border: 'border-clan-border',
         imageClass: 'w-full h-full object-cover object-left',
@@ -52,6 +56,7 @@ const steps = computed(() => {
         title: 'Tag du Clan',
         description: 'Le code # se trouve juste en dessous du nom du clan.',
         image: new URL('@/assets/tuto_clan_Id_2.jpeg', import.meta.url).href,
+        alt: 'Capture de la page du clan : le tag commençant par # sous le nom du clan',
         bg: 'bg-warning-soft',
         border: 'border-warning-border',
         imageClass: 'w-full h-full object-cover object-bottom',
@@ -61,6 +66,7 @@ const steps = computed(() => {
         title: 'Copiez & Cherchez',
         description: 'Notez ce code et entrez-le dans la barre de recherche ci-dessus.',
         image: new URL('@/assets/tuto_clan_id_3.jpeg', import.meta.url).href,
+        alt: 'Capture de la page du clan : le tag du clan à copier',
         bg: 'bg-success-soft',
         border: 'border-success-border',
         imageClass: 'w-full h-full object-cover',
@@ -105,13 +111,13 @@ const steps = computed(() => {
             <div
               class="w-full aspect-video bg-muted rounded-2xl border border-border flex items-center justify-center overflow-hidden relative shadow-inner group-hover:shadow-md transition-all"
             >
-              <img :src="step.image" :class="step.imageClass" />
+              <img :src="step.image" :alt="step.alt" :class="step.imageClass" />
 
               <!-- Step Number Badge -->
               <div
                 class="absolute top-2 left-2 w-8 h-8 rounded-full bg-card shadow-sm flex items-center justify-center font-black text-sm text-muted-foreground border border-border"
               >
-                {{ step.id }}
+                <span class="sr-only">Étape</span> {{ step.id }}
               </div>
             </div>
 
