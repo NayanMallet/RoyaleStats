@@ -191,7 +191,7 @@ const openapiSpec = {
       },
       patch: {
         tags: ['Links'],
-        summary: 'Update the social links (Twitter, Twitch) of the authenticated user',
+        summary: 'Update the social links and the trophy goal of the authenticated user',
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -212,6 +212,14 @@ const openapiSpec = {
                     example: 'karimcr',
                     description: 'Handle: letters, digits and _, 50 max. Empty or null clears it.',
                   },
+                  trophyGoal: {
+                    type: 'integer',
+                    nullable: true,
+                    minimum: 1,
+                    maximum: 20000,
+                    example: 7000,
+                    description: 'Trophy goal. null clears it, absent keeps it.',
+                  },
                 },
               },
             },
@@ -219,7 +227,7 @@ const openapiSpec = {
         },
         responses: {
           '200': { description: 'Link updated' },
-          '400': { description: 'Invalid handle' },
+          '400': { description: 'Invalid handle or trophy goal' },
           '401': { description: 'Missing or invalid token' },
           '403': { description: 'Link of another account' },
           '404': { description: 'Not found' },
@@ -234,6 +242,37 @@ const openapiSpec = {
           '401': { description: 'Missing or invalid token' },
           '403': { description: 'Link of another account' },
           '404': { description: 'Not found' },
+        },
+      },
+    },
+    '/api/link/{userId}/achievements': {
+      parameters: [{ in: 'path', name: 'userId', required: true, schema: { type: 'integer' } }],
+      get: {
+        tags: ['Links'],
+        summary: 'Trophy goal and achievements of the authenticated user',
+        description:
+          'Reads the profile and the battle log through clash-data-service, stores the achievements they unlock (each one keeps its first date) and returns them. When clash-data-service cannot answer, the stored achievements are still returned with `upToDate: false`.',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Goal and achievements',
+            content: {
+              'application/json': {
+                schema: {
+                  allOf: [
+                    {
+                      type: 'object',
+                      properties: { player_tag: { type: 'string', example: '#2PP8VJ9Q' } },
+                    },
+                    { $ref: '#/components/schemas/Progression' },
+                  ],
+                },
+              },
+            },
+          },
+          '401': { description: 'Missing or invalid token' },
+          '403': { description: 'Achievements of another account' },
+          '404': { description: 'No link for this account (LinkNotFound)' },
         },
       },
     },
@@ -255,6 +294,49 @@ const openapiSpec = {
           '200': { description: 'Public link info' },
           '400': { description: 'Invalid tag' },
           '404': { description: 'No link for this tag' },
+        },
+      },
+    },
+
+    '/api/link/tag/{tag}/share': {
+      parameters: [
+        {
+          in: 'path',
+          name: 'tag',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Player tag, with or without leading # (URL-encoded)',
+        },
+      ],
+      get: {
+        tags: ['Links'],
+        summary: 'Public share page: public link fields, trophy goal and achievements',
+        description:
+          'Public route: player_tag, twitter, twitch, linked_at, goal and achievements only, no account id. Refreshes the achievements like the private route.',
+        responses: {
+          '200': {
+            description: 'Shared progression',
+            content: {
+              'application/json': {
+                schema: {
+                  allOf: [
+                    {
+                      type: 'object',
+                      properties: {
+                        player_tag: { type: 'string' },
+                        twitter: { type: 'string', nullable: true },
+                        twitch: { type: 'string', nullable: true },
+                        linked_at: { type: 'string' },
+                      },
+                    },
+                    { $ref: '#/components/schemas/Progression' },
+                  ],
+                },
+              },
+            },
+          },
+          '400': { description: 'Invalid tag' },
+          '404': { description: 'No link for this tag (LinkNotFound)' },
         },
       },
     },
@@ -631,6 +713,65 @@ const openapiSpec = {
               from: { type: 'string', example: '20261119T120000.000Z' },
               to: { type: 'string', example: '20261119T183000.000Z' },
             },
+          },
+        },
+      },
+      Achievement: {
+        type: 'object',
+        properties: {
+          code: {
+            type: 'string',
+            enum: [
+              'linked',
+              'win-streak-5',
+              'win-streak-10',
+              'three-crowns',
+              'goal-reached',
+              'new-arena',
+            ],
+          },
+          title: { type: 'string', example: 'En feu' },
+          description: { type: 'string', example: '5 victoires d’affilée.' },
+          detail: { type: 'string', description: "Goal value or arena name, else ''" },
+          unlockedAt: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Absent from the achievements still to unlock',
+          },
+        },
+      },
+      Progression: {
+        type: 'object',
+        properties: {
+          goal: {
+            type: 'object',
+            nullable: true,
+            description: 'null without a goal',
+            properties: {
+              trophyGoal: { type: 'integer', example: 7000 },
+              trophies: { type: 'integer', nullable: true, example: 6100 },
+              progress: {
+                type: 'number',
+                nullable: true,
+                example: 87.1,
+                description: 'Percentage, 1 decimal, capped at 100',
+              },
+              reached: { type: 'boolean', nullable: true },
+            },
+          },
+          achievements: {
+            type: 'array',
+            description: 'Unlocked, most recent first',
+            items: { $ref: '#/components/schemas/Achievement' },
+          },
+          locked: {
+            type: 'array',
+            description: 'Achievements still to unlock (without unlockedAt)',
+            items: { $ref: '#/components/schemas/Achievement' },
+          },
+          upToDate: {
+            type: 'boolean',
+            description: 'false when clash-data-service could not answer: stored data only',
           },
         },
       },

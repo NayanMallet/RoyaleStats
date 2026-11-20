@@ -55,7 +55,7 @@ flowchart LR
   MT --> CD
   CD --> CR[(API officielle<br/>Clash Royale)]
   US --- DB1[(SQLite users)]
-  LS --- DB2[(SQLite player_links)]
+  LS --- DB2[(SQLite player_links<br/>achievements)]
   MT --- DB3[(SQLite battles<br/>card_stats)]
 ```
 
@@ -66,7 +66,7 @@ Le détail (routes, données, flux, limites connues) est dans [docs/ARCHITECTURE
 | `front`                      | 8080       | Interface Vue 3, servie par nginx qui relaie `/api/*` vers la Gateway |
 | `api-gateway`                | 3000       | Point d'entrée unique, proxy vers les services, Swagger               |
 | `user-service`               | 3002       | Comptes, connexion, JWT                                               |
-| `link-service`               | 3005       | Liaison compte RoyaleStats ↔ tag Clash Royale                        |
+| `link-service`               | 3005       | Liaison compte ↔ tag, objectif de trophées et succès                 |
 | `clash-data-service`         | 3004       | Seul client de l'API Clash Royale, avec cache en mémoire              |
 | `meta-tracker-service`       | 3006       | Collecte des combats et statistiques de la méta                       |
 | `item-service`, `public-api` | 3003, 3001 | Services hérités du TP microservices, hors périmètre produit          |
