@@ -4,7 +4,8 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useThemeStore } from './stores/theme'
-import { installErrorReporting, installSessionExpiry } from './lib/errorReporting'
+import { installErrorReporting } from './lib/errorReporting'
+import { installSession } from './lib/session'
 
 const app = createApp(App)
 
@@ -14,7 +15,7 @@ app.use(createPinia())
 useThemeStore()
 app.use(router)
 
-installSessionExpiry(router)
+installSession(router)
 
 import 'vue-sonner/style.css'
 import './style.css'
