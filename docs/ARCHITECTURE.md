@@ -34,16 +34,16 @@ flowchart LR
 
 ## Services
 
-| Service                | Port                        | Responsabilité                                                                   | Stockage                |
-| ---------------------- | --------------------------- | -------------------------------------------------------------------------------- | ----------------------- |
-| `front`                | 8080 (80 dans le conteneur) | Interface ; nginx sert le build Vite et relaie `/api/*` vers la Gateway          | —                       |
-| `api-gateway`          | 3000                        | Proxy vers les services, Swagger sur `/docs`, gestion des erreurs de proxy (502) | —                       |
-| `user-service`         | 3002                        | Inscription, connexion, profil ; mots de passe hachés (bcrypt), JWT              | `users`                 |
-| `link-service`         | 3005                        | Liaison compte ↔ tag, liens Twitter/Twitch                                      | `player_links`          |
-| `clash-data-service`   | 3004                        | Client de l'API Clash Royale, cache en mémoire avec expiration                   | mémoire                 |
-| `meta-tracker-service` | 3006                        | Worker de collecte, agrégats par carte, analyse de deck                          | `battles`, `card_stats` |
-| `item-service`         | 3003                        | Héritage du TP microservices (CRUD d'exemple)                                    | `items`                 |
-| `public-api`           | 3001                        | Héritage du TP microservices (routes d'exemple)                                  | —                       |
+| Service                | Port                        | Responsabilité                                                                   | Stockage                       |
+| ---------------------- | --------------------------- | -------------------------------------------------------------------------------- | ------------------------------ |
+| `front`                | 8080 (80 dans le conteneur) | Interface ; nginx sert le build Vite et relaie `/api/*` vers la Gateway          | —                              |
+| `api-gateway`          | 3000                        | Proxy vers les services, Swagger sur `/docs`, gestion des erreurs de proxy (502) | —                              |
+| `user-service`         | 3002                        | Inscription, connexion, profil ; mots de passe hachés (bcrypt), JWT              | `users`                        |
+| `link-service`         | 3005                        | Liaison compte ↔ tag, liens Twitter/Twitch, objectif de trophées et succès      | `player_links`, `achievements` |
+| `clash-data-service`   | 3004                        | Client de l'API Clash Royale, cache en mémoire avec expiration                   | mémoire                        |
+| `meta-tracker-service` | 3006                        | Worker de collecte, agrégats par carte, analyse de deck                          | `battles`, `card_stats`        |
+| `item-service`         | 3003                        | Héritage du TP microservices (CRUD d'exemple)                                    | `items`                        |
+| `public-api`           | 3001                        | Héritage du TP microservices (routes d'exemple)                                  | —                              |
 
 ## Routes exposées par la Gateway
 
@@ -52,7 +52,7 @@ La Gateway retire son préfixe avant de transmettre la requête. La référence 
 | Préfixe Gateway             | Service cible            | Routes principales                                                                                                                                                                                        |
 | --------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/api/users`                | user-service `/users`    | `POST /register`, `POST /login`, `GET\|PUT\|DELETE /me`                                                                                                                                                   |
-| `/api/link`                 | link-service `/link`     | `POST /`, `GET /tag/:tag`, `GET\|PATCH\|DELETE /:userId`                                                                                                                                                  |
+| `/api/link`                 | link-service `/link`     | `POST /`, `GET /tag/:tag`, `GET /tag/:tag/share`, `GET\|PATCH\|DELETE /:userId`, `GET /:userId/achievements`                                                                                              |
 | `/api/clash`                | clash-data-service `/`   | `GET /players/:tag`, `GET /players/:tag/battles`, `GET /players/:tag/summary`, `GET /cards`, `GET /clans/:tag`, `GET /leaderboards`, `GET /leaderboard/:id`, `GET /locations/global/pathoflegend/players` |
 | `/api/meta`                 | meta-tracker-service `/` | `GET /snapshot`, `POST /analyze/deck`, `GET /players/:tag/analysis`, `POST /players/:tag/ingest`                                                                                                          |
 | `/api/royaleapi`            | royaleapi.com            | Relais des classements publics                                                                                                                                                                            |
@@ -76,7 +76,18 @@ erDiagram
     text player_tag UK
     text twitter
     text twitch
+    int trophy_goal "objectif, nullable"
+    int snapshot_trophies "dernier profil vu"
+    int snapshot_arena_id "dernier profil vu"
+    text snapshot_at
     datetime linked_at
+  }
+  ACHIEVEMENTS {
+    int id PK
+    int player_link_id FK
+    text code
+    text detail "objectif ou arène, '' sinon"
+    text unlocked_at "ISO 8601"
   }
   BATTLES {
     int id PK
@@ -96,17 +107,25 @@ erDiagram
     datetime updated_at
   }
   USERS ||--o| PLAYER_LINKS : "lié par user_id (bases séparées)"
+  PLAYER_LINKS ||--o{ ACHIEVEMENTS : "ON DELETE CASCADE"
 ```
 
 `users`, `player_links` et `battles`/`card_stats` vivent dans **trois fichiers SQLite distincts** (`data/<service>/database.sqlite`, montés en volume Docker). La relation `users` → `player_links` est logique : aucune clé étrangère ne la garantit.
 
-Chaque service crée ses tables au démarrage (`CREATE TABLE IF NOT EXISTS`). Le link-service ajoute aussi les colonnes `twitter` et `twitch` si elles manquent : c'est la seule migration du projet à ce jour.
+Chaque service crée ses tables au démarrage (`CREATE TABLE IF NOT EXISTS`). Le link-service a en plus des **migrations versionnées** (`link-service/src/database.ts`) : la version atteinte est stockée dans la base (`PRAGMA user_version`) et, au démarrage, chaque migration plus récente s'exécute une seule fois, dans sa propre transaction (une migration qui échoue laisse la base intacte). Une migration publiée n'est jamais modifiée : on en ajoute une nouvelle.
+
+| Version | Contenu                                                                                                                                                                                               |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1       | `player_links`, et ajout de `twitter`/`twitch` aux bases créées avant ces colonnes                                                                                                                    |
+| 2       | `trophy_goal` et instantané du profil dans `player_links`, table `achievements` ; mise à jour des données existantes : chaque liaison déjà faite débloque « Compte lié », daté de sa liaison (RST-53) |
 
 ## Flux principaux
 
 **Recherche d'un joueur** : `HomeView` → `clash.service.ts` → nginx → Gateway `/api/clash/players/:tag` → `clash-data-service` → cache (5 min) ou API Clash Royale.
 
 **Liaison d'un compte** : `LinkPlayerDialog` → Gateway `/api/link` → `link-service`, qui vérifie le JWT (le compte vient du token, jamais d'un `userId` envoyé par le client), vérifie l'existence du joueur auprès de `clash-data-service`, puis enregistre la liaison (un compte et un tag au plus une fois chacun). Un utilisateur ne peut lire, modifier ou supprimer que sa propre liaison (403 sinon) ; `GET /tag/:tag` est public et ne renvoie que le tag, les pseudos Twitter/Twitch et la date.
+
+**Objectif et succès** : le joueur fixe un objectif de trophées (`PATCH /api/link/:userId`, `trophyGoal`). `GET /api/link/:userId/achievements` (JWT) et la page publique `GET /api/link/tag/:tag/share` lisent le profil et le battlelog via `clash-data-service`, enregistrent les succès débloqués puis renvoient objectif, progression et succès. Les règles sont dans `link-service/src/achievements.ts` : 5 et 10 victoires d'affilée et victoire 3 couronnes (datés du combat), objectif atteint (une fois par valeur d'objectif), nouvelle arène (arène différente avec plus de trophées que l'instantané précédent, pris à la liaison puis à chaque calcul). Un succès garde sa première date et reste acquis quand ses combats sortent du battlelog (l'API n'en garde qu'une trentaine). Si `clash-data-service` ne répond pas, les succès déjà enregistrés sont renvoyés avec `upToDate: false`. La page publique ne contient aucun identifiant de compte.
 
 **Collecte de la méta** : au démarrage puis toutes les heures, le worker du `meta-tracker-service` récupère les 1 000 premiers joueurs du classement Path of Legends, lit leurs derniers combats via `clash-data-service` et met à jour `battles` et `card_stats`. Quand un joueur est consulté, le front demande aussi `POST /api/meta/players/:tag/ingest` : le service récupère lui-même ses combats, aucune route n'accepte de combats envoyés par un client. Chaque combat est lu du côté du joueur, validé, puis enregistré une seule fois (index unique `player_tag` + `battle_time`, un lot par transaction) ; un passage du worker encore en cours n'est pas doublé par le suivant.
 

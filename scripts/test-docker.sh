@@ -107,6 +107,8 @@ check "login wrong password" 401 POST "$GATEWAY/api/users/login" \
   "{\"email\":\"$EMAIL\",\"password\":\"wrong\"}"
 check "me with token" 200 GET "$GATEWAY/api/users/me" "" "$TOKEN"
 check "me without token" 401 GET "$GATEWAY/api/users/me"
+check "achievements without token" 401 GET "$GATEWAY/api/link/1/achievements"
+check "share page of an unlinked tag" 404 GET "$GATEWAY/api/link/tag/%23Q0Q0Q0Q0Q/share"
 check "delete smoke account" 204 DELETE "$GATEWAY/api/users/me" "" "$TOKEN"
 
 if [[ "${SKIP_CLASH_API:-0}" == "1" ]]; then

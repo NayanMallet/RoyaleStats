@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import fetch from 'node-fetch';
 import { getDatabase } from '../database';
 import {
   ConflictError,
@@ -7,21 +6,34 @@ import {
   NotFoundError,
   UpstreamError,
   ValidationError,
-  TIMEOUTS_MS,
   getAuthenticatedUser,
-  isTimeoutError,
   logger,
-  requestIdHeaders,
-  timeoutFromEnv,
 } from 'shared';
 import type { PlayerLink } from 'shared';
+import { getFromClashDataService, playerPath } from '../clashDataClient';
+import {
+  LOCKABLE,
+  MAX_TROPHY_GOAL,
+  describeAchievement,
+  evaluateAchievements,
+  goalProgress,
+  isAchievementCode,
+} from '../achievements';
 
 // Errors are thrown: Express 5 forwards them, sync or async, to the shared error handler.
 
-const CLASH_DATA_SERVICE_URL =
-  process.env.CLASH_DATA_SERVICE_URL || 'http://clash-data-service:3004';
-// Longer than the Clash Royale call inside clash-data-service, shorter than the Gateway's limit.
-const SERVICE_CALL_TIMEOUT_MS = timeoutFromEnv('SERVICE_CALL_TIMEOUT_MS', TIMEOUTS_MS.serviceCall);
+/** Columns of a link returned to its owner: not the internal snapshot of the achievements. */
+const LINK_COLUMNS = 'id, user_id, player_tag, twitter, twitch, trophy_goal, linked_at';
+
+interface LinkRow extends PlayerLink {
+  snapshot_trophies: number | null;
+  snapshot_arena_id: number | null;
+}
+
+interface ClashProfile {
+  trophies?: number;
+  arena?: { id?: number; name?: string };
+}
 
 const linkNotFound = () =>
   new NotFoundError('Aucun joueur n’est associé à ce compte.', { code: 'LinkNotFound' });
@@ -84,36 +96,22 @@ export function normalizeTag(tag: unknown): string {
   return normalized;
 }
 
-/**
- * Checks that the player exists through the Clash Data Service.
- * Unknown player → 404; Clash Data Service down or failing → 503/502, not "player not found".
- */
-async function ensurePlayerExists(normalized: string): Promise<void> {
-  let response;
-  try {
-    response = await fetch(`${CLASH_DATA_SERVICE_URL}/players/%23${normalized}`, {
-      headers: requestIdHeaders(),
-      signal: AbortSignal.timeout(SERVICE_CALL_TIMEOUT_MS),
-    });
-  } catch (error) {
-    throw new UpstreamError(isTimeoutError(error) ? 504 : 503, undefined, {
-      internalDetails: { service: 'clash-data-service', timeoutMs: SERVICE_CALL_TIMEOUT_MS },
-      cause: error,
-    });
+/** Integer between 1 and MAX_TROPHY_GOAL; undefined keeps it, '' or null clears it. */
+function trophyGoal(value: unknown): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value > 0 &&
+    value <= MAX_TROPHY_GOAL
+  ) {
+    return value;
   }
-
-  if (response.status === 404) {
-    throw new NotFoundError('Aucun joueur Clash Royale ne correspond à ce tag.', {
-      code: 'PlayerNotFound',
-    });
-  }
-  if (!response.ok) {
-    // 503 and 504 keep their meaning (Clash Royale down or too slow); anything else is a 502.
-    const status = response.status === 503 || response.status === 504 ? response.status : 502;
-    throw new UpstreamError(status, undefined, {
-      internalDetails: { service: 'clash-data-service', status: response.status },
-    });
-  }
+  throw new ValidationError(
+    `Objectif de trophées invalide : un nombre entier entre 1 et ${MAX_TROPHY_GOAL}.`,
+    { details: { trophyGoal: 'Format invalide' } },
+  );
 }
 
 export async function createLink(req: Request, res: Response) {
@@ -129,7 +127,8 @@ export async function createLink(req: Request, res: Response) {
 
   const normalized = normalizeTag(playerTag);
 
-  await ensurePlayerExists(normalized);
+  // Unknown player → 404; Clash Data Service down or failing → 503/504/502, not "not found".
+  const profile = await getFromClashDataService<ClashProfile>(playerPath(`#${normalized}`));
 
   const db = getDatabase();
 
@@ -150,13 +149,30 @@ export async function createLink(req: Request, res: Response) {
   // Create link. The checks above and this insert run synchronously (better-sqlite3), with no
   // await in between: two concurrent requests cannot both pass them. The UNIQUE constraints of
   // player_links remain the last guard, answered 409 by the shared error handler.
-  const result = db
-    .prepare('INSERT INTO player_links (user_id, player_tag) VALUES (?, ?)')
-    .run(userId, `#${normalized}`);
-
-  const link = db
-    .prepare('SELECT * FROM player_links WHERE id = ?')
-    .get(result.lastInsertRowid) as PlayerLink;
+  // The profile read above is the first snapshot of the achievements ("new arena" compares the
+  // next ones with it), and the link unlocks "linked" in the same transaction.
+  const link = db.transaction(() => {
+    const result = db
+      .prepare(
+        `INSERT INTO player_links (user_id, player_tag, snapshot_trophies, snapshot_arena_id, snapshot_at)
+         VALUES (?, ?, ?, ?, ?)`,
+      )
+      .run(
+        userId,
+        `#${normalized}`,
+        typeof profile.trophies === 'number' ? profile.trophies : null,
+        typeof profile.arena?.id === 'number' ? profile.arena.id : null,
+        new Date().toISOString(),
+      );
+    db.prepare('INSERT INTO achievements (player_link_id, code, unlocked_at) VALUES (?, ?, ?)').run(
+      result.lastInsertRowid,
+      'linked',
+      new Date().toISOString(),
+    );
+    return db
+      .prepare(`SELECT ${LINK_COLUMNS} FROM player_links WHERE id = ?`)
+      .get(result.lastInsertRowid) as PlayerLink;
+  })();
 
   logger.info('Link created', { userId, playerTag: `#${normalized}` });
   res.status(201).json(link);
@@ -166,6 +182,7 @@ export async function updateLink(req: Request, res: Response) {
   const userId = ownUserId(res, req.params.userId);
   const twitter = socialHandle(req.body?.twitter, 'Twitter');
   const twitch = socialHandle(req.body?.twitch, 'Twitch');
+  const goal = trophyGoal(req.body?.trophyGoal);
 
   const db = getDatabase();
 
@@ -186,12 +203,19 @@ export async function updateLink(req: Request, res: Response) {
     params.push(twitch);
   }
 
+  if (goal !== undefined) {
+    updates.push('trophy_goal = ?');
+    params.push(goal);
+  }
+
   if (updates.length > 0) {
     params.push(userId);
     db.prepare(`UPDATE player_links SET ${updates.join(', ')} WHERE user_id = ?`).run(...params);
   }
 
-  const link = db.prepare('SELECT * FROM player_links WHERE user_id = ?').get(userId) as PlayerLink;
+  const link = db
+    .prepare(`SELECT ${LINK_COLUMNS} FROM player_links WHERE user_id = ?`)
+    .get(userId) as PlayerLink;
 
   logger.info('Link updated', { userId });
   res.json(link);
@@ -201,9 +225,9 @@ export async function getLink(req: Request, res: Response) {
   const userId = ownUserId(res, req.params.userId);
 
   const db = getDatabase();
-  const link = db.prepare('SELECT * FROM player_links WHERE user_id = ?').get(userId) as
-    | PlayerLink
-    | undefined;
+  const link = db
+    .prepare(`SELECT ${LINK_COLUMNS} FROM player_links WHERE user_id = ?`)
+    .get(userId) as PlayerLink | undefined;
 
   if (!link) throw linkNotFound();
 
@@ -236,4 +260,111 @@ export async function getLinkByTag(req: Request, res: Response) {
   }
 
   res.json(toPublicLink(link));
+}
+
+/**
+ * Reads the profile and the battle log of the player, stores the achievements they unlock and the
+ * new snapshot. When clash-data-service cannot answer, the stored achievements are still shown,
+ * with `upToDate: false`: never an error page because Clash Royale is down.
+ */
+async function refreshAchievements(
+  link: LinkRow,
+): Promise<{ trophies: number | null; upToDate: boolean }> {
+  let profile: ClashProfile;
+  let battleLog: unknown;
+  try {
+    [profile, battleLog] = await Promise.all([
+      getFromClashDataService<ClashProfile>(playerPath(link.player_tag)),
+      getFromClashDataService<unknown>(playerPath(link.player_tag, '/battles')),
+    ]);
+  } catch (error) {
+    if (error instanceof UpstreamError || error instanceof NotFoundError) {
+      logger.warn('Achievements not refreshed: clash-data-service did not answer', {
+        playerTag: link.player_tag,
+        status: error.statusCode,
+      });
+      return { trophies: link.snapshot_trophies, upToDate: false };
+    }
+    throw error;
+  }
+
+  const now = new Date().toISOString();
+  const evaluation = evaluateAchievements({
+    playerTag: link.player_tag,
+    profile,
+    battleLog,
+    trophyGoal: link.trophy_goal ?? null,
+    snapshot: { trophies: link.snapshot_trophies, arenaId: link.snapshot_arena_id },
+    now,
+  });
+
+  const db = getDatabase();
+  db.transaction(() => {
+    // INSERT OR IGNORE: an achievement already unlocked keeps its first date.
+    const insert = db.prepare(
+      'INSERT OR IGNORE INTO achievements (player_link_id, code, detail, unlocked_at) VALUES (?, ?, ?, ?)',
+    );
+    for (const achievement of evaluation.unlocked) {
+      insert.run(link.id, achievement.code, achievement.detail, achievement.unlockedAt);
+    }
+    db.prepare(
+      'UPDATE player_links SET snapshot_trophies = ?, snapshot_arena_id = ?, snapshot_at = ? WHERE id = ?',
+    ).run(evaluation.snapshot.trophies, evaluation.snapshot.arenaId, now, link.id);
+  })();
+
+  return {
+    trophies: typeof profile.trophies === 'number' ? profile.trophies : null,
+    upToDate: true,
+  };
+}
+
+/** Goal, unlocked achievements (most recent first) and the ones still to unlock. */
+async function progressionOf(link: LinkRow) {
+  const { trophies, upToDate } = await refreshAchievements(link);
+
+  const rows = getDatabase()
+    .prepare(
+      'SELECT code, detail, unlocked_at FROM achievements WHERE player_link_id = ? ORDER BY unlocked_at DESC, id DESC',
+    )
+    .all(link.id) as { code: string; detail: string; unlocked_at: string }[];
+  const achievements = rows.flatMap((row) =>
+    isAchievementCode(row.code)
+      ? [{ ...describeAchievement(row.code, row.detail), unlockedAt: row.unlocked_at }]
+      : [],
+  );
+  const unlockedCodes = new Set(rows.map((row) => row.code));
+
+  return {
+    goal: goalProgress(link.trophy_goal ?? null, trophies),
+    achievements,
+    locked: LOCKABLE.filter((code) => !unlockedCodes.has(code)).map((code) =>
+      describeAchievement(code),
+    ),
+    upToDate,
+  };
+}
+
+export async function getAchievements(req: Request, res: Response) {
+  const userId = ownUserId(res, req.params.userId);
+
+  const link = getDatabase().prepare('SELECT * FROM player_links WHERE user_id = ?').get(userId) as
+    | LinkRow
+    | undefined;
+  if (!link) throw linkNotFound();
+
+  res.json({ player_tag: link.player_tag, ...(await progressionOf(link)) });
+}
+
+/** Public share page: the public fields of the link, the goal and the achievements. */
+export async function getShare(req: Request, res: Response) {
+  const normalized = normalizeTag(req.params.tag);
+
+  const link = getDatabase()
+    .prepare('SELECT * FROM player_links WHERE player_tag = ?')
+    .get(`#${normalized}`) as LinkRow | undefined;
+  if (!link) {
+    throw new NotFoundError('Aucun compte n’est associé à ce tag.', { code: 'LinkNotFound' });
+  }
+
+  res.json({ ...toPublicLink(link), ...(await progressionOf(link)) });
 }
