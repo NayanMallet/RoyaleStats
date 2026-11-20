@@ -284,6 +284,33 @@ const openapiSpec = {
         responses: { '200': { description: 'Battle log' } },
       },
     },
+    '/api/clash/players/{playerTag}/summary': {
+      parameters: [
+        {
+          in: 'path',
+          name: 'playerTag',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Player tag with or without leading # (URL-encoded)',
+        },
+      ],
+      get: {
+        tags: ['Clash'],
+        summary: 'Recent form of a player, from their battle log',
+        description:
+          'Computed from the battle log (same 2-minute cache as `/battles`, about the last 30 battles). Each battle is read from the player side; a battle that cannot be read is left out of the sample. Under `minBattles` usable battles, `insufficientData` is true and `winRate` is null. An empty log is a 200 with an empty sample; an unavailable Clash Royale API stays a 503/504.',
+        responses: {
+          '200': {
+            description: 'Recent form',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/RecentForm' } },
+            },
+          },
+          '404': { description: 'Unknown player (PlayerNotFound)' },
+          '503': { description: 'Clash Royale API unavailable' },
+        },
+      },
+    },
     '/api/clash/cards': {
       get: {
         tags: ['Clash'],
@@ -560,6 +587,49 @@ const openapiSpec = {
                   },
                 },
               },
+            },
+          },
+        },
+      },
+      RecentForm: {
+        type: 'object',
+        properties: {
+          playerTag: { type: 'string', example: '#2PP8VJ9Q' },
+          sampleSize: {
+            type: 'integer',
+            description: 'Usable battles: the base of every indicator ("over N battles").',
+          },
+          minBattles: { type: 'integer', example: 5 },
+          insufficientData: { type: 'boolean', description: 'true under minBattles battles' },
+          wins: { type: 'integer' },
+          losses: { type: 'integer' },
+          draws: { type: 'integer' },
+          winRate: {
+            type: 'number',
+            nullable: true,
+            description: 'Percentage, wins / sampleSize; null when insufficientData',
+          },
+          streak: {
+            type: 'object',
+            nullable: true,
+            description: 'From the most recent battle; null when it is a draw',
+            properties: {
+              result: { type: 'string', enum: ['win', 'loss'] },
+              count: { type: 'integer' },
+            },
+          },
+          trophyChange: {
+            type: 'object',
+            nullable: true,
+            description: 'Only the battles where the API gives a trophy change',
+            properties: { total: { type: 'integer' }, battles: { type: 'integer' } },
+          },
+          period: {
+            type: 'object',
+            nullable: true,
+            properties: {
+              from: { type: 'string', example: '20261119T120000.000Z' },
+              to: { type: 'string', example: '20261119T183000.000Z' },
             },
           },
         },

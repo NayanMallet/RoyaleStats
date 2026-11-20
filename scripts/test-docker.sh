@@ -122,6 +122,7 @@ else
     check "clash player #$PLAYER_TAG" 200 GET "$GATEWAY/api/clash/players/%23$PLAYER_TAG"
     CLAN_TAG=$(sed -n 's/.*"clan":{"tag":"#\([0-9A-Z]*\)".*/\1/p' "$BODY_FILE")
     check "clash player battle log" 200 GET "$GATEWAY/api/clash/players/%23$PLAYER_TAG/battles"
+    check "clash player recent form" 200 GET "$GATEWAY/api/clash/players/%23$PLAYER_TAG/summary"
     [[ -n "$CLAN_TAG" ]] && check "clash clan #$CLAN_TAG" 200 GET "$GATEWAY/api/clash/clans/%23$CLAN_TAG"
   else
     red "  ✗ no player tag in the Path of Legend ranking"

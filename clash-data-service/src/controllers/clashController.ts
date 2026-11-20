@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { fetchFromClashAPI } from '../clashRoyaleClient';
 import { cache } from '../cache';
 import { NotFoundError, ValidationError } from 'shared';
+import { summarizeRecentForm } from '../recentForm';
 
 // Errors are thrown: Express 5 forwards them, sync or async, to the shared error handler.
 // fetchFromClashAPI turns the Clash Royale API statuses into errors (404, 429, 503…).
@@ -64,24 +65,41 @@ function limitParam(req: Request, max: number, fallback?: number): number | unde
   return Math.min(Math.max(requested, 1), max);
 }
 
-export async function getPlayer(req: Request, res: Response) {
-  const normalized = normalizeTag(decodeURIComponent(req.params.playerTag as string));
-
-  // API expects %23 before the tag. Cache for 5 minutes.
-  const data = await cached(res, `player:${normalized}`, 5 * 60 * 1000, () =>
+/** Player profile, cached for 5 minutes. The API expects %23 before the tag. */
+function playerProfile(res: Response, normalized: string) {
+  return cached(res, `player:${normalized}`, 5 * 60 * 1000, () =>
     fetchFromClashAPI(`/players/%23${normalized}`, { notFound: playerNotFound }),
   );
-  res.json(data);
+}
+
+export async function getPlayer(req: Request, res: Response) {
+  const normalized = normalizeTag(decodeURIComponent(req.params.playerTag as string));
+  res.json(await playerProfile(res, normalized));
+}
+
+/** Battle log of a player, cached for 2 minutes (battles change frequently). */
+function battleLog(res: Response, normalized: string) {
+  return cached(res, `battles:${normalized}`, 2 * 60 * 1000, () =>
+    fetchFromClashAPI(`/players/%23${normalized}/battlelog`, { notFound: playerNotFound }),
+  );
 }
 
 export async function getPlayerBattles(req: Request, res: Response) {
   const normalized = normalizeTag(decodeURIComponent(req.params.playerTag as string));
+  res.json(await battleLog(res, normalized));
+}
 
-  // Cache for 2 minutes (battles change frequently)
-  const data = await cached(res, `battles:${normalized}`, 2 * 60 * 1000, () =>
-    fetchFromClashAPI(`/players/%23${normalized}/battlelog`, { notFound: playerNotFound }),
-  );
-  res.json(data);
+/**
+ * Recent form computed from the battle log (same cache). An empty log gives an empty sample with
+ * `insufficientData`; an unavailable Clash Royale API stays an error (503/504), never a 0 %.
+ * The API answers an empty battle log for a tag that does not exist, so the profile (usually
+ * already cached: the client reads it first) tells an unknown player (404) from a player without
+ * recent battles. The `x-cache` header is the one of the battle log, read last.
+ */
+export async function getPlayerSummary(req: Request, res: Response) {
+  const normalized = normalizeTag(decodeURIComponent(req.params.playerTag as string));
+  const [, log] = await Promise.all([playerProfile(res, normalized), battleLog(res, normalized)]);
+  res.json({ playerTag: `#${normalized}`, ...summarizeRecentForm(normalized, log) });
 }
 
 export async function getCards(req: Request, res: Response) {

@@ -144,3 +144,81 @@ describe('cache', () => {
     expect(fetchFromClashAPI).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('GET /players/:playerTag/summary', () => {
+  const win = (minute: number) => ({
+    battleTime: `20261119T12${String(minute).padStart(2, '0')}00.000Z`,
+    team: [{ tag: '#2PP8VJ9Q', crowns: 3, trophyChange: 30 }],
+    opponent: [{ tag: '#X', crowns: 0 }],
+  });
+
+  /** Profile and battle log answered by the mocked API. */
+  function apiAnswers(log: unknown[]) {
+    fetchFromClashAPI.mockImplementation(async (endpoint: string) =>
+      endpoint.endsWith('/battlelog') ? log : { tag: '#2PP8VJ9Q' },
+    );
+  }
+
+  it('summarizes the battle log of the player', async () => {
+    apiAnswers([win(4), win(3), win(2), win(1), win(0)]);
+
+    const { status, body } = await get('/players/%232pp8vj9q/summary');
+
+    expect(status).toBe(200);
+    expect(fetchFromClashAPI).toHaveBeenCalledWith(
+      '/players/%232PP8VJ9Q/battlelog',
+      expect.anything(),
+    );
+    expect(body).toMatchObject({
+      playerTag: '#2PP8VJ9Q',
+      sampleSize: 5,
+      insufficientData: false,
+      wins: 5,
+      winRate: 100,
+      streak: { result: 'win', count: 5 },
+      trophyChange: { total: 150, battles: 5 },
+    });
+  });
+
+  it('answers an empty log with insufficientData, not with an error or a 0 %', async () => {
+    apiAnswers([]);
+
+    const { status, body } = await get('/players/%232PP8VJ9Q/summary');
+
+    expect(status).toBe(200);
+    expect(body).toMatchObject({ sampleSize: 0, insufficientData: true, winRate: null });
+  });
+
+  it('keeps an unavailable Clash Royale API distinct from an empty sample', async () => {
+    fetchFromClashAPI.mockRejectedValue(new UpstreamError(503));
+
+    const { status, body } = await get('/players/%232PP8VJ9Q/summary');
+
+    expect(status).toBe(503);
+    expect(body).not.toHaveProperty('winRate');
+  });
+
+  it('answers 404 PlayerNotFound for an unknown player, whose battle log the API answers empty', async () => {
+    fetchFromClashAPI.mockImplementation(async (endpoint: string, options) => {
+      if (endpoint.endsWith('/battlelog')) return [];
+      throw options.notFound();
+    });
+
+    const { status, body } = await get('/players/%23UNKNOWN/summary');
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('PlayerNotFound');
+  });
+
+  it('shares the caches of the profile and of the battle log', async () => {
+    apiAnswers([win(0)]);
+
+    await get('/players/%232PP8VJ9Q');
+    const battles = await get('/players/%232PP8VJ9Q/battles');
+    const summary = await get('/players/%232PP8VJ9Q/summary');
+
+    expect(battles.cacheHeader).toBe('MISS');
+    expect(summary.cacheHeader).toBe('HIT');
+    expect(fetchFromClashAPI).toHaveBeenCalledTimes(2);
+  });
+});
