@@ -9,13 +9,14 @@ RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY front/package.json ./front/package.json
 
-# Install workspace dependencies according to lockfile
-RUN pnpm install --frozen-lockfile
+# Install the front dependencies, exactly as locked (this layer is cached until a manifest changes)
+RUN pnpm install --frozen-lockfile --filter front...
 
-# Copy the full project and build the front app
+# Copy the full project and build the front app. No second install: it could resolve other
+# versions than the lockfile.
 COPY . .
 WORKDIR /app/front
-RUN pnpm install && pnpm run build
+RUN pnpm run build
 
 ### Production stage
 FROM nginx:stable-alpine

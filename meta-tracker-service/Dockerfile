@@ -5,18 +5,17 @@ RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
 FROM base AS builder
 WORKDIR /app
 
-# Install build dependencies for native modules
-RUN apk add --no-cache python3 py3-setuptools make g++
+# Toolchain for better-sqlite3, used only when no prebuilt binary matches the platform
+RUN apk add --no-cache python3 make g++
 
-# Copy workspace files
-COPY pnpm-workspace.yaml package.json ./
+# Workspace manifests and lockfile: the image gets the exact versions of pnpm-lock.yaml.
+# pnpm-workspace.yaml allows better-sqlite3 to build its native binding (onlyBuiltDependencies).
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY shared ./shared
 COPY meta-tracker-service ./meta-tracker-service
 
-# Enable build scripts and force fresh install for Linux
-RUN pnpm config set enable-pre-post-scripts true
-RUN pnpm install --shamefully-hoist
-RUN npm rebuild better-sqlite3
+# Only this service and the packages it depends on (shared)
+RUN pnpm install --frozen-lockfile --shamefully-hoist --filter meta-tracker-service...
 
 # Build shared package
 RUN pnpm --filter shared build

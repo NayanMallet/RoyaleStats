@@ -5,13 +5,13 @@ RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
 FROM base AS builder
 WORKDIR /app
 
-# Copy workspace files
+# Workspace manifests and lockfile: the image gets the exact versions of pnpm-lock.yaml.
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY shared ./shared
 COPY api-gateway ./api-gateway
 
-# Install ALL dependencies
-RUN pnpm install --shamefully-hoist
+# Only this service and the packages it depends on (shared)
+RUN pnpm install --frozen-lockfile --shamefully-hoist --filter api-gateway...
 
 # Build shared package
 RUN pnpm --filter shared build
