@@ -94,8 +94,9 @@ const preview: Preview = {
       },
     },
     a11y: {
-      // 'todo' reports violations in the panel without failing; switch to 'error' once fixed.
-      test: 'todo',
+      // A violation fails the story: in the panel, and in `pnpm --filter front test:a11y`
+      // (scripts/check-a11y.mjs, run by the CI). A story can lower it to 'todo' or 'off'.
+      test: 'error',
     },
   },
 }
