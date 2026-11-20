@@ -49,14 +49,14 @@ flowchart LR
 
 La Gateway retire son préfixe avant de transmettre la requête. La référence à jour reste le Swagger : <http://localhost:3000/docs>.
 
-| Préfixe Gateway             | Service cible            | Routes principales                                                                                                                                                           |
-| --------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api/users`                | user-service `/users`    | `POST /register`, `POST /login`, `GET\|PUT\|DELETE /me`                                                                                                                      |
-| `/api/link`                 | link-service `/link`     | `POST /`, `GET /tag/:tag`, `GET\|PATCH\|DELETE /:userId`                                                                                                                     |
-| `/api/clash`                | clash-data-service `/`   | `GET /players/:tag`, `GET /players/:tag/battles`, `GET /cards`, `GET /clans/:tag`, `GET /leaderboards`, `GET /leaderboard/:id`, `GET /locations/global/pathoflegend/players` |
-| `/api/meta`                 | meta-tracker-service `/` | `GET /snapshot`, `POST /analyze/deck`, `GET /players/:tag/analysis`, `POST /players/:tag/ingest`                                                                             |
-| `/api/royaleapi`            | royaleapi.com            | Relais des classements publics                                                                                                                                               |
-| `/api/items`, `/api/public` | item-service, public-api | Héritage du TP                                                                                                                                                               |
+| Préfixe Gateway             | Service cible            | Routes principales                                                                                                                                                                                        |
+| --------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/users`                | user-service `/users`    | `POST /register`, `POST /login`, `GET\|PUT\|DELETE /me`                                                                                                                                                   |
+| `/api/link`                 | link-service `/link`     | `POST /`, `GET /tag/:tag`, `GET\|PATCH\|DELETE /:userId`                                                                                                                                                  |
+| `/api/clash`                | clash-data-service `/`   | `GET /players/:tag`, `GET /players/:tag/battles`, `GET /players/:tag/summary`, `GET /cards`, `GET /clans/:tag`, `GET /leaderboards`, `GET /leaderboard/:id`, `GET /locations/global/pathoflegend/players` |
+| `/api/meta`                 | meta-tracker-service `/` | `GET /snapshot`, `POST /analyze/deck`, `GET /players/:tag/analysis`, `POST /players/:tag/ingest`                                                                                                          |
+| `/api/royaleapi`            | royaleapi.com            | Relais des classements publics                                                                                                                                                                            |
+| `/api/items`, `/api/public` | item-service, public-api | Héritage du TP                                                                                                                                                                                            |
 
 ## Données
 
@@ -112,14 +112,16 @@ Chaque service crée ses tables au démarrage (`CREATE TABLE IF NOT EXISTS`). Le
 
 **Analyse du deck** : `GET /api/meta/players/:tag/analysis` récupère le deck actuel du joueur via `clash-data-service` et le compare à l'échantillon. Une carte n'est notée qu'avec au moins 50 utilisations ; le taux du deck est pondéré par l'usage et comparé à celui de toute la méta. L'échantillon vient surtout des joueurs du top 1000, d'où une moyenne au-dessus de 50 % : c'est cette moyenne qui sert de référence. Une carte 2 points sous la méta reçoit jusqu'à 3 alternatives au même coût en élixir, avec au moins 2 points de mieux. Les règles sont dans `meta-tracker-service/src/services/deckAnalysis.ts`.
 
+**Forme récente** : `GET /api/clash/players/:tag/summary` calcule, à partir du battlelog du joueur (même cache de 2 min que `/battles`, une trentaine de combats), victoires, défaites, nuls, winrate, série en cours et variation de trophées. Chaque combat est lu du côté du joueur ; un combat illisible sort de l'échantillon. Sous 5 combats exploitables, `insufficientData` vaut `true` et `winRate` est `null` : le front n'affiche jamais un 0 % trompeur. Un battlelog vide répond 200 avec un échantillon vide ; un tag inconnu (dont l'API renvoie pourtant un battlelog vide) répond 404, grâce au profil lu en parallèle ; une API Clash Royale indisponible reste une 503/504. Les règles sont dans `clash-data-service/src/recentForm.ts`.
+
 ### Durées du cache (`clash-data-service`)
 
-| Donnée              | Durée  |
-| ------------------- | ------ |
-| Profil joueur       | 5 min  |
-| Combats d'un joueur | 2 min  |
-| Liste des cartes    | 24 h   |
-| Clans, classements  | 10 min |
+| Donnée                             | Durée  |
+| ---------------------------------- | ------ |
+| Profil joueur                      | 5 min  |
+| Combats d'un joueur, forme récente | 2 min  |
+| Liste des cartes                   | 24 h   |
+| Clans, classements                 | 10 min |
 
 ## Orchestration (Docker Compose)
 
