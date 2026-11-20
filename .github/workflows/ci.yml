@@ -56,12 +56,13 @@ jobs:
       - name: Build Storybook
         run: pnpm --filter front build-storybook
 
-      # axe-core on every story, light and dark themes (RST-57): a violation fails the build.
+      # Every story in the light and dark themes: rendering, play function (interactions) and
+      # axe-core accessibility (RST-57). Any failure fails the build.
       - name: Install Playwright browser
         run: pnpm --filter front exec playwright install --with-deps chromium
 
-      - name: Accessibility of the stories
-        run: pnpm --filter front test:a11y
+      - name: Stories (interactions and accessibility)
+        run: pnpm --filter front test:stories
 
   e2e:
     name: Docker stack & E2E

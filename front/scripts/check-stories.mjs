@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// Accessibility check of every Storybook story, in the light and dark themes, with axe-core: the
-// same engine and rules as the Accessibility tab of Storybook (addon a11y), but run from the
-// command line and in CI, where the tab cannot block anything.
+// Check of every Storybook story, in the light and dark themes: it must render, its play function
+// (interactions) must pass, and axe-core must find no accessibility violation, with the same
+// engine and rules as the Accessibility tab of Storybook (addon a11y). Run from the command line
+// and in CI, where Storybook itself cannot block anything.
 //
-// Usage: pnpm --filter front build-storybook && pnpm --filter front test:a11y
+// Usage: pnpm --filter front build-storybook && pnpm --filter front test:stories
 //
 // It honours the a11y parameters of each story, like the addon:
 //   parameters.a11y.test: 'error' (default from .storybook/preview.ts) fails the check,
@@ -51,20 +52,40 @@ function serve(dir) {
   return new Promise((done) => server.listen(0, '127.0.0.1', () => done(server)))
 }
 
+/**
+ * Runs before the preview: records the events of the Storybook channel as soon as it exists. The
+ * render phase stays "finished" even when a play function throws, only these events tell.
+ */
+function recordStoryEvents() {
+  window.__storyCheck = { finished: false, errors: [] }
+  let channel
+  Object.defineProperty(window, '__STORYBOOK_ADDONS_CHANNEL__', {
+    configurable: true,
+    get: () => channel,
+    set(value) {
+      channel = value
+      value.on('storyFinished', () => (window.__storyCheck.finished = true))
+      for (const name of ['playFunctionThrewException', 'storyThrewException', 'storyErrored']) {
+        value.on(name, (error) =>
+          window.__storyCheck.errors.push(`${name}: ${error?.message ?? error?.title ?? ''}`),
+        )
+      }
+    },
+  })
+}
+
 async function checkStory(browser, base, axeSource, story, theme) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } })
   try {
+    await page.addInitScript(recordStoryEvents)
     await page.goto(`${base}/iframe.html?id=${story.id}&viewMode=story&globals=theme:${theme}`)
-    // Wait for the story to be rendered and its play function, if any, to be done ('finished' in
-    // Storybook 10, 'completed' before).
-    await page.waitForFunction(
-      () => {
-        const render = window.__STORYBOOK_PREVIEW__?.currentRender
-        return render && ['finished', 'completed', 'errored', 'aborted'].includes(render.phase)
-      },
-      null,
-      { timeout: 15000 },
-    )
+    // Wait for the story to be rendered and its play function, if any, to be done.
+    await page.waitForFunction(() => window.__storyCheck.finished, null, { timeout: 15000 })
+    // A story that fails to render, or whose play function fails, is a failure too: nothing
+    // else runs the play functions in CI.
+    const storyErrors = await page.evaluate(() => window.__storyCheck.errors)
+    if (storyErrors.length > 0) throw new Error(storyErrors.join(' | ').split('\n')[0])
+
     // Let the entry animations (fade-in, zoom-in) finish: axe reads the final colors.
     await page.waitForTimeout(800)
     await page.addScriptTag({ content: axeSource })
@@ -132,7 +153,7 @@ server.close()
 
 for (const error of errors) console.log(`✗ ${error}`)
 console.log(
-  `\n${stories.length} stories × ${THEMES.length} thèmes : ${failures} en échec, ` +
-    `${reported} signalées (todo), ${errors.length} non analysées.`,
+  `\n${stories.length} stories × ${THEMES.length} thèmes : ${failures} avec violations, ` +
+    `${reported} signalées (todo), ${errors.length} en erreur (rendu, play ou délai).`,
 )
 process.exit(failures > 0 || errors.length > 0 ? 1 : 0)
