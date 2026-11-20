@@ -18,3 +18,5 @@ export { installProcessHandlers, registerDebugRoutes } from './src/process';
 export { getAuthenticatedUser, getJwtSecret, requireAuth, verifyAccessToken } from './src/auth';
 export type { AuthenticatedUser } from './src/auth';
 export { TIMEOUTS_MS, isTimeoutError, timeoutFromEnv } from './src/timeouts';
+export { formatPlayerTag, readBattleForPlayer } from './src/battles';
+export type { BattleResult, PlayerBattle, RawBattle, RawCard, RawParticipant } from './src/battles';
