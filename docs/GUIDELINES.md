@@ -89,7 +89,7 @@ Règles :
 - **Aucun appel réseau réel** : la story déclare ses réponses dans `parameters.mockApi` et l'état de connexion dans `parameters.auth` (`'guest'`, `'user'` ou `'linked'`). Les appels vers un autre domaine (RoyaleAPI, GitHub…) sont interceptés aussi et se simulent avec une `RegExp` sur l'URL complète. Les données factices sont dans `src/stories/mocks/fixtures.ts`, les routes simulées partagées par plusieurs stories (classements, fiche joueur) dans `src/stories/mocks/routes.ts`. Les images issues de l'API (cartes, badges) sont remplacées par des SVG générés localement (`placeholderImage`).
 - **Vérifier les deux thèmes** avec le sélecteur « Thème » de la barre d'outils (clair, sombre).
 - **Vérifier les personas** avec les viewports de la barre d'outils : « Gérard — écran 800×600 », « Gérard — surface utile 780×470 » et « Karim — mobile 393×851 ».
-- **Accessibilité** : l'onglet Accessibility (axe-core) doit être vide pour tout nouveau composant. La dette existante est suivie dans Jira.
+- **Accessibilité** : l'onglet Accessibility (axe-core) doit être vide. La CI analyse toutes les stories, en thème clair et sombre, et échoue sur la moindre violation : lancez `pnpm --filter front build-storybook && pnpm --filter front test:a11y` avant de pousser. Un bouton qui ne contient qu'une icône a un `aria-label`, l'icône `aria-hidden="true"` ; une image décorative a `alt=""`.
 - Les interactions (saisie, clic, message attendu) s'écrivent dans une `play` function avec `storybook/test` ; le résultat s'affiche dans l'onglet Interactions.
 
 ### Appels HTTP et état
