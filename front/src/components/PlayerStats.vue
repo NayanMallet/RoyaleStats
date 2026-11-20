@@ -263,11 +263,13 @@ const heroImage = computed(() => {
         <img
           v-if="player.arena"
           :src="getArenaDetails(player.arena.id, player.arena.name).image"
+          :alt="`Arène : ${player.arena.name}`"
           class="absolute right-8 top-1/2 -translate-y-1/2 w-auto h-auto max-w-[60%] max-h-[110%] object-contain opacity-80"
         />
         <img
           v-if="heroImage"
           :src="heroImage"
+          alt=""
           class="absolute right-12 top-1/2 -translate-y-1/2 w-1/2 md:w-1/3 h-auto object-contain opacity-20 blur-sm md:blur-0 mix-blend-overlay group-hover:scale-105 transition-transform duration-1000 rotate-12"
         />
 
@@ -407,12 +409,12 @@ const heroImage = computed(() => {
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-ranked-soft rounded-bl-full opacity-50 pointer-events-none"
             ></div>
-            <h3
+            <h2
               class="flex items-center gap-3 text-2xl font-black text-foreground mb-6 relative z-10"
             >
               <Trophy class="w-6 h-6 text-ranked fill-ranked-soft" />
               Voie des Légendes
-            </h3>
+            </h2>
             <div class="grid md:grid-cols-3 gap-6 relative z-10">
               <div
                 class="bg-ranked-soft/50 rounded-2xl p-4 border border-ranked-border text-center hover:bg-ranked-soft transition-colors"
@@ -455,11 +457,11 @@ const heroImage = computed(() => {
           <!-- Stats Breakdown -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div class="bg-card rounded-3xl p-6 shadow-lg border border-border">
-              <h4
+              <h2
                 class="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2"
               >
                 <Swords class="w-4 h-4" /> Statistiques Combats
-              </h4>
+              </h2>
               <div class="space-y-4">
                 <div class="flex justify-between items-center">
                   <span class="text-muted-foreground font-medium">Total Combats</span>
@@ -471,17 +473,17 @@ const heroImage = computed(() => {
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-muted-foreground font-medium">Défaites</span>
-                  <span class="font-bold text-rose-500">{{ player.losses }}</span>
+                  <span class="font-bold text-destructive">{{ player.losses }}</span>
                 </div>
               </div>
             </div>
 
             <div class="bg-card rounded-3xl p-6 shadow-lg border border-border">
-              <h4
+              <h2
                 class="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2"
               >
                 <Sparkles class="w-4 h-4" /> Collection & Dons
-              </h4>
+              </h2>
               <div class="space-y-4">
                 <div class="flex justify-between items-center">
                   <span class="text-muted-foreground font-medium">Cartes Tournoi</span>
@@ -506,7 +508,7 @@ const heroImage = computed(() => {
             <Zap class="absolute -right-6 -bottom-6 w-40 h-40 text-white/5 rotate-12" />
             <div class="relative z-10 flex justify-between items-center">
               <div>
-                <h3 class="text-xl font-bold text-emerald-100 mb-1">Merge Tactics</h3>
+                <h2 class="text-xl font-bold text-emerald-100 mb-1">Merge Tactics</h2>
                 <p class="text-emerald-300/80 text-sm">Progression Spéciale</p>
               </div>
               <div class="text-right">
@@ -527,10 +529,10 @@ const heroImage = computed(() => {
           <!-- Current Deck -->
           <div class="bg-card rounded-3xl p-6 shadow-xl border border-border">
             <div class="flex items-center justify-between mb-6">
-              <h3 class="text-xl font-black text-foreground flex items-center gap-2">
+              <h2 class="text-xl font-black text-foreground flex items-center gap-2">
                 <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
                 Deck Actuel
-              </h3>
+              </h2>
               <span
                 class="text-xs font-bold bg-info-soft text-info px-2 py-1 rounded-md border border-info-border"
               >
@@ -555,6 +557,7 @@ const heroImage = computed(() => {
                 ></div>
                 <img
                   :src="card.iconUrls.medium"
+                  :alt="card.name"
                   class="w-full h-full object-contain relative z-10 drop-shadow-md group-hover:-translate-y-1 transition-transform"
                 />
 
@@ -577,10 +580,10 @@ const heroImage = computed(() => {
             v-if="filteredBadges.length"
             class="bg-card rounded-3xl p-6 shadow-xl border border-border"
           >
-            <h3 class="text-xl font-black text-foreground flex items-center gap-2 mb-6">
+            <h2 class="text-xl font-black text-foreground flex items-center gap-2 mb-6">
               <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
               Collection
-            </h3>
+            </h2>
             <div class="grid grid-cols-4 gap-4">
               <div
                 v-for="badge in filteredBadges.slice(0, 16)"
@@ -589,6 +592,7 @@ const heroImage = computed(() => {
               >
                 <img
                   :src="badge.iconUrls.large"
+                  :alt="badge.level ? `${badge.name} (niveau ${badge.level})` : badge.name"
                   class="w-full h-full object-contain grayscale-[0.3] group-hover:grayscale-0 transition-all group-hover:scale-110"
                 />
                 <!-- Tooltip fallback -->
@@ -625,13 +629,14 @@ const heroImage = computed(() => {
       >
         <!-- Header -->
         <div class="p-6 border-b border-border flex justify-between items-center bg-background/50">
-          <h3 class="text-2xl font-black text-foreground">Tous les Badges</h3>
+          <h2 class="text-2xl font-black text-foreground">Tous les Badges</h2>
           <Button
             variant="ghost"
+            aria-label="Fermer"
             class="rounded-full w-10 h-10 p-0 hover:bg-accent text-muted-foreground"
             @click="closeBadgesModal"
           >
-            <X class="w-6 h-6" />
+            <X class="w-6 h-6" aria-hidden="true" />
           </Button>
         </div>
         <!-- Grid -->
@@ -684,6 +689,7 @@ const heroImage = computed(() => {
           <img
             v-if="getClanBadgeUrl(selectedClan.badgeId)"
             :src="getClanBadgeUrl(selectedClan.badgeId)"
+            :alt="`Badge du clan ${selectedClan.name}`"
             class="w-24 h-24 object-contain drop-shadow-lg"
           />
           <div
@@ -693,9 +699,9 @@ const heroImage = computed(() => {
             <Shield class="w-12 h-12 text-clan" />
           </div>
           <div class="flex-1 text-center md:text-left space-y-2">
-            <h3 class="text-3xl md:text-4xl font-black text-foreground tracking-tight">
+            <h2 class="text-3xl md:text-4xl font-black text-foreground tracking-tight">
               {{ selectedClan.name }}
-            </h3>
+            </h2>
             <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
               <span
                 class="text-muted-foreground font-mono font-bold bg-accent/50 px-2 py-1 rounded text-sm"
@@ -743,10 +749,11 @@ const heroImage = computed(() => {
           </div>
           <Button
             variant="ghost"
+            aria-label="Fermer"
             class="absolute top-4 right-4 rounded-full w-10 h-10 p-0 hover:bg-accent text-muted-foreground"
             @click="closeClanModal"
           >
-            <X class="w-6 h-6" />
+            <X class="w-6 h-6" aria-hidden="true" />
           </Button>
         </div>
 
@@ -852,10 +859,11 @@ const heroImage = computed(() => {
       >
         <Button
           variant="ghost"
+          aria-label="Fermer"
           class="absolute top-4 right-4 rounded-full w-10 h-10 p-0 hover:bg-white/10 text-white/70 hover:text-white z-20 transition-colors"
           @click="closeCardModal"
         >
-          <X class="w-6 h-6" />
+          <X class="w-6 h-6" aria-hidden="true" />
         </Button>
 
         <!-- Cinematic Header -->
@@ -876,6 +884,7 @@ const heroImage = computed(() => {
 
           <img
             :src="selectedCard.iconUrls.medium"
+            alt=""
             class="w-64 h-auto drop-shadow-[0_10px_60px_rgba(0,0,0,0.6)] z-10 transform hover:scale-105 transition-transform duration-700 ease-in-out"
           />
         </div>
@@ -899,7 +908,7 @@ const heroImage = computed(() => {
                 <span class="text-xs font-bold uppercase tracking-wider">Évoluée</span>
               </div>
             </div>
-            <h3 class="text-3xl font-black text-white tracking-tight">{{ selectedCard.name }}</h3>
+            <h2 class="text-3xl font-black text-white tracking-tight">{{ selectedCard.name }}</h2>
           </div>
 
           <div class="grid grid-cols-3 gap-3">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, useId } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -96,6 +96,10 @@ const handleUnlink = async () => {
 onMounted(() => {
   fetchPlayerName()
 })
+
+// Ties each label to its field, for screen readers and a click on the label.
+const twitterId = useId()
+const twitchId = useId()
 </script>
 
 <template>
@@ -143,6 +147,7 @@ onMounted(() => {
             v-if="link.twitter"
             :href="`https://twitter.com/${link.twitter}`"
             target="_blank"
+            rel="noopener noreferrer"
             class="flex items-center gap-2 px-3 py-1.5 bg-[#1DA1F2]/10 text-info rounded-lg hover:bg-[#1DA1F2]/20 transition-colors"
           >
             <Twitter class="w-4 h-4" />
@@ -153,6 +158,7 @@ onMounted(() => {
             v-if="link.twitch"
             :href="`https://twitch.tv/${link.twitch}`"
             target="_blank"
+            rel="noopener noreferrer"
             class="flex items-center gap-2 px-3 py-1.5 bg-[#9146FF]/10 text-ranked rounded-lg hover:bg-[#9146FF]/20 transition-colors"
           >
             <Twitch class="w-4 h-4" />
@@ -166,9 +172,10 @@ onMounted(() => {
           @click="isEditing = true"
           variant="ghost"
           size="sm"
+          aria-label="Modifier les réseaux sociaux"
           class="h-8 w-8 p-0 rounded-full hover:bg-info-soft text-info"
         >
-          <Edit2 class="w-4 h-4" />
+          <Edit2 class="w-4 h-4" aria-hidden="true" />
         </Button>
       </div>
 
@@ -183,18 +190,22 @@ onMounted(() => {
             @click="isEditing = false"
             variant="ghost"
             size="sm"
+            aria-label="Annuler la modification"
             class="h-6 w-6 p-0 hover:bg-muted rounded-full"
           >
-            <X class="w-3 h-3 text-muted-foreground" />
+            <X class="w-3 h-3 text-muted-foreground" aria-hidden="true" />
           </Button>
         </div>
 
         <div class="space-y-3">
           <div class="space-y-1">
-            <Label class="text-xs text-muted-foreground font-bold uppercase">Twitter</Label>
+            <Label :for="twitterId" class="text-xs text-muted-foreground font-bold uppercase"
+              >Twitter</Label
+            >
             <div class="relative">
               <Twitter class="w-4 h-4 text-info absolute left-3 top-2.5" />
               <Input
+                :id="twitterId"
                 v-model="twitterHandle"
                 placeholder="@pseudo"
                 class="pl-9 h-9 bg-background border-border focus:border-[#1DA1F2] focus:ring-[#1DA1F2]/20"
@@ -203,10 +214,13 @@ onMounted(() => {
           </div>
 
           <div class="space-y-1">
-            <Label class="text-xs text-muted-foreground font-bold uppercase">Twitch</Label>
+            <Label :for="twitchId" class="text-xs text-muted-foreground font-bold uppercase"
+              >Twitch</Label
+            >
             <div class="relative">
               <Twitch class="w-4 h-4 text-ranked absolute left-3 top-2.5" />
               <Input
+                :id="twitchId"
                 v-model="twitchHandle"
                 placeholder="pseudo"
                 class="pl-9 h-9 bg-background border-border focus:border-[#9146FF] focus:ring-[#9146FF]/20"
@@ -235,9 +249,9 @@ onMounted(() => {
           variant="outline"
           class="h-11 rounded-xl border-destructive/25 text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold"
         >
-          <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
-          <Unlink v-else class="w-4 h-4 mr-2" />
-          <span v-if="!loading">Dissocier</span>
+          <Loader2 v-if="loading" class="w-4 h-4 animate-spin" aria-hidden="true" />
+          <Unlink v-else class="w-4 h-4 mr-2" aria-hidden="true" />
+          <span :class="{ 'sr-only': loading }">Dissocier</span>
         </Button>
       </div>
 

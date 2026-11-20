@@ -93,7 +93,7 @@ onMounted(loadSnapshot)
               :src="getCardUrl(card.card_name)"
               @error="handleImageError"
               class="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300"
-              alt="{{ card.card_name }}"
+              :alt="card.card_name"
             />
             <div
               class="absolute -top-2 -left-2 w-6 h-6 bg-slate-800 text-white rounded-full flex items-center justify-center text-xs font-black border-2 border-card shadow-sm"

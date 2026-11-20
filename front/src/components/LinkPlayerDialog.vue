@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, useId } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -66,29 +66,39 @@ const handleClose = () => {
     emit('close')
   }
 }
+
+// Accessible name of the dialog and label of the tag field.
+const titleId = useId()
+const tagId = useId()
 </script>
 
 <template>
   <div
     v-if="show"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+    role="dialog"
+    aria-modal="true"
+    :aria-labelledby="titleId"
     @click.self="handleClose"
+    @keydown.esc="handleClose"
   >
     <Card class="w-full max-w-md bg-card shadow-2xl animate-in zoom-in-95 duration-200">
       <CardHeader class="relative">
         <button
+          type="button"
           @click="handleClose"
           :disabled="loading"
+          aria-label="Fermer"
           class="absolute right-4 top-4 p-2 rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
         >
-          <X class="w-4 h-4 text-muted-foreground" />
+          <X class="w-4 h-4 text-muted-foreground" aria-hidden="true" />
         </button>
         <div class="flex items-center gap-3">
           <div class="p-3 bg-info-soft rounded-xl">
             <LinkIcon class="w-6 h-6 text-info" />
           </div>
           <div>
-            <CardTitle>Lier mon compte Clash Royale</CardTitle>
+            <CardTitle :id="titleId">Lier mon compte Clash Royale</CardTitle>
             <CardDescription>Connectez votre SupercellID pour un accès rapide</CardDescription>
           </div>
         </div>
@@ -96,8 +106,9 @@ const handleClose = () => {
 
       <CardContent class="space-y-4">
         <div class="space-y-2">
-          <label class="text-sm font-semibold text-foreground">Tag du joueur</label>
+          <label :for="tagId" class="text-sm font-semibold text-foreground">Tag du joueur</label>
           <Input
+            :id="tagId"
             v-model="playerTag"
             placeholder="#TAG (ex: #2PP)"
             :disabled="loading"
