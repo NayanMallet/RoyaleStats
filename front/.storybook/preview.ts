@@ -94,8 +94,8 @@ const preview: Preview = {
       },
     },
     a11y: {
-      // A violation fails the story: in the panel, and in `pnpm --filter front test:a11y`
-      // (scripts/check-a11y.mjs, run by the CI). A story can lower it to 'todo' or 'off'.
+      // A violation fails the story: in the panel, and in `pnpm --filter front test:stories`
+      // (scripts/check-stories.mjs, run by the CI). A story can lower it to 'todo' or 'off'.
       test: 'error',
     },
   },

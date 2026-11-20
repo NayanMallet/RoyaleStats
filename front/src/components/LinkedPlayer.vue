@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Unlink, Loader2, User, Twitter, Twitch, Edit2, Save, X } from 'lucide-vue-next'
 import { linkService, type PlayerLink } from '@/services/link.service'
+import { fetchPlayer } from '@/services/clash.service'
 import { useAuthStore } from '@/stores/auth'
 import { toast } from 'vue-sonner'
 
@@ -61,15 +62,10 @@ const handleSaveSocials = async () => {
 const fetchPlayerName = async () => {
   loadingName.value = true
   try {
-    const tag = props.link.player_tag.replace('#', '')
-    const API_GATEWAY_BASE_URL = import.meta.env.VITE_API_GATEWAY_URL ?? ''
-    const response = await fetch(`${API_GATEWAY_BASE_URL}/api/clash/players/%23${tag}`)
-    if (response.ok) {
-      const data = await response.json()
-      playerName.value = data.name
-    }
+    playerName.value = (await fetchPlayer(props.link.player_tag)).name
   } catch (error) {
-    console.error('Error fetching player name:', error)
+    // The name is a bonus: the card still shows the tag when Clash Royale cannot answer.
+    console.warn('Could not load the player name', error)
   } finally {
     loadingName.value = false
   }

@@ -68,7 +68,7 @@ export const PathOfLegendKarim: Story = {
 
 /** Noms et clans longs, scores à six chiffres : les textes sont tronqués, le score reste entier. */
 export const PathOfLegendLongNames: Story = {
-  parameters: { mockApi: leaderboardsRoutes({}, longPathOfLegendRankings) },
+  parameters: { mockApi: leaderboardsRoutes({}, { pathOfLegend: longPathOfLegendRankings }) },
   play: async ({ canvasElement }) => {
     await openPathOfLegend(canvasElement, 'Mohamed Light le Magnifique')
     await expectNoHorizontalOverflow(canvasElement)
@@ -79,13 +79,68 @@ export const Loading: Story = {
   parameters: { mockApi: leaderboardsRoutes({ delay: Infinity }) },
 }
 
+const UNAVAILABLE = {
+  status: 503,
+  body: {
+    error: 'ServiceUnavailable',
+    message: 'Service momentanément indisponible.',
+    statusCode: 503,
+    requestId: '6f1c9e2a-3b7d-4c1e-9a2f-1d2e3f4a5b6c',
+  },
+}
+
+/** Opens a category from its card. */
+async function openCategory(canvasElement: HTMLElement, label: string) {
+  await userEvent.click(await within(canvasElement).findByText(label))
+}
+
 /**
- * L'API ne répond pas : les catégories restent affichées mais leurs listes sont vides,
- * sans message d'erreur. À faire évoluer avec RST-33 (Error Management).
+ * L'API ne répond pas : la catégorie ouverte affiche une erreur avec son code incident et un
+ * bouton Réessayer, jamais une liste vide (RST-11).
  */
 export const ServerError: Story = {
-  parameters: {
-    mockApi: leaderboardsRoutes({ status: 500, body: { error: 'Internal Server Error' } }),
+  parameters: { mockApi: leaderboardsRoutes(UNAVAILABLE) },
+  play: async ({ canvasElement }) => {
+    await openCategory(canvasElement, 'Ranked')
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Classement indisponible')).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: /Réessayer/ })).toBeInTheDocument()
+    await expect(canvas.getByText('6f1c9e2a-3b7d-4c1e-9a2f-1d2e3f4a5b6c')).toBeInTheDocument()
+    await expect(canvas.queryByTestId('leaderboard-row')).not.toBeInTheDocument()
+  },
+}
+
+/** RoyaleAPI seul est en panne : le classement Trophées l'indique, les autres restent servis. */
+export const TrophyRankingDown: Story = {
+  parameters: { mockApi: leaderboardsRoutes({}, { trophies: UNAVAILABLE }) },
+  play: async ({ canvasElement }) => {
+    await openCategory(canvasElement, 'Trophées')
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Classement indisponible')).toBeInTheDocument()
+
+    await userEvent.click(canvas.getByRole('button', { name: /Retour/ }))
+    await openPathOfLegend(canvasElement, 'Mohamed Light')
+  },
+}
+
+/** Classement de saison réel (Merge Tactics), lu sur le dernier classement publié par l'API. */
+export const SeasonRanking: Story = {
+  play: async ({ canvasElement }) => {
+    await openCategory(canvasElement, 'Merge')
+    await expect(await within(canvasElement).findByText('Ronaldo CR')).toBeInTheDocument()
+  },
+}
+
+/** Aucun classement publié pour la saison : un message le dit, sans données inventées. */
+export const EmptySeason: Story = {
+  parameters: { mockApi: leaderboardsRoutes({}, { seasons: { items: [] } }) },
+  play: async ({ canvasElement }) => {
+    await openCategory(canvasElement, '2v2 League')
+    const canvas = within(canvasElement)
+    await expect(
+      await canvas.findByText('Aucun joueur classé pour le moment dans ce classement.'),
+    ).toBeInTheDocument()
+    await expect(canvas.queryByTestId('leaderboard-row')).not.toBeInTheDocument()
   },
 }
 

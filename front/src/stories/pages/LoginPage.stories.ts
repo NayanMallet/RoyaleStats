@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import LoginView from '@/views/LoginView.vue'
 import type { MockRoute } from '../mocks/api'
 import { demoLink, demoUser } from '../mocks/fixtures'
@@ -41,7 +41,9 @@ export const RequiredFields: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: /Se connecter/ }))
-    await expect(await canvas.findByText("L'email est requis")).toBeVisible()
+    const message = await canvas.findByText("L'email est requis")
+    // The view fades in when it mounts: the message is visible once that animation is over.
+    await waitFor(() => expect(message).toBeVisible())
   },
 }
 

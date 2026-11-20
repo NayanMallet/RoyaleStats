@@ -19,7 +19,7 @@
     "build-storybook": "storybook build",
     "lint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
-    "test:a11y": "node scripts/check-a11y.mjs storybook-static"
+    "test:stories": "node scripts/check-stories.mjs storybook-static"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.17",
