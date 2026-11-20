@@ -43,17 +43,17 @@ En production, une réponse ne contient jamais de stack, de requête SQL, d'URL 
 
 ## Table HTTP → effet dans l'interface
 
-| Code            | `error`                                              | Effet côté front (`describeApiError`)                            |
-| --------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
-| 400             | `ValidationError`, `InvalidPlayerTag`                | message métier, sous le champ concerné quand il y en a un        |
-| 401             | `AuthenticationError`                                | session purgée, redirection vers `/login?redirect=<page>`        |
-| 403             | `Forbidden`                                          | « Action non autorisée. »                                        |
-| 404             | `NotFound`, `PlayerNotFound`, `RouteNotFound`…       | message métier, ou état « introuvable » dédié                    |
-| 409             | `ConflictError`                                      | message métier (« Un compte existe déjà avec cet email. »)       |
-| 429             | `RateLimited`                                        | « Trop de requêtes, réessayez dans quelques secondes. »          |
-| 500             | `InternalServerError`                                | « Une erreur interne est survenue. » + Réessayer + code incident |
-| 502 / 503 / 504 | `BadGateway`, `ServiceUnavailable`, `GatewayTimeout` | « Service momentanément indisponible » + Réessayer               |
-| réseau, délai   | `NetworkError` (front)                               | « Service injoignable » + Réessayer, au plus tard après 10 s     |
+| Code            | `error`                                              | Effet côté front (`describeApiError`)                                           |
+| --------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 400             | `ValidationError`, `InvalidPlayerTag`                | message métier, sous le champ concerné quand il y en a un                       |
+| 401             | `AuthenticationError`                                | session purgée ; sur une page privée, redirection vers `/login?redirect=<page>` |
+| 403             | `Forbidden`                                          | « Action non autorisée. »                                                       |
+| 404             | `NotFound`, `PlayerNotFound`, `RouteNotFound`…       | message métier, ou état « introuvable » dédié                                   |
+| 409             | `ConflictError`                                      | message métier (« Un compte existe déjà avec cet email. »)                      |
+| 429             | `RateLimited`                                        | « Trop de requêtes, réessayez dans quelques secondes. »                         |
+| 500             | `InternalServerError`                                | « Une erreur interne est survenue. » + Réessayer + code incident                |
+| 502 / 503 / 504 | `BadGateway`, `ServiceUnavailable`, `GatewayTimeout` | « Service momentanément indisponible » + Réessayer                              |
+| réseau, délai   | `NetworkError` (front)                               | « Service injoignable » + Réessayer, au plus tard après 10 s                    |
 
 ## Côté back : lever une erreur
 
@@ -135,7 +135,7 @@ loadError.value = describe(error); // <ErrorState v-bind="loadError" @retry="loa
 ```
 
 - **`ErrorState`** (Storybook : `Molecules/ErrorState`) affiche titre, message, code incident, bouton Réessayer et, en développement, les détails techniques. `MetaStats` l'utilise pour distinguer « erreur » de « aucune donnée ».
-- **401** : un appel envoyé avec un token qui répond 401 purge la session et redirige vers `/login?redirect=<page>` ; après connexion, l'utilisateur revient sur sa page. Une 401 sans token (mauvais mot de passe) reste une erreur de formulaire.
+- **Session** (`lib/session.ts`) : une session se termine quand un appel envoyé avec le token répond 401, quand le token indique lui-même qu'il est expiré (vérifié au démarrage et à chaque navigation, sans appel réseau), ou quand un autre onglet se déconnecte. Le token, l'utilisateur et le tag lié sont alors effacés, un toast « Votre session a expiré » s'affiche et, sur une page privée, l'utilisateur est redirigé vers `/login?redirect=<page>` puis ramené sur sa page après connexion. Au démarrage, la session stockée est aussi vérifiée auprès de l'API (`GET /api/users/me`) ; une panne réseau la conserve. Une 401 sans token (mauvais mot de passe) reste une erreur de formulaire.
 - **Crash d'un composant** : `ErrorBoundary` (autour de `<RouterView>` dans `App.vue`) affiche un écran de repli avec « Recharger » et « Retour à l'accueil ». Les erreurs restantes (`app.config.errorHandler`, `window` `error` et `unhandledrejection`) sont journalisées dans la console par `lib/errorReporting.ts`.
 
 ## Retrouver un incident à partir du code incident
