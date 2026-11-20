@@ -311,9 +311,9 @@ onMounted(() => {
       <div class="mt-6 grid gap-4 md:grid-cols-2">
         <Card class="bg-muted/50 backdrop-blur-md border-border/50 relative overflow-hidden">
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <Lock class="w-14 h-14 text-foreground/20" />
+            <Lock class="w-14 h-14 text-foreground/20" aria-hidden="true" />
           </div>
-          <CardHeader class="relative z-10 opacity-50">
+          <CardHeader class="relative z-10">
             <CardTitle class="text-lg font-bold text-muted-foreground">Sécurité</CardTitle>
             <CardDescription class="text-muted-foreground"
               >Gérez la sécurité de votre compte</CardDescription
@@ -332,9 +332,9 @@ onMounted(() => {
 
         <Card class="bg-muted/50 backdrop-blur-md border-border/50 relative overflow-hidden">
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <Lock class="w-14 h-14 text-foreground/20" />
+            <Lock class="w-14 h-14 text-foreground/20" aria-hidden="true" />
           </div>
-          <CardHeader class="relative z-10 opacity-50">
+          <CardHeader class="relative z-10">
             <CardTitle class="text-lg font-bold text-muted-foreground">Préférences</CardTitle>
             <CardDescription class="text-muted-foreground"
               >Personnalisez votre expérience</CardDescription
