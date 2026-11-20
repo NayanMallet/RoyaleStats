@@ -30,8 +30,14 @@ export interface User {
   updated_at?: string
 }
 
-const TOKEN_KEY = 'auth_token'
-const USER_KEY = 'auth_user'
+// Browser storage of the session. Only this service and the auth store read or write it.
+export const SESSION_KEYS = {
+  token: 'auth_token',
+  user: 'auth_user',
+  linkedPlayerTag: 'linked_player_tag',
+} as const
+const TOKEN_KEY = SESSION_KEYS.token
+const USER_KEY = SESSION_KEYS.user
 
 export const authService = {
   async login(payload: LoginPayload): Promise<AuthResponse> {
@@ -72,12 +78,21 @@ export const authService = {
     }
   },
 
-  isAuthenticated(): boolean {
-    return !!this.getToken()
+  saveUser(user: User) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
   },
 
-  logout() {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
+  getLinkedPlayerTag(): string | null {
+    return localStorage.getItem(SESSION_KEYS.linkedPlayerTag)
+  },
+
+  saveLinkedPlayerTag(tag: string | null) {
+    if (tag) localStorage.setItem(SESSION_KEYS.linkedPlayerTag, tag)
+    else localStorage.removeItem(SESSION_KEYS.linkedPlayerTag)
+  },
+
+  /** Removes everything the session stored: token, user and linked tag. */
+  clearSession() {
+    for (const key of Object.values(SESSION_KEYS)) localStorage.removeItem(key)
   },
 }

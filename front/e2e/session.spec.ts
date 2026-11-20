@@ -49,4 +49,34 @@ test.describe('Session expirée', () => {
 
     await expect(page).toHaveURL(/\/profile$/)
   })
+
+  test('un token expiré est retiré dès l’ouverture, sans appel à l’API', async ({ page }) => {
+    // Unsigned JWT whose exp is one minute ago: the front reads exp, only the server verifies.
+    const payload = Buffer.from(
+      JSON.stringify({ userId: 1, exp: Math.floor(Date.now() / 1000) - 60 }),
+    ).toString('base64url')
+    await page.addInitScript((token) => {
+      if (sessionStorage.getItem('e2e-expired-seeded')) return
+      sessionStorage.setItem('e2e-expired-seeded', '1')
+      localStorage.setItem('auth_token', token)
+      localStorage.setItem('auth_user', JSON.stringify({ id: 1, name: 'E2E', email: 'e@x.fr' }))
+      localStorage.setItem('linked_player_tag', '#2PP8VJ9Q')
+    }, `e30.${payload}.signature`)
+    const privateCalls: string[] = []
+    page.on('request', (request) => {
+      if (/\/api\/(users\/me|link)/.test(request.url())) privateCalls.push(request.url())
+    })
+
+    await page.goto('/profile')
+
+    await expect(page).toHaveURL(/\/login\?redirect=(\/|%2F)profile$/)
+    await expect(page.getByText('Votre session a expiré, reconnectez-vous.')).toBeVisible()
+    expect(
+      await page.evaluate(() => [
+        localStorage.getItem('auth_token'),
+        localStorage.getItem('linked_player_tag'),
+      ]),
+    ).toEqual([null, null])
+    expect(privateCalls).toEqual([])
+  })
 })

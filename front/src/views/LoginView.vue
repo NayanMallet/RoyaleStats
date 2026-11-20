@@ -9,6 +9,7 @@ import { Loader2, ArrowLeft, LogIn } from 'lucide-vue-next'
 import AppLogo from '@/statics/Logo.png'
 import { authService } from '@/services/auth.service'
 import { ApiError } from '@/services/http'
+import { describeApiError } from '@/composables/useApiError'
 import { useAuthStore } from '@/stores/auth'
 import { linkService } from '@/services/link.service'
 import { safeRedirect } from '@/lib/redirect'
@@ -56,17 +57,23 @@ const handleLogin = async () => {
 
     router.push(safeRedirect(route.query.redirect))
   } catch (error) {
-    if (error instanceof ApiError) {
-      if (error.status === 401) {
-        emailError.value = 'Email ou mot de passe incorrect'
-        passwordError.value = 'Email ou mot de passe incorrect'
-      } else {
-        emailError.value = 'Erreur lors de la connexion au serveur'
-      }
-    } else {
-      emailError.value = 'Erreur lors de la connexion au serveur'
+    if (error instanceof ApiError && error.status === 401) {
+      emailError.value = 'Email ou mot de passe incorrect'
+      passwordError.value = 'Email ou mot de passe incorrect'
+      return
     }
-    console.error('Login error:', error)
+    // Business message of the API (400, 429…) or the HTTP → UX table (unavailable, network).
+    const fieldErrors =
+      error instanceof ApiError && error.status === 400
+        ? ((error.details ?? {}) as Partial<Record<'email' | 'password', string>>)
+        : {}
+    if (fieldErrors.email || fieldErrors.password) {
+      emailError.value = fieldErrors.email ?? ''
+      passwordError.value = fieldErrors.password ?? ''
+    } else {
+      emailError.value = describeApiError(error).message
+    }
+    if (!(error instanceof ApiError && error.status < 500)) console.error('Login error:', error)
   } finally {
     isLoading.value = false
   }
